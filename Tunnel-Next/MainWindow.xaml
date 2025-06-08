@@ -137,7 +137,7 @@
                                 <GroupBox Header="图像" Style="{StaticResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{StaticResource RibbonLargeButtonStyle}"
-                                                ToolTip="导入图像"
+                                                ToolTip="导入图像&#x0a;支持选择一张或多张图像文件&#x0a;将自动创建对应的图像输入节点"
                                                 Command="{Binding ImportImageCommand}">
                                             <StackPanel>
                                                 <Image Source="pack://application:,,,/Resources/image.png" Width="32" Height="32" Margin="0,2,0,2"
@@ -288,11 +288,21 @@
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource RibbonButtonStyle}"
-                                                    ToolTip="垂直对齐">
+                                                    ToolTip="垂直对齐"
+                                                    Margin="0,0,0,2">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
                                                            RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
                                                     <TextBlock Text="垂直" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="密集整理 (Ctrl+Shift+L)"
+                                                    Command="{Binding ArrangeNodesDenseCommand}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="密集" FontSize="10"/>
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>

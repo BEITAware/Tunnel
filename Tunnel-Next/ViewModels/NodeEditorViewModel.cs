@@ -902,6 +902,61 @@ namespace Tunnel_Next.ViewModels
         }
 
         /// <summary>
+        /// 断开端口的所有连接
+        /// </summary>
+        public void DisconnectPort(Node node, string portName, bool isOutput)
+        {
+            if (node == null || string.IsNullOrEmpty(portName))
+                return;
+
+            // 找到所有相关连接
+            var connectionsToRemove = Connections
+                .Where(c => isOutput
+                    ? (c.OutputNode?.Id == node.Id && c.OutputPortName == portName)
+                    : (c.InputNode?.Id == node.Id && c.InputPortName == portName))
+                .ToList();
+
+            // 删除连接
+            foreach (var connection in connectionsToRemove)
+            {
+                // 使用ConnectionManager删除连接以确保端口状态正确更新
+                _connectionManager.RemoveConnection(connection);
+
+                // 从UI连接集合中移除
+                if (Connections.Contains(connection))
+                {
+                    Connections.Remove(connection);
+                }
+            }
+
+            // 如果有连接被删除，触发处理
+            if (connectionsToRemove.Count > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var nodeGraph = CreateNodeGraph();
+                        var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { node });
+
+                        if (result.Success)
+                        {
+                            // 在UI线程触发预览更新
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                PreviewUpdateRequested?.Invoke();
+                            });
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // 静默处理异常
+                    }
+                });
+            }
+        }
+
+        /// <summary>
         /// 获取待连接的起点位置
         /// </summary>
         public Point? GetPendingConnectionStartPoint()

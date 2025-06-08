@@ -694,16 +694,88 @@ namespace Tunnel_Next
 
                     // 将图片资源添加到节点
                     var position = new System.Windows.Point(50, 50);
-                    _viewModel.NodeEditor.AddSpecificNodeCommand?.Execute("图片节点");
+                    _viewModel.NodeEditor.SetPendingNodePosition(position);
+                    _viewModel.NodeEditor.AddSpecificNodeCommand?.Execute("图像输入");
 
                     // 将文件路径参数添加到节点
                     var lastNode = _viewModel.NodeEditor.Nodes.LastOrDefault();
                     if (lastNode != null)
                     {
-                        var filePathParam = lastNode.Parameters.FirstOrDefault(p => p.Name == "FilePath");
-                        if (filePathParam != null)
+                        bool parameterSet = false;
+
+                        // 方法1：通过ViewModel设置参数（最佳方法）
+                        if (lastNode.ViewModel is Tunnel_Next.Services.Scripting.IScriptViewModel scriptViewModel)
                         {
-                            filePathParam.Value = item.FilePath;
+                            try
+                            {
+                                // 使用反射设置ViewModel的ImagePath属性
+                                var viewModelType = scriptViewModel.GetType();
+                                var imagePathProperty = viewModelType.GetProperty("ImagePath");
+                                if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                {
+                                    imagePathProperty.SetValue(scriptViewModel, item.FilePath);
+                                    parameterSet = true;
+                                    _viewModel.TaskStatus = $"已通过ViewModel设置 {lastNode.Title} 的ImagePath = {item.Name}";
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _viewModel.TaskStatus = $"通过ViewModel设置参数失败: {ex.Message}";
+                            }
+                        }
+
+                        // 方法2：直接通过脚本实例设置参数
+                        if (!parameterSet && lastNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript scriptInstance)
+                        {
+                            try
+                            {
+                                // 使用反射直接设置脚本实例的ImagePath属性
+                                var scriptType = scriptInstance.GetType();
+                                var imagePathProperty = scriptType.GetProperty("ImagePath");
+                                if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                {
+                                    imagePathProperty.SetValue(scriptInstance, item.FilePath);
+
+                                    // 触发参数变化事件，确保UI和处理流程同步
+                                    if (scriptInstance is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                    {
+                                        revivalScript.OnParameterChanged("ImagePath", item.FilePath);
+                                    }
+
+                                    parameterSet = true;
+                                    _viewModel.TaskStatus = $"已通过脚本实例设置 {lastNode.Title} 的ImagePath = {item.Name}";
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _viewModel.TaskStatus = $"通过脚本实例设置参数失败: {ex.Message}";
+                            }
+                        }
+
+                        // 方法3：如果前面的方法都失败，尝试通过NodeParameter设置
+                        if (!parameterSet)
+                        {
+                            var filePathParam = lastNode.Parameters.FirstOrDefault(p =>
+                                p.Name == "ImagePath" ||
+                                p.Name == "FilePath" ||
+                                p.Name == "Path" ||
+                                p.Name == "文件路径" ||
+                                p.Name.ToLower().Contains("path"));
+
+                            if (filePathParam != null)
+                            {
+                                filePathParam.Value = item.FilePath;
+                                parameterSet = true;
+                                _viewModel.TaskStatus = $"已通过NodeParameter设置 {lastNode.Title} 的参数 {filePathParam.Name} = {item.Name}";
+                            }
+                        }
+
+                        // 如果都失败了，显示调试信息
+                        if (!parameterSet)
+                        {
+                            var paramNames = string.Join(", ", lastNode.Parameters.Select(p => p.Name));
+                            var scriptType = lastNode.Tag?.GetType().Name ?? "Unknown";
+                            _viewModel.TaskStatus = $"警告：节点 {lastNode.Title} (脚本类型: {scriptType}) 参数设置失败。可用参数: {paramNames}";
                         }
                     }
                 }
@@ -831,7 +903,10 @@ namespace Tunnel_Next
                         e.Handled = true;
                         break;
                     case Key.L:
-                        _viewModel.ArrangeNodesCommand?.Execute(null);
+                        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                            _viewModel.ArrangeNodesDenseCommand?.Execute(null);
+                        else
+                            _viewModel.ArrangeNodesCommand?.Execute(null);
                         e.Handled = true;
                         break;
                     case Key.D0:

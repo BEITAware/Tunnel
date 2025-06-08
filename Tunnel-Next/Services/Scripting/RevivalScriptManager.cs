@@ -102,7 +102,6 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 目录扫描异常: {directory} - {ex.Message}");
             }
         }
 
@@ -157,10 +156,8 @@ namespace Tunnel_Next.Services.Scripting
 
                 if (!emitResult.Success)
                 {
-                    Console.WriteLine($"❌ 脚本解析编译失败: {filePath}");
                     foreach (var error in emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
                     {
-                        Console.WriteLine($"   编译错误: {error}");
                     }
                     return null;
                 }
@@ -173,7 +170,6 @@ namespace Tunnel_Next.Services.Scripting
 
                 if (scriptType == null)
                 {
-                    Console.WriteLine($"❌ 脚本解析失败: 未找到实现IRevivalScript接口的类 - {filePath}");
                     return null;
                 }
 
@@ -181,7 +177,6 @@ namespace Tunnel_Next.Services.Scripting
                 var revivalScriptAttr = scriptType.GetCustomAttribute<RevivalScriptAttribute>();
                 if (revivalScriptAttr == null)
                 {
-                    Console.WriteLine($"❌ 脚本解析失败: 类 {scriptType.Name} 缺少 [RevivalScript] 特性 - {filePath}");
                     return null;
                 }
 
@@ -217,7 +212,6 @@ namespace Tunnel_Next.Services.Scripting
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ 脚本端口解析失败: {filePath} - {ex.Message}");
                 }
 
                 // 解析参数信息
@@ -245,7 +239,6 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 脚本解析异常: {filePath} - {ex.Message}");
                 return null;
             }
         }
@@ -307,14 +300,11 @@ namespace Tunnel_Next.Services.Scripting
                     }
                     else
                     {
-                        Console.WriteLine($"❌ 脚本编译失败: {relativePath}");
                         foreach (var error in result.Errors)
                         {
-                            Console.WriteLine($"   编译错误: {error}");
                         }
                         foreach (var warning in result.Warnings)
                         {
-                            Console.WriteLine($"   编译警告: {warning}");
                         }
                     }
                 }
@@ -368,14 +358,11 @@ namespace Tunnel_Next.Services.Scripting
                 }
                 else
                 {
-                    Console.WriteLine($"❌ 脚本实例创建时编译失败: {relativePath}");
                     foreach (var error in result.Errors)
                     {
-                        Console.WriteLine($"   编译错误: {error}");
                     }
                     foreach (var warning in result.Warnings)
                     {
-                        Console.WriteLine($"   编译警告: {warning}");
                     }
                     return null;
                 }
@@ -473,7 +460,6 @@ namespace Tunnel_Next.Services.Scripting
                     SaveCompilationCache();
 
                     // 输出编译成功信息
-                    Console.WriteLine($"✅ 脚本编译成功: {relativePath} -> {assemblyFileName}");
                 }
                 else
                 {
@@ -518,17 +504,13 @@ namespace Tunnel_Next.Services.Scripting
                 }
                 else
                 {
-                    Console.WriteLine($"❌ 程序集加载失败: 未找到实现IRevivalScript接口的类 - {assemblyPath}");
-                    Console.WriteLine($"   程序集中的类型:");
                     foreach (var type in allTypes)
                     {
-                        Console.WriteLine($"     - {type.FullName}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 程序集加载异常: {assemblyPath} - {ex.Message}");
             }
 
             return null;
@@ -664,7 +646,6 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 加载编译缓存失败: {ex.Message}");
                 _compilationCache = new CompilationCache();
             }
         }
@@ -684,7 +665,6 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 保存编译缓存失败: {ex.Message}");
             }
         }
 
@@ -715,18 +695,15 @@ namespace Tunnel_Next.Services.Scripting
                         try
                         {
                             File.Delete(file);
-                            Console.WriteLine($"🗑️ 清理无效编译文件: {fileName}");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"❌ 清理编译文件失败: {fileName} - {ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 清理编译文件夹失败: {ex.Message}");
             }
         }
     }

@@ -71,6 +71,9 @@ namespace Tunnel_Next.Controls
         public event EventHandler<(Node node, string portName, bool isOutput, Point position)>? PortDragMove;
         public event EventHandler<(Node node, string portName, bool isOutput, FrameworkElement? targetElement)>? PortDragEnded;
 
+        // 端口断开连接事件
+        public event EventHandler<(Node node, string portName, bool isOutput)>? PortDisconnectRequested;
+
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (_node != null)
@@ -133,6 +136,13 @@ namespace Tunnel_Next.Controls
                 {
                     // 输入端口不开始拖拽，只能作为连接目标
                     PortClicked?.Invoke(this, (_node, port.Name, false));
+                    e.Handled = true;
+                };
+
+                // 添加右键菜单处理
+                portEllipse.MouseRightButtonDown += (s, e) =>
+                {
+                    ShowPortContextMenu(port, false, portEllipse);
                     e.Handled = true;
                 };
 
@@ -247,6 +257,13 @@ namespace Tunnel_Next.Controls
                     else
                     {
                     }
+                };
+
+                // 添加右键菜单处理
+                portEllipse.MouseRightButtonDown += (s, e) =>
+                {
+                    ShowPortContextMenu(port, true, portEllipse);
+                    e.Handled = true;
                 };
 
                 OutputPortsPanel.Children.Add(portEllipse);
@@ -583,6 +600,32 @@ namespace Tunnel_Next.Controls
         {
             var portDataType = PortTypeDefinitions.GetPortDataType(dataType);
             return PortTypeDefinitions.GetPortWpfColor(portDataType);
+        }
+
+        /// <summary>
+        /// 显示端口上下文菜单
+        /// </summary>
+        private void ShowPortContextMenu(NodePort port, bool isOutput, FrameworkElement portElement)
+        {
+            if (_node == null || port == null || portElement == null) return;
+
+            // 检查端口是否有连接
+            if (!port.IsConnected) return;
+
+            var contextMenu = new ContextMenu();
+
+            var disconnectItem = new MenuItem { Header = "断开此链接" };
+            disconnectItem.Click += (s, args) =>
+            {
+                // 触发端口断开连接请求事件
+                PortDisconnectRequested?.Invoke(this, (_node, port.Name, isOutput));
+            };
+            contextMenu.Items.Add(disconnectItem);
+
+            // 设置菜单位置并显示 - 使用端口元素作为目标，在端口下方显示
+            contextMenu.PlacementTarget = portElement;
+            contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            contextMenu.IsOpen = true;
         }
     }
 }

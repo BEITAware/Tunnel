@@ -189,6 +189,24 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
+        /// 选择多个图像文件
+        /// </summary>
+        /// <param name="title">对话框标题</param>
+        /// <returns>选择的文件路径数组，如果取消则返回空数组</returns>
+        public string[] SelectMultipleImageFiles(string title = "选择图像文件")
+        {
+            var openDialog = new OpenFileDialog
+            {
+                Filter = ImageFilter,
+                Title = title,
+                CheckFileExists = true,
+                Multiselect = true
+            };
+
+            return openDialog.ShowDialog() == true ? openDialog.FileNames : new string[0];
+        }
+
+        /// <summary>
         /// 选择图像保存路径
         /// </summary>
         /// <param name="title">对话框标题</param>

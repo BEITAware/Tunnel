@@ -200,6 +200,7 @@ namespace Tunnel_Next.ViewModels
         public ICommand? AddNodeCommand { get; private set; }
         public ICommand? DeleteNodeCommand { get; private set; }
         public ICommand? ArrangeNodesCommand { get; private set; }
+        public ICommand? ArrangeNodesDenseCommand { get; private set; }
 
         #endregion
 
@@ -232,6 +233,7 @@ namespace Tunnel_Next.ViewModels
             AddNodeCommand = new RelayCommand(ExecuteAddNode);
             DeleteNodeCommand = new RelayCommand(ExecuteDeleteNode, CanDeleteNode);
             ArrangeNodesCommand = new RelayCommand(ExecuteArrangeNodes);
+            ArrangeNodesDenseCommand = new RelayCommand(ExecuteArrangeNodesDense);
         }
 
         private async void InitializeCollections()
@@ -515,30 +517,127 @@ namespace Tunnel_Next.ViewModels
 
         private async void ExecuteImportImage()
         {
-            var filePath = _fileService.SelectImageFile("选择要导入的图像");
-            if (!string.IsNullOrEmpty(filePath))
+            var filePaths = _fileService.SelectMultipleImageFiles("选择要导入的图像");
+            if (filePaths != null && filePaths.Length > 0)
             {
                 try
                 {
-                    // 复制图像到工作文件夹
-                    var workFolderPath = await _workFolderService.CopyImageToWorkFolderAsync(filePath);
-                    CurrentImagePath = workFolderPath;
-                    TaskStatus = $"已导入图像: {Path.GetFileName(workFolderPath)}";
+                    var importedCount = 0;
+                    var startX = 50.0;
+                    var startY = 50.0;
+                    var nodeSpacing = 200.0; // 节点之间的间距
 
-                    // 创建图像输入节点
-                    var position = new System.Windows.Point(50, 50);
-                    _nodeEditor.AddSpecificNodeCommand?.Execute("图像输入");
-
-                    // 设置文件路径参数
-                    var lastNode = _nodeEditor.Nodes.LastOrDefault();
-                    if (lastNode != null)
+                    foreach (var filePath in filePaths)
                     {
-                        var filePathParam = lastNode.Parameters.FirstOrDefault(p => p.Name == "FilePath");
-                        if (filePathParam != null)
+                        // 复制图像到工作文件夹
+                        var workFolderPath = await _workFolderService.CopyImageToWorkFolderAsync(filePath);
+
+                        // 如果是第一个图像，设置为当前图像路径
+                        if (importedCount == 0)
                         {
-                            filePathParam.Value = workFolderPath;
+                            CurrentImagePath = workFolderPath;
                         }
+
+                        // 计算节点位置，避免重叠
+                        var nodeX = startX + (importedCount % 4) * nodeSpacing; // 每行最多4个节点
+                        var nodeY = startY + (importedCount / 4) * nodeSpacing; // 超过4个节点时换行
+
+                        // 设置节点位置
+                        _nodeEditor.SetPendingNodePosition(new System.Windows.Point(nodeX, nodeY));
+
+                        // 创建图像输入节点
+                        _nodeEditor.AddSpecificNodeCommand?.Execute("图像输入");
+
+                        // 设置文件路径参数
+                        var lastNode = _nodeEditor.Nodes.LastOrDefault();
+                        if (lastNode != null)
+                        {
+                            bool parameterSet = false;
+
+                            // 方法1：通过ViewModel设置参数（最佳方法）
+                            if (lastNode.ViewModel is Services.Scripting.IScriptViewModel scriptViewModel)
+                            {
+                                try
+                                {
+                                    // 使用反射设置ViewModel的ImagePath属性
+                                    var viewModelType = scriptViewModel.GetType();
+                                    var imagePathProperty = viewModelType.GetProperty("ImagePath");
+                                    if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                    {
+                                        imagePathProperty.SetValue(scriptViewModel, workFolderPath);
+                                        parameterSet = true;
+                                        TaskStatus = $"已通过ViewModel设置 {lastNode.Title} 的ImagePath = {Path.GetFileName(workFolderPath)}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    TaskStatus = $"通过ViewModel设置参数失败: {ex.Message}";
+                                }
+                            }
+
+                            // 方法2：直接通过脚本实例设置参数
+                            if (!parameterSet && lastNode.Tag is Services.Scripting.IRevivalScript scriptInstance)
+                            {
+                                try
+                                {
+                                    // 使用反射直接设置脚本实例的ImagePath属性
+                                    var scriptType = scriptInstance.GetType();
+                                    var imagePathProperty = scriptType.GetProperty("ImagePath");
+                                    if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                    {
+                                        imagePathProperty.SetValue(scriptInstance, workFolderPath);
+
+                                        // 触发参数变化事件，确保UI和处理流程同步
+                                        if (scriptInstance is Services.Scripting.RevivalScriptBase revivalScript)
+                                        {
+                                            revivalScript.OnParameterChanged("ImagePath", workFolderPath);
+                                        }
+
+                                        parameterSet = true;
+                                        TaskStatus = $"已通过脚本实例设置 {lastNode.Title} 的ImagePath = {Path.GetFileName(workFolderPath)}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    TaskStatus = $"通过脚本实例设置参数失败: {ex.Message}";
+                                }
+                            }
+
+                            // 方法3：如果前面的方法都失败，尝试通过NodeParameter设置
+                            if (!parameterSet)
+                            {
+                                var filePathParam = lastNode.Parameters.FirstOrDefault(p =>
+                                    p.Name == "ImagePath" ||
+                                    p.Name == "FilePath" ||
+                                    p.Name == "Path" ||
+                                    p.Name == "文件路径" ||
+                                    p.Name.ToLower().Contains("path"));
+
+                                if (filePathParam != null)
+                                {
+                                    filePathParam.Value = workFolderPath;
+                                    parameterSet = true;
+                                    TaskStatus = $"已通过NodeParameter设置 {lastNode.Title} 的参数 {filePathParam.Name} = {Path.GetFileName(workFolderPath)}";
+                                }
+                            }
+
+                            // 如果都失败了，显示调试信息
+                            if (!parameterSet)
+                            {
+                                var paramNames = string.Join(", ", lastNode.Parameters.Select(p => p.Name));
+                                var scriptType = lastNode.Tag?.GetType().Name ?? "Unknown";
+                                TaskStatus = $"警告：节点 {lastNode.Title} (脚本类型: {scriptType}) 参数设置失败。可用参数: {paramNames}";
+                            }
+                        }
+                        else
+                        {
+                            TaskStatus = "警告：未能获取最后创建的节点";
+                        }
+
+                        importedCount++;
                     }
+
+                    TaskStatus = $"已导入 {importedCount} 张图像";
 
                     // 更新资源库
                     await UpdateResourceLibraryAsync();
@@ -667,7 +766,306 @@ namespace Tunnel_Next.ViewModels
 
         private void ExecuteArrangeNodes()
         {
-            TaskStatus = "整理节点功能待实现";
+            try
+            {
+                if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any())
+                {
+                    TaskStatus = "没有节点需要整理";
+                    return;
+                }
+
+                TaskStatus = "正在整理节点...";
+
+                // 执行节点整理算法
+                ArrangeNodesAlgorithm();
+
+                TaskStatus = $"已整理 {_nodeEditor.Nodes.Count} 个节点";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"整理节点失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 节点整理算法 - 基于拓扑排序的自动布局
+        /// </summary>
+        private void ArrangeNodesAlgorithm()
+        {
+            if (_nodeEditor?.Nodes == null || _nodeEditor.Connections == null)
+                return;
+
+            var nodes = _nodeEditor.Nodes.ToList();
+            var connections = _nodeEditor.Connections.ToList();
+
+            // 1. 更新所有节点的高度以适应端口数量
+            foreach (var node in nodes)
+            {
+                node.UpdateNodeHeight();
+            }
+
+            // 2. 使用拓扑排序确定节点层级
+            var layers = PerformTopologicalLayering(nodes, connections);
+
+            // 3. 布局参数
+            const double layerSpacing = 200; // 层间距
+            const double nodeSpacing = 20;   // 节点间距
+            const double startX = 50;        // 起始X位置
+            const double startY = 50;        // 起始Y位置
+
+            // 4. 为每一层布局节点
+            double currentX = startX;
+
+            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            {
+                var layer = layers[layerIndex];
+                if (!layer.Any()) continue;
+
+                // 计算当前层的总高度
+                double totalHeight = layer.Sum(n => n.Height) + (layer.Count - 1) * nodeSpacing;
+
+                // 计算起始Y位置（居中对齐）
+                double currentY = startY;
+
+                // 按节点高度排序，较高的节点放在中间
+                var sortedLayer = layer.OrderBy(n => n.Height).ToList();
+
+                // 布局当前层的节点
+                foreach (var node in sortedLayer)
+                {
+                    node.X = currentX;
+                    node.Y = currentY;
+
+                    currentY += node.Height + nodeSpacing;
+                }
+
+                // 移动到下一层
+                currentX += GetMaxNodeWidth(layer) + layerSpacing;
+            }
+
+            // 5. 通知节点图已修改 - 通过设置节点属性来触发PropertyChanged事件
+            // 这会间接触发NodeEditorViewModel内部的NodeGraphModified事件
+            if (nodes.Any())
+            {
+                // 通过重新设置第一个节点的X属性来触发PropertyChanged事件
+                var firstNode = nodes.First();
+                var firstNodeX = firstNode.X;
+                firstNode.X = firstNodeX; // 这会触发PropertyChanged事件
+            }
+        }
+
+        /// <summary>
+        /// 执行拓扑分层，返回按层级组织的节点列表
+        /// </summary>
+        private List<List<Node>> PerformTopologicalLayering(List<Node> nodes, List<NodeConnection> connections)
+        {
+            var layers = new List<List<Node>>();
+            var remainingNodes = new HashSet<Node>(nodes);
+            var processedNodes = new HashSet<Node>();
+
+            while (remainingNodes.Any())
+            {
+                var currentLayer = new List<Node>();
+
+                // 找到当前层的节点（没有未处理的输入依赖）
+                var candidateNodes = remainingNodes.Where(node =>
+                {
+                    var inputConnections = connections.Where(c => c.InputNode?.Id == node.Id);
+                    return inputConnections.All(c => c.OutputNode == null || processedNodes.Contains(c.OutputNode));
+                }).ToList();
+
+                // 如果没有候选节点，说明存在循环依赖，选择剩余节点中的第一个
+                if (!candidateNodes.Any() && remainingNodes.Any())
+                {
+                    candidateNodes.Add(remainingNodes.First());
+                }
+
+                // 将候选节点添加到当前层
+                foreach (var node in candidateNodes)
+                {
+                    currentLayer.Add(node);
+                    remainingNodes.Remove(node);
+                    processedNodes.Add(node);
+                }
+
+                if (currentLayer.Any())
+                {
+                    layers.Add(currentLayer);
+                }
+            }
+
+            return layers;
+        }
+
+        /// <summary>
+        /// 获取节点列表中的最大宽度
+        /// </summary>
+        private double GetMaxNodeWidth(List<Node> nodes)
+        {
+            return nodes.Any() ? nodes.Max(n => n.Width) : 120; // 默认宽度120
+        }
+
+        /// <summary>
+        /// 执行密集节点整理
+        /// </summary>
+        private void ExecuteArrangeNodesDense()
+        {
+            try
+            {
+                if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any())
+                {
+                    TaskStatus = "没有节点需要整理";
+                    return;
+                }
+
+                TaskStatus = "正在执行密集整理...";
+
+                // 执行密集节点整理算法
+                ArrangeNodesDenseAlgorithm();
+
+                TaskStatus = $"已密集整理 {_nodeEditor.Nodes.Count} 个节点";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"密集整理失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 密集节点整理算法 - 极致紧凑的布局
+        /// </summary>
+        private void ArrangeNodesDenseAlgorithm()
+        {
+            if (_nodeEditor?.Nodes == null || _nodeEditor.Connections == null)
+                return;
+
+            var nodes = _nodeEditor.Nodes.ToList();
+            var connections = _nodeEditor.Connections.ToList();
+
+            // 1. 更新所有节点的高度以适应端口数量
+            foreach (var node in nodes)
+            {
+                node.UpdateNodeHeight();
+            }
+
+            // 2. 使用拓扑排序确定节点层级
+            var layers = PerformTopologicalLayering(nodes, connections);
+
+            // 3. 密集布局参数 - 极致紧凑
+            const double layerSpacing = 80;   // 层间距极度减少到80
+            const double nodeSpacing = 5;    // 节点间距极度减少到5
+            const double startX = 10;        // 起始X位置极度减少
+            const double startY = 10;        // 起始Y位置极度减少
+
+            // 4. 为每一层布局节点 - 使用极致紧凑算法
+            double currentX = startX;
+
+            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            {
+                var layer = layers[layerIndex];
+                if (!layer.Any()) continue;
+
+                // 按连接数量和高度排序，优化垂直空间利用
+                var sortedLayer = layer.OrderBy(n => GetNodeConnectionCount(n, connections))
+                                      .ThenBy(n => n.Height).ToList();
+
+                // 使用极致紧凑的垂直打包
+                var packedPositions = PackNodesUltraCompact(sortedLayer, nodeSpacing, startY);
+
+                // 设置节点位置
+                for (int i = 0; i < sortedLayer.Count; i++)
+                {
+                    var node = sortedLayer[i];
+                    node.X = currentX;
+                    node.Y = packedPositions[i];
+                }
+
+                // 移动到下一层，使用极致紧凑的宽度计算
+                // 进一步减少层间距，几乎贴合
+                var layerWidth = GetUltraCompactWidth(layer);
+                currentX += layerWidth + Math.Min(layerSpacing, layerWidth * 0.3); // 层间距不超过节点宽度的30%
+            }
+
+            // 5. 后处理：微调重叠节点
+            ResolveNodeOverlaps(nodes, nodeSpacing);
+
+            // 6. 通知节点图已修改
+            if (nodes.Any())
+            {
+                var firstNode = nodes.First();
+                var firstNodeX = firstNode.X;
+                firstNode.X = firstNodeX; // 触发PropertyChanged事件
+            }
+        }
+
+        /// <summary>
+        /// 获取节点的连接数量（输入+输出）
+        /// </summary>
+        private int GetNodeConnectionCount(Node node, List<NodeConnection> connections)
+        {
+            var inputCount = connections.Count(c => c.InputNode?.Id == node.Id);
+            var outputCount = connections.Count(c => c.OutputNode?.Id == node.Id);
+            return inputCount + outputCount;
+        }
+
+        /// <summary>
+        /// 极致紧凑的垂直打包节点，返回每个节点的Y坐标
+        /// </summary>
+        private List<double> PackNodesUltraCompact(List<Node> nodes, double spacing, double startY)
+        {
+            var positions = new List<double>();
+            double currentY = startY;
+
+            foreach (var node in nodes)
+            {
+                positions.Add(currentY);
+                // 使用更小的间距，几乎贴合
+                currentY += node.Height + Math.Max(spacing, 2); // 最小间距2像素
+            }
+
+            return positions;
+        }
+
+        /// <summary>
+        /// 获取节点层的极致紧凑宽度
+        /// </summary>
+        private double GetUltraCompactWidth(List<Node> nodes)
+        {
+            if (!nodes.Any()) return 80; // 最小宽度80
+
+            // 使用节点的实际宽度，但进一步压缩
+            var maxWidth = nodes.Max(n => n.Width);
+
+            // 对于密集布局，我们可以使用更紧凑的宽度
+            // 假设节点的实际内容宽度比显示宽度小一些
+            return Math.Max(maxWidth * 0.85, 80); // 压缩到85%，最小80
+        }
+
+        /// <summary>
+        /// 解决节点重叠问题 - 极致紧凑版本
+        /// </summary>
+        private void ResolveNodeOverlaps(List<Node> nodes, double minSpacing)
+        {
+            // 按Y坐标排序
+            var sortedNodes = nodes.OrderBy(n => n.Y).ToList();
+
+            for (int i = 1; i < sortedNodes.Count; i++)
+            {
+                var currentNode = sortedNodes[i];
+                var previousNode = sortedNodes[i - 1];
+
+                // 检查是否在同一列（X坐标相近），使用更小的阈值
+                if (Math.Abs(currentNode.X - previousNode.X) < 30)
+                {
+                    // 使用极小的间距，几乎贴合
+                    var ultraMinSpacing = Math.Max(minSpacing, 1);
+                    var requiredY = previousNode.Y + previousNode.Height + ultraMinSpacing;
+                    if (currentNode.Y < requiredY)
+                    {
+                        currentNode.Y = requiredY;
+                    }
+                }
+            }
         }
 
         #endregion

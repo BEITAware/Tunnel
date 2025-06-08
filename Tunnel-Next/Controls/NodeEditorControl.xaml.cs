@@ -22,6 +22,7 @@ namespace Tunnel_Next.Controls
     {
         private NodeEditorViewModel? _viewModel;
         private readonly Dictionary<Node, NodeControl> _nodeControls = new();
+        private readonly Dictionary<Node, PropertyChangedEventHandler> _nodePropertyHandlers = new();
         private Path? _previewConnectionPath;
 
         /// <summary>
@@ -136,6 +137,29 @@ namespace Tunnel_Next.Controls
                 // 不再直接设置ImageProcessor，使用MVVM解耦
             };
 
+            // 设置节点在Canvas上的初始位置
+            Canvas.SetLeft(nodeControl, node.X);
+            Canvas.SetTop(nodeControl, node.Y);
+
+            // 监听节点位置变化，同步更新Canvas位置并重绘连接线
+            PropertyChangedEventHandler nodePropertyHandler = (s, e) =>
+            {
+                if (e.PropertyName == nameof(Node.X))
+                {
+                    Canvas.SetLeft(nodeControl, node.X);
+                    // 位置改变时重新绘制连接线
+                    UpdateConnections();
+                }
+                else if (e.PropertyName == nameof(Node.Y))
+                {
+                    Canvas.SetTop(nodeControl, node.Y);
+                    // 位置改变时重新绘制连接线
+                    UpdateConnections();
+                }
+            };
+            node.PropertyChanged += nodePropertyHandler;
+            _nodePropertyHandlers[node] = nodePropertyHandler;
+
             nodeControl.NodeSelected += (s, n) =>
             {
                 _viewModel?.SelectNode(n);
@@ -159,6 +183,11 @@ namespace Tunnel_Next.Controls
                 UpdateDragPreviewConnection(args.position);
             };
 
+            // 绑定端口断开连接事件
+            nodeControl.PortDisconnectRequested += (s, args) => {
+                _viewModel?.DisconnectPort(args.node, args.portName, args.isOutput);
+            };
+
             nodeControl.PortDragEnded += (s, args) => {
                 HandlePortDragEnd(args.node, args.portName, args.isOutput, args.targetElement);
             };
@@ -173,7 +202,14 @@ namespace Tunnel_Next.Controls
             if (_nodeControls.TryGetValue(node, out var nodeControl))
             {
 
-                // 解绑事件处理器，避免内存泄漏
+                // 解绑节点属性变化事件处理器
+                if (_nodePropertyHandlers.TryGetValue(node, out var propertyHandler))
+                {
+                    node.PropertyChanged -= propertyHandler;
+                    _nodePropertyHandlers.Remove(node);
+                }
+
+                // 解绑其他事件处理器，避免内存泄漏
                 nodeControl.NodeSelected -= (s, n) => _viewModel?.SelectNode(n);
                 nodeControl.NodeMoved -= (s, n) => UpdateConnections();
                 nodeControl.NodeDeleteRequested -= (s, n) => {
