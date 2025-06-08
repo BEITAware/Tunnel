@@ -706,6 +706,11 @@ namespace Tunnel_Next.ViewModels
         /// </summary>
         public event Action<string>? ConnectionErrorDetected;
 
+        /// <summary>
+        /// 连接变化事件
+        /// </summary>
+        public event Action? ConnectionsChanged;
+
         #endregion
 
         #region Event Handlers for Script Parameter Changes
@@ -841,6 +846,9 @@ namespace Tunnel_Next.ViewModels
 
                     if (connection != null)
                     {
+                        // 触发连接变化事件
+                        ConnectionsChanged?.Invoke();
+
                         // 连接创建后触发增量处理 - 处理连接发出方的下游节点
                         _ = Task.Run(async () =>
                         {
@@ -945,6 +953,9 @@ namespace Tunnel_Next.ViewModels
             // 如果有连接被删除，触发处理 - 处理连接发出方的下游节点
             if (connectionsToRemove.Count > 0)
             {
+                // 触发连接变化事件
+                ConnectionsChanged?.Invoke();
+
                 _ = Task.Run(async () =>
                 {
                     try
@@ -1051,6 +1062,9 @@ namespace Tunnel_Next.ViewModels
 
             if (connection != null)
             {
+                // 触发连接变化事件
+                ConnectionsChanged?.Invoke();
+
                 // 拖拽连接创建后触发选择性处理 - 处理连接发出方的下游节点
                 _ = Task.Run(async () =>
                 {

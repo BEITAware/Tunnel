@@ -23,6 +23,7 @@ namespace Tunnel_Next.ViewModels
         private NodeGraph _currentNodeGraph = new();
         private Node? _selectedNode;
         private string _currentImagePath = string.Empty;
+        private bool _isNodeStatusVisible = false;
         private NodeEditorViewModel _nodeEditor;
         private readonly WorkFolderService _workFolderService = new();
         private readonly FileService _fileService;
@@ -53,11 +54,20 @@ namespace Tunnel_Next.ViewModels
                 if (e.PropertyName == nameof(_nodeEditor.SelectedNode))
                 {
                     SelectedNode = _nodeEditor.SelectedNode;
+
+                    // 如果节点状态显示开启，实时更新处理标记
+                    if (IsNodeStatusVisible)
+                    {
+                        UpdateProcessingMarksFromSelectedNode();
+                    }
                 }
             };
 
             // 监听连接错误事件
             _nodeEditor.ConnectionErrorDetected += OnConnectionErrorDetected;
+
+            // 监听连接变化事件
+            _nodeEditor.ConnectionsChanged += OnConnectionsChanged;
 
             // 异步初始化工作文件夹
             _ = InitializeAsync();
@@ -173,6 +183,22 @@ namespace Tunnel_Next.ViewModels
         {
             get => _documentManager;
             set => SetProperty(ref _documentManager, value);
+        }
+
+        /// <summary>
+        /// 节点状态是否可见
+        /// </summary>
+        public bool IsNodeStatusVisible
+        {
+            get => _isNodeStatusVisible;
+            set
+            {
+                if (SetProperty(ref _isNodeStatusVisible, value))
+                {
+                    // 当状态改变时，更新所有节点的显示状态
+                    UpdateNodeStatusVisibility();
+                }
+            }
         }
 
         #endregion
@@ -1071,7 +1097,7 @@ namespace Tunnel_Next.ViewModels
         }
 
         /// <summary>
-        /// 执行显示节点状态
+        /// 执行显示节点状态（开关模式）
         /// </summary>
         private void ExecuteShowNodeStatus()
         {
@@ -1083,56 +1109,108 @@ namespace Tunnel_Next.ViewModels
                     return;
                 }
 
-                TaskStatus = "正在显示节点状态...";
+                // 切换显示状态
+                IsNodeStatusVisible = !IsNodeStatusVisible;
 
-                // 根据选中的节点进行选择性处理标记
-                var selectedNode = _nodeEditor.SelectedNode;
-                if (selectedNode != null)
+                if (IsNodeStatusVisible)
                 {
-                    // 创建当前节点图
-                    var nodeGraph = _nodeEditor.CreateNodeGraph();
-
-                    // 清除所有节点的处理标记
-                    nodeGraph.ClearAllProcessingFlags();
-
-                    // 标记选中节点及其下游节点需要处理
-                    selectedNode.MarkDownstreamForProcessing(nodeGraph);
-
-                    TaskStatus = $"已标记从 '{selectedNode.Title}' 开始的下游节点需要处理";
+                    var selectedNode = _nodeEditor.SelectedNode;
+                    if (selectedNode != null)
+                    {
+                        var nodesToProcess = _nodeEditor.Nodes.Count(n => n.ToBeProcessed);
+                        TaskStatus = $"节点状态已开启 - 实时跟踪从 '{selectedNode.Title}' 开始的处理链 (绿色: {nodesToProcess}个待处理, 灰色: {_nodeEditor.Nodes.Count - nodesToProcess}个无需处理)";
+                    }
+                    else
+                    {
+                        var nodesToProcess = _nodeEditor.Nodes.Count(n => n.ToBeProcessed);
+                        TaskStatus = $"节点状态已开启 - 实时显示处理状态 (绿色: {nodesToProcess}个待处理, 灰色: {_nodeEditor.Nodes.Count - nodesToProcess}个无需处理)";
+                    }
                 }
                 else
                 {
-                    TaskStatus = "未选中节点，显示所有节点的当前状态";
+                    TaskStatus = "节点状态已关闭";
                 }
-
-                // 显示所有节点的状态指示器
-                foreach (var node in _nodeEditor.Nodes)
-                {
-                    node.ShowStatusIndicator = true;
-                }
-
-                // 5秒后自动隐藏状态指示器
-                var timer = new System.Windows.Threading.DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(5)
-                };
-                timer.Tick += (s, e) =>
-                {
-                    timer.Stop();
-                    foreach (var node in _nodeEditor.Nodes)
-                    {
-                        node.ShowStatusIndicator = false;
-                    }
-                    TaskStatus = "节点状态已隐藏";
-                };
-                timer.Start();
-
-                var nodesToProcess = _nodeEditor.Nodes.Count(n => n.ToBeProcessed);
-                TaskStatus = $"已显示节点状态 (绿色: {nodesToProcess}个待处理, 灰色: {_nodeEditor.Nodes.Count - nodesToProcess}个无需处理) - 5秒";
             }
             catch (Exception ex)
             {
-                TaskStatus = $"显示节点状态失败: {ex.Message}";
+                TaskStatus = $"切换节点状态失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 更新节点状态可见性
+        /// </summary>
+        private void UpdateNodeStatusVisibility()
+        {
+            if (_nodeEditor?.Nodes == null) return;
+
+            foreach (var node in _nodeEditor.Nodes)
+            {
+                node.ShowStatusIndicator = IsNodeStatusVisible;
+            }
+
+            // 如果状态显示开启，同时更新处理标记
+            if (IsNodeStatusVisible)
+            {
+                UpdateProcessingMarksFromSelectedNode();
+            }
+        }
+
+        /// <summary>
+        /// 根据选中节点更新处理标记
+        /// </summary>
+        private void UpdateProcessingMarksFromSelectedNode()
+        {
+            if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any()) return;
+
+            try
+            {
+                // 确保在UI线程中执行
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var selectedNode = _nodeEditor.SelectedNode;
+                    if (selectedNode != null)
+                    {
+                        // 创建当前节点图
+                        var nodeGraph = _nodeEditor.CreateNodeGraph();
+
+                        // 清除所有节点的处理标记
+                        nodeGraph.ClearAllProcessingFlags();
+
+                        // 标记选中节点及其下游节点需要处理
+                        selectedNode.MarkDownstreamForProcessing(nodeGraph);
+
+                        // 强制触发UI更新 - 直接设置属性会自动触发PropertyChanged
+                        // 不需要手动调用OnPropertyChanged，因为ToBeProcessed属性的setter已经处理了
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                // 静默处理异常，不中断程序
+            }
+        }
+
+        /// <summary>
+        /// 连接变化事件处理
+        /// </summary>
+        private void OnConnectionsChanged()
+        {
+            try
+            {
+                // 如果节点状态显示开启，实时更新处理标记
+                if (IsNodeStatusVisible)
+                {
+                    // 延迟一点执行，确保连接变化已完成
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        UpdateProcessingMarksFromSelectedNode();
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+            catch (Exception)
+            {
+                // 静默处理异常
             }
         }
 
@@ -1309,11 +1387,20 @@ namespace Tunnel_Next.ViewModels
                 if (e.PropertyName == nameof(nodeEditor.SelectedNode))
                 {
                     SelectedNode = nodeEditor.SelectedNode;
+
+                    // 如果节点状态显示开启，实时更新处理标记
+                    if (IsNodeStatusVisible)
+                    {
+                        UpdateProcessingMarksFromSelectedNode();
+                    }
                 }
             };
 
             // 监听连接错误事件
             nodeEditor.ConnectionErrorDetected += OnConnectionErrorDetected;
+
+            // 监听连接变化事件
+            nodeEditor.ConnectionsChanged += OnConnectionsChanged;
 
             // 更新节点数量
             NodeCount = nodeEditor.Nodes.Count;

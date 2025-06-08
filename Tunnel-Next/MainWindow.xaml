@@ -313,13 +313,38 @@
                                 <GroupBox Header="状态" Style="{StaticResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button x:Name="NodeStatusButton"
-                                                Style="{StaticResource RibbonLargeButtonStyle}"
-                                                ToolTip="显示节点状态 (5秒)"
+                                                Style="{StaticResource ActivatedButtonStyle}"
+                                                ToolTip="切换节点状态显示"
                                                 Click="NodeStatusButton_Click">
                                             <StackPanel>
-                                                <Image Source="pack://application:,,,/Resources/GreyLight.png" Width="32" Height="32" Margin="0,2,0,2"
-                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
-                                                <TextBlock Text="节点状态" HorizontalAlignment="Center" FontSize="10"/>
+                                                <Image Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                       UseLayoutRounding="True">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Source" Value="pack://application:,,,/Resources/GreyLight.png"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsNodeStatusVisible}" Value="True">
+                                                                    <Setter Property="Source" Value="pack://application:,,,/Resources/GreenLight.png"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                                <TextBlock HorizontalAlignment="Center" FontSize="10">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="节点状态"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsNodeStatusVisible}" Value="True">
+                                                                    <Setter Property="Text" Value="状态开启"/>
+                                                                    <Setter Property="Foreground" Value="#FF00FF00"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                             </StackPanel>
                                         </Button>
                                     </StackPanel>
