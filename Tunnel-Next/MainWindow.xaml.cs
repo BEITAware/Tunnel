@@ -841,6 +841,12 @@ namespace Tunnel_Next
             }
         }
 
+        private void NodeStatusButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 显示节点状态
+            _viewModel.ShowNodeStatusCommand?.Execute(null);
+        }
+
         private void NodeEditorAddNodeButton_Click(object sender, RoutedEventArgs e)
         {
             // 节点编辑器右上角添加节点按钮点击事件

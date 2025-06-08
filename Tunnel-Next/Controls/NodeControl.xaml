@@ -85,11 +85,13 @@
         </Style>
     </UserControl.Resources>
 
-    <Border x:Name="NodeBorder"
-            Style="{StaticResource NodeBorderStyle}"
-            MinWidth="130"
-            MinHeight="85"
-            Opacity="0.95">
+    <!-- 外层Grid用于放置节点和状态指示器 -->
+    <Grid>
+        <Border x:Name="NodeBorder"
+                Style="{StaticResource NodeBorderStyle}"
+                MinWidth="130"
+                MinHeight="85"
+                Opacity="0.95">
 
         <!-- 主背景层 -->
         <Border.Background>
@@ -241,6 +243,103 @@
                                       Opacity="0.7"/>
                 </Border.Effect>
             </Border>
+
         </Grid>
-    </Border>
+        </Border>
+
+        <!-- 状态指示器图标 - 左下角略微超出节点边界，带发光和动画效果 -->
+        <Image x:Name="StatusIndicatorImage"
+               Width="32" Height="32"
+               HorizontalAlignment="Left"
+               VerticalAlignment="Bottom"
+               Margin="-16,0,0,-16"
+               Visibility="{Binding ShowStatusIndicator, Converter={StaticResource BooleanToVisibilityConverter}}"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               UseLayoutRounding="True"
+               Panel.ZIndex="10">
+            <Image.Style>
+                <Style TargetType="Image">
+                    <Setter Property="Source" Value="pack://application:,,,/Resources/GreyLight.png"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <!-- 灰色状态的阴影和发光 -->
+                            <DropShadowEffect x:Name="GreyGlow"
+                                              Color="#FF808080"
+                                              Direction="270"
+                                              ShadowDepth="3"
+                                              BlurRadius="8"
+                                              Opacity="0.8"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ToBeProcessed}" Value="True">
+                            <Setter Property="Source" Value="pack://application:,,,/Resources/GreenLight.png"/>
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <!-- 绿色状态的阴影和发光 -->
+                                    <DropShadowEffect x:Name="GreenGlow"
+                                                      Color="#FF00FF00"
+                                                      Direction="270"
+                                                      ShadowDepth="3"
+                                                      BlurRadius="12"
+                                                      Opacity="0.9"/>
+                                </Setter.Value>
+                            </Setter>
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <!-- 绿色状态的脉冲动画 -->
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0.7" To="1"
+                                                         Duration="0:0:1"
+                                                         AutoReverse="True">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                        <!-- 显示时的淡入动画 -->
+                        <Trigger Property="Visibility" Value="Visible">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 淡入效果 -->
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1"
+                                                         Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <!-- 缩放效果 -->
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                         From="0.5" To="1"
+                                                         Duration="0:0:0.4">
+                                            <DoubleAnimation.EasingFunction>
+                                                <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                         From="0.5" To="1"
+                                                         Duration="0:0:0.4">
+                                            <DoubleAnimation.EasingFunction>
+                                                <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+            <Image.RenderTransform>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Image.RenderTransform>
+            <Image.RenderTransformOrigin>0.5,0.5</Image.RenderTransformOrigin>
+        </Image>
+    </Grid>
 </UserControl>

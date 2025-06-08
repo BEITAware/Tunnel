@@ -415,6 +415,7 @@ namespace Tunnel_Next.Models
         private object? _tag;
         private object? _viewModel;
         private bool _toBeProcessed = true; // 默认新节点需要处理
+        private bool _showStatusIndicator = false; // 是否显示状态指示器
 
         public int Id
         {
@@ -545,6 +546,15 @@ namespace Tunnel_Next.Models
         {
             get => _toBeProcessed;
             set { _toBeProcessed = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// 是否显示状态指示器
+        /// </summary>
+        public bool ShowStatusIndicator
+        {
+            get => _showStatusIndicator;
+            set { _showStatusIndicator = value; OnPropertyChanged(); }
         }
 
         /// <summary>

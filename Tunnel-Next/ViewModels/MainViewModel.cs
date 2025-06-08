@@ -201,6 +201,7 @@ namespace Tunnel_Next.ViewModels
         public ICommand? DeleteNodeCommand { get; private set; }
         public ICommand? ArrangeNodesCommand { get; private set; }
         public ICommand? ArrangeNodesDenseCommand { get; private set; }
+        public ICommand? ShowNodeStatusCommand { get; private set; }
 
         #endregion
 
@@ -234,6 +235,7 @@ namespace Tunnel_Next.ViewModels
             DeleteNodeCommand = new RelayCommand(ExecuteDeleteNode, CanDeleteNode);
             ArrangeNodesCommand = new RelayCommand(ExecuteArrangeNodes);
             ArrangeNodesDenseCommand = new RelayCommand(ExecuteArrangeNodesDense);
+            ShowNodeStatusCommand = new RelayCommand(ExecuteShowNodeStatus);
         }
 
         private async void InitializeCollections()
@@ -1065,6 +1067,72 @@ namespace Tunnel_Next.ViewModels
                         currentNode.Y = requiredY;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// 执行显示节点状态
+        /// </summary>
+        private void ExecuteShowNodeStatus()
+        {
+            try
+            {
+                if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any())
+                {
+                    TaskStatus = "没有节点可显示状态";
+                    return;
+                }
+
+                TaskStatus = "正在显示节点状态...";
+
+                // 根据选中的节点进行选择性处理标记
+                var selectedNode = _nodeEditor.SelectedNode;
+                if (selectedNode != null)
+                {
+                    // 创建当前节点图
+                    var nodeGraph = _nodeEditor.CreateNodeGraph();
+
+                    // 清除所有节点的处理标记
+                    nodeGraph.ClearAllProcessingFlags();
+
+                    // 标记选中节点及其下游节点需要处理
+                    selectedNode.MarkDownstreamForProcessing(nodeGraph);
+
+                    TaskStatus = $"已标记从 '{selectedNode.Title}' 开始的下游节点需要处理";
+                }
+                else
+                {
+                    TaskStatus = "未选中节点，显示所有节点的当前状态";
+                }
+
+                // 显示所有节点的状态指示器
+                foreach (var node in _nodeEditor.Nodes)
+                {
+                    node.ShowStatusIndicator = true;
+                }
+
+                // 5秒后自动隐藏状态指示器
+                var timer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(5)
+                };
+                timer.Tick += (s, e) =>
+                {
+                    timer.Stop();
+                    foreach (var node in _nodeEditor.Nodes)
+                    {
+                        node.ShowStatusIndicator = false;
+                    }
+                    TaskStatus = "节点状态已隐藏";
+                };
+                timer.Start();
+
+                var nodesToProcess = _nodeEditor.Nodes.Count(n => n.ToBeProcessed);
+                TaskStatus = $"已显示节点状态 (绿色: {nodesToProcess}个待处理, 灰色: {_nodeEditor.Nodes.Count - nodesToProcess}个无需处理) - 5秒";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"显示节点状态失败: {ex.Message}";
             }
         }
 

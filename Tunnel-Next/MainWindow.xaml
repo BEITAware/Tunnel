@@ -308,6 +308,22 @@
                                         </StackPanel>
                                     </StackPanel>
                                 </GroupBox>
+
+                                <!-- 状态组 -->
+                                <GroupBox Header="状态" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="NodeStatusButton"
+                                                Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="显示节点状态 (5秒)"
+                                                Click="NodeStatusButton_Click">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/GreyLight.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="节点状态" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </GroupBox>
                             </StackPanel>
                         </Border>
                     </TabItem>
