@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             Focusable="True">
 
     <Grid>
         <ScrollViewer x:Name="NodeScrollViewer"
@@ -13,8 +14,14 @@
                       Background="#1F3449">
             <!-- 网格背景 - 密集横向条纹 -->
             <Grid x:Name="GridBackground"
-                  Width="2000"
-                  Height="2000">
+                  Width="8000"
+                  Height="8000">
+                <Grid.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="ScaleTransform" ScaleX="1" ScaleY="1"/>
+                        <TranslateTransform x:Name="TranslateTransform" X="0" Y="0"/>
+                    </TransformGroup>
+                </Grid.RenderTransform>
                 <Grid.Background>
                     <!-- 密集横向条纹背景 -->
                     <DrawingBrush TileMode="Tile"
@@ -45,12 +52,10 @@
                     </DrawingBrush>
                 </Grid.Background>
 
-
-
                 <!-- 连接线Canvas - 放在节点Canvas下方，作为兄弟元素 -->
                 <Canvas x:Name="ConnectionCanvas"
-                        Width="2000"
-                        Height="2000"
+                        Width="8000"
+                        Height="8000"
                         Panel.ZIndex="1"
                         Background="Transparent"
                         IsHitTestVisible="False"/>
@@ -58,12 +63,13 @@
                 <!-- 节点Canvas - 在连接线Canvas之上 -->
                 <Canvas x:Name="NodeCanvas"
                         Background="Transparent"
-                        Width="2000"
-                        Height="2000"
+                        Width="8000"
+                        Height="8000"
                         Panel.ZIndex="2"
                         MouseLeftButtonDown="NodeCanvas_MouseLeftButtonDown"
                         MouseRightButtonDown="NodeCanvas_MouseRightButtonDown"
-                        MouseMove="NodeCanvas_MouseMove">
+                        MouseMove="NodeCanvas_MouseMove"
+                        MouseWheel="NodeCanvas_MouseWheel">
                     <!-- 节点将在这里动态添加 -->
                 </Canvas>
             </Grid>

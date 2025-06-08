@@ -25,6 +25,15 @@ namespace Tunnel_Next.Controls
         private readonly Dictionary<Node, PropertyChangedEventHandler> _nodePropertyHandlers = new();
         private Path? _previewConnectionPath;
 
+        // 新的操作逻辑字段
+        private bool _isMiddleButtonPanning = false;
+        private Point _lastPanPoint;
+        private double _currentScale = 1.0;
+        private const double MIN_SCALE = 0.2;  // 提高最小缩放，避免看到画布外
+        private const double MAX_SCALE = 3.0;  // 降低最大缩放，避免过度放大
+        private const double SCALE_FACTOR = 1.15; // 降低缩放步长，更平滑
+        private const double PAN_SPEED = 60.0; // 稍微提高平移速度
+
         /// <summary>
         /// 图像处理服务引用（MVVM解耦），通过DataContext获取
         /// </summary>
@@ -44,6 +53,24 @@ namespace Tunnel_Next.Controls
             Panel.SetZIndex(ConnectionCanvas, 1);
             // 节点Canvas必须在连接线Canvas之上
             Panel.SetZIndex(NodeCanvas, 2);
+
+            // 启用键盘焦点
+            Focusable = true;
+
+            // 添加键盘事件处理
+            KeyDown += OnKeyDown;
+
+            // 添加鼠标中键事件处理
+            MouseDown += OnMouseDown;
+            MouseUp += OnMouseUp;
+            MouseMove += OnMouseMove;
+
+            // 确保控件可以获得焦点
+            Loaded += (s, e) =>
+            {
+                Focus();
+                // 不再自动居中，保持左上角为起始位置
+            };
 
             DataContextChanged += OnDataContextChanged;
         }
@@ -354,6 +381,12 @@ namespace Tunnel_Next.Controls
 
         private void NodeCanvas_MouseMove(object sender, MouseEventArgs e)
         {
+            // 如果正在中键拖拽，不处理Canvas的鼠标移动
+            if (_isMiddleButtonPanning)
+            {
+                return;
+            }
+
             // 如果有待连接状态，显示预览连接线
             if (_viewModel != null && _viewModel.HasPendingConnection)
             {
@@ -851,5 +884,169 @@ namespace Tunnel_Next.Controls
             var dataType = PortTypeDefinitions.GetPortDataType(portType);
             return PortTypeDefinitions.GetPortWpfColor(dataType);
         }
+
+        #region 新的操作逻辑
+
+        /// <summary>
+        /// 鼠标按下事件 - 处理中键
+        /// </summary>
+        private void OnMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed)
+            {
+                _isMiddleButtonPanning = true;
+                _lastPanPoint = e.GetPosition(this);
+                CaptureMouse();
+                Focus(); // 确保获得键盘焦点
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// 鼠标释放事件 - 处理中键
+        /// </summary>
+        private void OnMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Released && _isMiddleButtonPanning)
+            {
+                _isMiddleButtonPanning = false;
+                ReleaseMouseCapture();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// 控件级别的鼠标移动事件 - 处理中键拖拽
+        /// </summary>
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isMiddleButtonPanning)
+            {
+                var currentPoint = e.GetPosition(this);
+                var deltaX = currentPoint.X - _lastPanPoint.X;
+                var deltaY = currentPoint.Y - _lastPanPoint.Y;
+
+                PanView(deltaX, deltaY);
+                _lastPanPoint = currentPoint;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// 滚轮事件 - 处理移动和缩放
+        /// </summary>
+        private void NodeCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                // Control + 滚轮 = 缩放
+                var mousePosition = e.GetPosition(NodeScrollViewer);
+                var scaleDelta = e.Delta > 0 ? SCALE_FACTOR : 1.0 / SCALE_FACTOR;
+                ZoomAtPoint(mousePosition, scaleDelta);
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Shift)
+            {
+                // Shift + 滚轮 = 水平移动
+                var deltaX = e.Delta > 0 ? PAN_SPEED : -PAN_SPEED;
+                PanView(deltaX, 0);
+            }
+            else
+            {
+                // 普通滚轮 = 垂直移动
+                var deltaY = e.Delta > 0 ? PAN_SPEED : -PAN_SPEED;
+                PanView(0, deltaY);
+            }
+
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// 键盘事件 - 方向键移动
+        /// </summary>
+        private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            const double keyPanSpeed = 30.0;
+
+            switch (e.Key)
+            {
+                case Key.Left:
+                    PanView(keyPanSpeed, 0);
+                    e.Handled = true;
+                    break;
+                case Key.Right:
+                    PanView(-keyPanSpeed, 0);
+                    e.Handled = true;
+                    break;
+                case Key.Up:
+                    PanView(0, keyPanSpeed);
+                    e.Handled = true;
+                    break;
+                case Key.Down:
+                    PanView(0, -keyPanSpeed);
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 平移视图
+        /// </summary>
+        private void PanView(double deltaX, double deltaY)
+        {
+            // 使用ScrollViewer的滚动功能进行平移
+            var newHorizontalOffset = NodeScrollViewer.HorizontalOffset - deltaX;
+            var newVerticalOffset = NodeScrollViewer.VerticalOffset - deltaY;
+
+            NodeScrollViewer.ScrollToHorizontalOffset(Math.Max(0, newHorizontalOffset));
+            NodeScrollViewer.ScrollToVerticalOffset(Math.Max(0, newVerticalOffset));
+        }
+
+        /// <summary>
+        /// 在指定点缩放 - 以鼠标位置为缩放中心
+        /// </summary>
+        private void ZoomAtPoint(Point mousePosition, double scaleDelta)
+        {
+            var newScale = Math.Max(MIN_SCALE, Math.Min(MAX_SCALE, _currentScale * scaleDelta));
+
+            if (Math.Abs(newScale - _currentScale) < 0.001)
+                return;
+
+            // 获取当前滚动位置
+            var currentHorizontalOffset = NodeScrollViewer.HorizontalOffset;
+            var currentVerticalOffset = NodeScrollViewer.VerticalOffset;
+
+            // 计算鼠标在画布内容中的绝对位置（考虑当前缩放）
+            var mouseInContentX = (currentHorizontalOffset + mousePosition.X) / _currentScale;
+            var mouseInContentY = (currentVerticalOffset + mousePosition.Y) / _currentScale;
+
+            // 应用新的缩放
+            var oldScale = _currentScale;
+            _currentScale = newScale;
+            ScaleTransform.ScaleX = _currentScale;
+            ScaleTransform.ScaleY = _currentScale;
+
+            // 强制更新布局以应用缩放
+            GridBackground.UpdateLayout();
+
+            // 计算新的滚动位置，使鼠标位置在缩放后保持不变
+            var newHorizontalOffset = mouseInContentX * _currentScale - mousePosition.X;
+            var newVerticalOffset = mouseInContentY * _currentScale - mousePosition.Y;
+
+            // 确保滚动位置不会超出边界
+            var maxHorizontalOffset = Math.Max(0, GridBackground.Width * _currentScale - NodeScrollViewer.ViewportWidth);
+            var maxVerticalOffset = Math.Max(0, GridBackground.Height * _currentScale - NodeScrollViewer.ViewportHeight);
+
+            newHorizontalOffset = Math.Max(0, Math.Min(maxHorizontalOffset, newHorizontalOffset));
+            newVerticalOffset = Math.Max(0, Math.Min(maxVerticalOffset, newVerticalOffset));
+
+            NodeScrollViewer.ScrollToHorizontalOffset(newHorizontalOffset);
+            NodeScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
+        }
+
+
+
+
+
+        #endregion
     }
 }
