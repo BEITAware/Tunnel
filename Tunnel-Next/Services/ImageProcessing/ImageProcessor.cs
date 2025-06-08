@@ -203,7 +203,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 var inputs = PrepareNodeInputs(node, nodeGraph);
 
                 // 执行Revival Script
-                var outputs = ExecuteRevivalScript(node, inputs); // This can return null if script fails
+                var outputs = ExecuteRevivalScript(node, inputs, nodeGraph); // This can return null if script fails
 
                 if (outputs != null)
                 {
@@ -267,7 +267,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 执行Revival Script
         /// </summary>
-        private Dictionary<string, object>? ExecuteRevivalScript(Node node, Dictionary<string, object> inputs)
+        private Dictionary<string, object>? ExecuteRevivalScript(Node node, Dictionary<string, object> inputs, NodeGraph nodeGraph)
         {
             try
             {
@@ -281,29 +281,56 @@ namespace Tunnel_Next.Services.ImageProcessing
                 // 确保参数同步
                 ScriptInstanceManager.Instance.EnsureParameterSynchronization(scriptInstance, node);
 
-                // 执行脚本
+                // 1. 收集和合并上游元数据
+                var upstreamMetadata = CollectUpstreamMetadata(node, nodeGraph);
+
+                // 2. 让脚本提取所需的元数据
+                scriptInstance.ExtractMetadata(upstreamMetadata);
+
+                // 3. 执行脚本核心处理逻辑
                 var outputs = scriptInstance.Process(inputs, _scriptContext);
 
-                if (outputs != null && outputs.Count > 0)
+                if (outputs != null)
                 {
+                    // 4. 处理元数据注入和传递
+                    outputs = ProcessMetadataForOutputs(scriptInstance, node, outputs, upstreamMetadata);
+
+                    // 5. 调试输出
                     foreach (var output in outputs)
                     {
                         if (output.Value is Mat mat)
                         {
+                            // Mat输出调试信息
                         }
                         else
                         {
+                            // 其他类型输出调试信息
                         }
                     }
                     return outputs;
                 }
                 else
                 {
-                    return new Dictionary<string, object>();
+                    // 即使没有输出，也要处理元数据
+                    var emptyOutputs = new Dictionary<string, object>();
+                    return ProcessMetadataForOutputs(scriptInstance, node, emptyOutputs, upstreamMetadata);
                 }
             }
             catch (Exception ex)
             {
+                node.HasError = true;
+                node.ErrorMessage = $"脚本执行失败: {ex.Message}";
+
+                // 详细的异常调试信息
+                System.Diagnostics.Debug.WriteLine($"[脚本执行异常] 节点 {node.Title}({node.Id}) 执行失败:");
+                System.Diagnostics.Debug.WriteLine($"  异常类型: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine($"  异常消息: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  内部异常: {ex.InnerException.Message}");
+                }
+                System.Diagnostics.Debug.WriteLine($"  堆栈跟踪: {ex.StackTrace}");
+
                 return null;
             }
         }
@@ -374,6 +401,84 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
+        /// 收集上游元数据
+        /// </summary>
+        private Dictionary<string, object> CollectUpstreamMetadata(Node node, NodeGraph nodeGraph)
+        {
+            var metadataManager = new MetadataManager();
+            var allMetadata = new List<Dictionary<string, object>>();
+
+            // 遍历节点的输入端口，直接从上游节点的输出中获取元数据
+            foreach (var inputPort in node.InputPorts)
+            {
+                // 查找连接到此输入端口的输出端口
+                var connection = nodeGraph.Connections.FirstOrDefault(c =>
+                    c.InputNode?.Id == node.Id && c.InputPortName == inputPort.Name);
+
+                if (connection?.OutputNode != null)
+                {
+                    var outputNode = connection.OutputNode;
+                    var outputPortName = connection.OutputPortName;
+
+                    // 从输出节点获取完整的输出数据（包含元数据）
+                    if (_nodeOutputs.TryGetValue(outputNode.Id, out var outputData))
+                    {
+                        // 检查是否有元数据
+                        if (outputData.TryGetValue("_metadata", out var metadata) &&
+                            metadata is Dictionary<string, object> metadataDict)
+                        {
+                            allMetadata.Add(metadataDict);
+                        }
+                    }
+                }
+            }
+
+            // 合并所有上游元数据
+            return metadataManager.MergeMetadata(allMetadata.ToArray());
+        }
+
+        /// <summary>
+        /// 处理输出的元数据注入和传递
+        /// </summary>
+        private Dictionary<string, object> ProcessMetadataForOutputs(
+            IRevivalScript scriptInstance,
+            Node node,
+            Dictionary<string, object> outputs,
+            Dictionary<string, object> upstreamMetadata)
+        {
+            var metadataManager = new MetadataManager();
+
+            // 1. 清洗上游元数据
+            var cleanOptions = new MetadataCleanOptions
+            {
+                RemoveNullValues = true,
+                CleanNodePath = false,  // 不再自动管理节点路径
+                CleanProcessingHistory = false,  // 不再自动管理处理历史
+                MaxHistoryRecords = 50,
+                MergeDuplicateKeys = true
+            };
+            var cleanedUpstreamMetadata = metadataManager.CleanMetadata(upstreamMetadata, cleanOptions);
+
+            // 2. 从清洗后的上游元数据开始
+            var currentMetadata = metadataManager.CopyMetadata(cleanedUpstreamMetadata);
+
+            // 3. 让脚本注入自定义元数据（不覆盖已有键）
+            currentMetadata = scriptInstance.InjectMetadata(currentMetadata);
+
+            // 4. 让脚本生成/覆盖特定元数据
+            currentMetadata = scriptInstance.GenerateMetadata(currentMetadata);
+
+            // 5. 最终清洗元数据
+            currentMetadata = metadataManager.CleanMetadata(currentMetadata, cleanOptions);
+
+            // 6. 将元数据附加到所有输出
+            var processedOutputs = new Dictionary<string, object>(outputs);
+            processedOutputs["_metadata"] = currentMetadata;
+
+            return processedOutputs;
+        }
+
+        /// <summary>
         /// 准备节点输入数据
         /// </summary>
         private Dictionary<string, object> PrepareNodeInputs(Node node, NodeGraph nodeGraph)
@@ -392,7 +497,6 @@ namespace Tunnel_Next.Services.ImageProcessing
                     var outputNode = connection.OutputNode;
                     var outputPortName = connection.OutputPortName;
 
-
                     // 从输出节点获取数据
                     if (_nodeOutputs.TryGetValue(outputNode.Id, out var outputData) &&
                         outputData.TryGetValue(outputPortName, out var portData))
@@ -400,13 +504,16 @@ namespace Tunnel_Next.Services.ImageProcessing
                         inputs[inputPort.Name] = portData;
                         if (portData is Mat mat)
                         {
+                            // Mat输入调试信息
                         }
                         else
                         {
+                            // 其他类型输入调试信息
                         }
                     }
                     else
                     {
+                        // 输入数据不可用的调试信息
                     }
                 }
             }

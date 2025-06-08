@@ -7,6 +7,68 @@ using System.Threading;
 namespace Tunnel_Next.Services.ImageProcessing
 {
     /// <summary>
+    /// 元数据清洗选项
+    /// </summary>
+    public class MetadataCleanOptions
+    {
+        /// <summary>
+        /// 是否移除空值
+        /// </summary>
+        public bool RemoveNullValues { get; set; } = true;
+
+        /// <summary>
+        /// 是否清理节点路径
+        /// </summary>
+        public bool CleanNodePath { get; set; } = true;
+
+        /// <summary>
+        /// 是否清理处理历史
+        /// </summary>
+        public bool CleanProcessingHistory { get; set; } = true;
+
+        /// <summary>
+        /// 最大历史记录数
+        /// </summary>
+        public int MaxHistoryRecords { get; set; } = 50;
+
+        /// <summary>
+        /// 是否移除过期时间戳
+        /// </summary>
+        public bool RemoveExpiredTimestamps { get; set; } = false;
+
+        /// <summary>
+        /// 时间戳过期小时数
+        /// </summary>
+        public int TimestampExpiryHours { get; set; } = 24;
+
+        /// <summary>
+        /// 是否合并重复键
+        /// </summary>
+        public bool MergeDuplicateKeys { get; set; } = true;
+    }
+
+    /// <summary>
+    /// 元数据验证结果
+    /// </summary>
+    public class MetadataValidationResult
+    {
+        /// <summary>
+        /// 是否有效
+        /// </summary>
+        public bool IsValid { get; set; }
+
+        /// <summary>
+        /// 错误列表
+        /// </summary>
+        public List<string> Errors { get; set; } = new List<string>();
+
+        /// <summary>
+        /// 警告列表
+        /// </summary>
+        public List<string> Warnings { get; set; } = new List<string>();
+    }
+
+    /// <summary>
     /// 元数据管理器 - 负责处理节点图中的元数据流
     /// 基于Python版本的MetadataManager实现
     /// </summary>
@@ -15,7 +77,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         private readonly object _lock = new object();
 
         /// <summary>
-        /// 创建新的元数据字典
+        /// 创建新的元数据字典（仅包含用户提供的数据）
         /// </summary>
         /// <param name="additionalData">额外的元数据</param>
         /// <returns>新的元数据字典</returns>
@@ -23,12 +85,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         {
             lock (_lock)
             {
-                var metadata = new Dictionary<string, object>
-                {
-                    ["创建时间"] = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                    ["节点路径"] = new List<Dictionary<string, object>>(),
-                    ["处理历史"] = new List<Dictionary<string, object>>()
-                };
+                var metadata = new Dictionary<string, object>();
 
                 if (additionalData != null)
                 {
@@ -188,26 +245,211 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 验证元数据格式
+        /// 清洗元数据 - 移除无效、过期或冗余的元数据
         /// </summary>
-        /// <param name="metadata">要验证的元数据</param>
-        /// <returns>是否有效</returns>
-        public bool ValidateMetadata(Dictionary<string, object>? metadata)
+        /// <param name="metadata">要清洗的元数据</param>
+        /// <param name="options">清洗选项</param>
+        /// <returns>清洗后的元数据</returns>
+        public Dictionary<string, object> CleanMetadata(Dictionary<string, object>? metadata, MetadataCleanOptions? options = null)
         {
             if (metadata == null)
-                return false;
+                return new Dictionary<string, object>();
 
-            // 检查必要的字段
+            options ??= new MetadataCleanOptions();
+            var cleaned = CopyMetadata(metadata);
+
+            lock (_lock)
+            {
+                // 1. 移除空值和无效值
+                if (options.RemoveNullValues)
+                {
+                    var keysToRemove = cleaned.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).ToList();
+                    foreach (var key in keysToRemove)
+                    {
+                        cleaned.Remove(key);
+                    }
+                }
+
+                // 2. 清理节点路径
+                if (options.CleanNodePath && cleaned.ContainsKey("节点路径"))
+                {
+                    cleaned["节点路径"] = CleanNodePath(cleaned["节点路径"]);
+                }
+
+                // 3. 清理处理历史
+                if (options.CleanProcessingHistory && cleaned.ContainsKey("处理历史"))
+                {
+                    cleaned["处理历史"] = CleanProcessingHistory(cleaned["处理历史"], options.MaxHistoryRecords);
+                }
+
+                // 4. 移除过期的时间戳
+                if (options.RemoveExpiredTimestamps)
+                {
+                    RemoveExpiredTimestamps(cleaned, options.TimestampExpiryHours);
+                }
+
+                // 5. 合并重复的键值对
+                if (options.MergeDuplicateKeys)
+                {
+                    MergeDuplicateKeys(cleaned);
+                }
+
+                return cleaned;
+            }
+        }
+
+        /// <summary>
+        /// 验证元数据完整性
+        /// </summary>
+        /// <param name="metadata">要验证的元数据</param>
+        /// <returns>验证结果</returns>
+        public MetadataValidationResult ValidateMetadata(Dictionary<string, object>? metadata)
+        {
+            var result = new MetadataValidationResult { IsValid = true };
+
+            if (metadata == null)
+            {
+                result.IsValid = false;
+                result.Errors.Add("元数据为空");
+                return result;
+            }
+
+            // 检查必需的基础字段
             var requiredFields = new[] { "创建时间", "节点路径", "处理历史" };
-
             foreach (var field in requiredFields)
             {
                 if (!metadata.ContainsKey(field))
-                    return false;
+                {
+                    result.Warnings.Add($"缺少推荐字段: {field}");
+                }
             }
 
-            return true;
+            // 验证节点路径格式
+            if (metadata.ContainsKey("节点路径"))
+            {
+                if (!(metadata["节点路径"] is List<Dictionary<string, object>>))
+                {
+                    result.Errors.Add("节点路径格式无效");
+                    result.IsValid = false;
+                }
+            }
+
+            // 验证处理历史格式
+            if (metadata.ContainsKey("处理历史"))
+            {
+                if (!(metadata["处理历史"] is List<Dictionary<string, object>>))
+                {
+                    result.Errors.Add("处理历史格式无效");
+                    result.IsValid = false;
+                }
+            }
+
+            return result;
         }
+
+        /// <summary>
+        /// 清理节点路径
+        /// </summary>
+        private object CleanNodePath(object nodePath)
+        {
+            if (!(nodePath is List<Dictionary<string, object>> pathList))
+                return new List<Dictionary<string, object>>();
+
+            // 移除重复的节点
+            var seen = new HashSet<string>();
+            var cleaned = new List<Dictionary<string, object>>();
+
+            foreach (var node in pathList)
+            {
+                if (node.ContainsKey("节点ID") && node.ContainsKey("节点标题"))
+                {
+                    var nodeKey = $"{node["节点ID"]}_{node["节点标题"]}";
+                    if (!seen.Contains(nodeKey))
+                    {
+                        seen.Add(nodeKey);
+                        cleaned.Add(node);
+                    }
+                }
+            }
+
+            return cleaned;
+        }
+
+        /// <summary>
+        /// 清理处理历史
+        /// </summary>
+        private object CleanProcessingHistory(object processingHistory, int maxRecords)
+        {
+            if (!(processingHistory is List<Dictionary<string, object>> historyList))
+                return new List<Dictionary<string, object>>();
+
+            // 保留最新的记录
+            if (historyList.Count > maxRecords)
+            {
+                return historyList.Skip(historyList.Count - maxRecords).ToList();
+            }
+
+            return historyList;
+        }
+
+        /// <summary>
+        /// 移除过期的时间戳
+        /// </summary>
+        private void RemoveExpiredTimestamps(Dictionary<string, object> metadata, int expiryHours)
+        {
+            var cutoffTime = DateTime.Now.AddHours(-expiryHours);
+            var keysToRemove = new List<string>();
+
+            foreach (var kvp in metadata)
+            {
+                if (kvp.Key.Contains("时间") && kvp.Value is string timeStr)
+                {
+                    if (DateTime.TryParse(timeStr, out var timestamp) && timestamp < cutoffTime)
+                    {
+                        keysToRemove.Add(kvp.Key);
+                    }
+                }
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                metadata.Remove(key);
+            }
+        }
+
+        /// <summary>
+        /// 合并重复的键值对
+        /// </summary>
+        private void MergeDuplicateKeys(Dictionary<string, object> metadata)
+        {
+            // 查找相似的键并合并
+            var groups = metadata.GroupBy(kvp => kvp.Key.ToLowerInvariant()).Where(g => g.Count() > 1);
+
+            foreach (var group in groups)
+            {
+                var firstKey = group.First().Key;
+                var values = group.Select(kvp => kvp.Value).ToList();
+
+                // 移除重复的键
+                foreach (var kvp in group.Skip(1))
+                {
+                    metadata.Remove(kvp.Key);
+                }
+
+                // 合并值（如果是列表类型）
+                if (values.All(v => v is List<object>))
+                {
+                    var mergedList = new List<object>();
+                    foreach (var list in values.Cast<List<object>>())
+                    {
+                        mergedList.AddRange(list);
+                    }
+                    metadata[firstKey] = mergedList;
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// 序列化元数据为JSON字符串

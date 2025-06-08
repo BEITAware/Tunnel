@@ -430,19 +430,15 @@ namespace Tunnel_Next.Controls
 
             try
             {
-                // MVVM解耦：不再直接从ImageProcessor获取元数据
-                // 创建基本元数据用于显示
-                var metadataManager = new MetadataManager();
-                var basicData = new Dictionary<string, object>
+                // 获取节点的实际输出元数据
+                var metadata = new Dictionary<string, object>();
+
+                // 尝试从节点的ProcessedOutputs中获取元数据
+                if (_node.ProcessedOutputs.TryGetValue("_metadata", out var nodeMetadata) &&
+                    nodeMetadata is Dictionary<string, object> metadataDict)
                 {
-                    ["节点ID"] = _node.Id,
-                    ["节点标题"] = _node.Title,
-                    ["脚本路径"] = _node.ScriptPath ?? "",
-                    ["参数数量"] = _node.Parameters.Count,
-                    ["输入端口数量"] = _node.InputPorts.Count,
-                    ["输出端口数量"] = _node.OutputPorts.Count
-                };
-                var metadata = metadataManager.CreateMetadata(basicData);
+                    metadata = metadataDict;
+                }
 
                 // 显示元数据查看器窗口
                 var metadataWindow = new MetadataViewerWindow(_node, metadata)

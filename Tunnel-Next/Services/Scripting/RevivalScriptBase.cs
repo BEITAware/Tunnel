@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Linq;
+using System.Reflection;
 using Tunnel_Next.ViewModels;
 using Tunnel_Next.Services;
 
@@ -91,26 +92,93 @@ namespace Tunnel_Next.Services.Scripting
 
         /// <summary>
         /// 注入元数据到下游（不覆盖已有键）
+        /// 子类可以重写此方法来添加自定义元数据
         /// </summary>
+        /// <param name="currentMetadata">当前元数据</param>
+        /// <returns>注入后的元数据</returns>
         public virtual Dictionary<string, object> InjectMetadata(Dictionary<string, object> currentMetadata)
         {
-            return currentMetadata; // 默认不注入
+            // 默认实现：不注入任何元数据，由子类决定
+            return currentMetadata;
         }
 
         /// <summary>
         /// 从上游提取所需元数据
+        /// 子类可以重写此方法来提取和使用上游元数据
         /// </summary>
+        /// <param name="upstreamMetadata">上游元数据</param>
         public virtual void ExtractMetadata(Dictionary<string, object> upstreamMetadata)
         {
-            // 默认不提取
+            // 默认实现：提取常用的元数据信息
+            if (upstreamMetadata.ContainsKey("图像尺寸"))
+            {
+                OnMetadataExtracted("图像尺寸", upstreamMetadata["图像尺寸"]);
+            }
+
+            if (upstreamMetadata.ContainsKey("颜色空间"))
+            {
+                OnMetadataExtracted("颜色空间", upstreamMetadata["颜色空间"]);
+            }
+
+            if (upstreamMetadata.ContainsKey("处理历史"))
+            {
+                OnMetadataExtracted("处理历史", upstreamMetadata["处理历史"]);
+            }
         }
 
         /// <summary>
         /// 强制覆盖元数据键值对
+        /// 子类可以重写此方法来生成或覆盖特定的元数据
         /// </summary>
+        /// <param name="currentMetadata">当前元数据</param>
+        /// <returns>生成后的元数据</returns>
         public virtual Dictionary<string, object> GenerateMetadata(Dictionary<string, object> currentMetadata)
         {
-            return currentMetadata; // 默认不生成
+            // 默认实现：不生成任何元数据，由子类决定
+            return currentMetadata;
+        }
+
+        /// <summary>
+        /// 获取脚本版本信息
+        /// 子类可以重写以提供版本信息
+        /// </summary>
+        /// <returns>脚本版本</returns>
+        protected virtual string GetScriptVersion()
+        {
+            return "1.0.0";
+        }
+
+        /// <summary>
+        /// 获取参数数量
+        /// </summary>
+        /// <returns>参数数量</returns>
+        protected virtual int GetParameterCount()
+        {
+            var scriptType = GetType();
+            var properties = scriptType.GetProperties()
+                .Where(p => p.GetCustomAttribute<ScriptParameterAttribute>() != null);
+            return properties.Count();
+        }
+
+        /// <summary>
+        /// 获取脚本特定的元数据
+        /// 子类可以重写以提供特定的元数据
+        /// </summary>
+        /// <returns>脚本特定元数据</returns>
+        protected virtual Dictionary<string, object> GetScriptSpecificMetadata()
+        {
+            return new Dictionary<string, object>();
+        }
+
+        /// <summary>
+        /// 元数据提取完成回调
+        /// 子类可以重写以响应元数据提取
+        /// </summary>
+        /// <param name="key">元数据键</param>
+        /// <param name="value">元数据值</param>
+        protected virtual void OnMetadataExtracted(string key, object value)
+        {
+            // 默认不做任何处理
         }
 
         /// <summary>
