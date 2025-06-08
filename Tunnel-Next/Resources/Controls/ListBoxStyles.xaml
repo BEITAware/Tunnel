@@ -1,0 +1,140 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 标准ListBox样式 -->
+    <Style x:Key="AeroListBoxStyle" TargetType="ListBox">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#C8C8C8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="1"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+        <Setter Property="FontSize" Value="{DynamicResource AeroFontSize}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+    </Style>
+    
+    <!-- ListBoxItem样式 -->
+    <Style x:Key="AeroListBoxItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="true">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="true">
+                            <Setter Property="Background" TargetName="Bd" Value="#1A1F28"/>
+                            <Setter Property="BorderBrush" TargetName="Bd" Value="#1A1F28"/>
+                            <Setter Property="Foreground" Value="#222222"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Background" TargetName="Bd" Value="#1A1F28"/>
+                            <Setter Property="BorderBrush" TargetName="Bd" Value="#1A1F28"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="false">
+                            <Setter Property="Foreground" Value="{DynamicResource AeroDisabledForegroundBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 胶片预览ListBox样式 -->
+    <Style x:Key="FilmPreviewListBoxStyle" TargetType="ListBox" BasedOn="{StaticResource AeroListBoxStyle}">
+        <Setter Property="Background" Value="{DynamicResource WorkAreaBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WorkAreaBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 胶片预览ListBoxItem样式 -->
+    <Style x:Key="FilmPreviewListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource AeroListBoxItemStyle}">
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="Background" Value="#1A1F28"/>
+        <Setter Property="BorderBrush" Value="#1A1F28"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="#042271"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="3"
+                            SnapsToDevicePixels="true">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="true">
+                            <Setter Property="Background" TargetName="Bd" Value="#FEF3B5"/>
+                            <Setter Property="BorderBrush" TargetName="Bd" Value="#C4AF8C"/>
+                            <Setter Property="Foreground" Value="#042271"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Background" TargetName="Bd" Value="#6A87AB"/>
+                            <Setter Property="BorderBrush" TargetName="Bd" Value="#1A1F28"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 资源库样式 -->
+    <Style x:Key="ResourceLibraryListBoxStyle" TargetType="ListBox" BasedOn="{StaticResource AeroListBoxStyle}">
+        <Setter Property="Background" Value="{DynamicResource WorkAreaBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WorkAreaBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4"/>
+    </Style>
+    
+    <!-- ListView样式 -->
+    <Style x:Key="AeroListViewStyle" TargetType="ListView">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#C8C8C8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+        <Setter Property="FontSize" Value="{DynamicResource AeroFontSize}"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    
+    <!-- ListViewItem样式 -->
+    <Style x:Key="AeroListViewItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource AeroListBoxItemStyle}">
+    </Style>
+</ResourceDictionary> 

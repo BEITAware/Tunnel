@@ -1,0 +1,340 @@
+<UserControl x:Class="Tunnel_Next.Controls.FilmPreviewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Tunnel_Next.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="150" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <!-- 转换器 -->
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <local:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+
+        <!-- 轻微阴影 - 有角度且柔和 -->
+        <DropShadowEffect x:Key="FilmItemShadow"
+                          Color="#25000000"
+                          Direction="315"
+                          ShadowDepth="2"
+                          BlurRadius="6"
+                          Opacity="0.3"/>
+
+        <!-- 悬停状态的阴影 -->
+        <DropShadowEffect x:Key="FilmItemHoverShadow"
+                          Color="#35000000"
+                          Direction="315"
+                          ShadowDepth="3"
+                          BlurRadius="8"
+                          Opacity="0.4"/>
+
+        <!-- 选中状态的阴影 -->
+        <DropShadowEffect x:Key="FilmItemSelectedShadow"
+                          Color="#45000000"
+                          Direction="315"
+                          ShadowDepth="4"
+                          BlurRadius="10"
+                          Opacity="0.5"/>
+
+        <!-- 真正的Aero玻璃效果 - 透明玻璃质感 -->
+        <LinearGradientBrush x:Key="AeroGlassOverlay" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#30FFFFFF" Offset="0"/>
+            <GradientStop Color="#15FFFFFF" Offset="0.2"/>
+            <GradientStop Color="#05FFFFFF" Offset="0.5"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.7"/>
+            <GradientStop Color="#08FFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 选中状态的玻璃效果 - 径向和线性渐变混合 -->
+        <Grid x:Key="AeroSelectedGlass">
+            <Grid.Background>
+                <!-- 径向渐变 - 中心高光 -->
+                <RadialGradientBrush Center="0.5,0.3" RadiusX="0.6" RadiusY="0.4">
+                    <GradientStop Color="#40FFFFFF" Offset="0"/>
+                    <GradientStop Color="#20FFFFFF" Offset="0.3"/>
+                    <GradientStop Color="#08FFFFFF" Offset="0.7"/>
+                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                </RadialGradientBrush>
+            </Grid.Background>
+            <!-- 线性渐变覆盖层 -->
+            <Border>
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#25FFFFFF" Offset="0"/>
+                        <GradientStop Color="#10FFFFFF" Offset="0.15"/>
+                        <GradientStop Color="#03FFFFFF" Offset="0.4"/>
+                        <GradientStop Color="#00FFFFFF" Offset="0.6"/>
+                        <GradientStop Color="#10FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+        </Grid>
+
+        <!-- 胶片项目样式 -->
+        <Style x:Key="FilmItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ControlTemplate.Resources>
+                            <!-- 为ItemBorder设置RenderTransform -->
+                            <Style TargetType="Border">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                            </Style>
+                        </ControlTemplate.Resources>
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Effect="{StaticResource FilmItemShadow}">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Border.RenderTransformOrigin>0.5,0.5</Border.RenderTransformOrigin>
+                            <ContentPresenter x:Name="ContentPresenter"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- 鼠标悬停效果 - 带动画 -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                           Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemHoverShadow}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                           Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.2" Value="{StaticResource FilmItemShadow}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+
+                            <!-- 选中状态效果 - 带动画 -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                           Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemSelectedShadow}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                           Storyboard.TargetProperty="Effect">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.3" Value="{StaticResource FilmItemShadow}"/>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Border Grid.Row="0" Background="{DynamicResource PanelHeaderBackgroundBrush}"
+                BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="胶片预览" FontWeight="Bold"
+                           Foreground="White"
+                           FontFamily="{DynamicResource AeroFontFamily}"
+                           FontSize="{DynamicResource AeroFontSize}"
+                           VerticalAlignment="Center"/>
+                <Button x:Name="RefreshButton" Content="🔄" Margin="10,0,0,0"
+                        Style="{StaticResource RibbonButtonStyle}"
+                        ToolTip="刷新胶片预览" Click="RefreshButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 胶片列表 -->
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled"
+                      Style="{DynamicResource AeroScrollViewerStyle}"
+                      Background="{DynamicResource AeroBackgroundBrush}"
+                      PanningMode="HorizontalOnly"
+                      CanContentScroll="True">
+            <ListBox x:Name="FilmListBox"
+                     ItemsSource="{Binding FilmPreviewItems}"
+                     ItemContainerStyle="{StaticResource FilmItemStyle}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     SelectionChanged="FilmListBox_SelectionChanged"
+                     MouseDoubleClick="FilmListBox_MouseDoubleClick"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="8,8"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Width="120" Margin="3">
+                            <Grid Width="110" Height="85">
+                                <!-- 缩略图 - 纯净无边框 -->
+                                <Border x:Name="ThumbnailContainer"
+                                        Width="100" Height="75"
+                                        CornerRadius="2"
+                                        Background="White"
+                                        ClipToBounds="True">
+
+                                    <Grid>
+                                        <!-- 缩略图 -->
+                                        <Image Source="{Binding Thumbnail}"
+                                               Stretch="Uniform"
+                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                                        <!-- 默认图标 -->
+                                        <Grid Visibility="{Binding Thumbnail, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <TextBlock Text="📄" FontSize="20"
+                                                       Foreground="#FF999999"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 玻璃覆盖层 - 覆盖并超出图像的透明玻璃 -->
+                                <Border x:Name="GlassOverlay"
+                                        Width="110" Height="85"
+                                        CornerRadius="4"
+                                        Background="{StaticResource AeroGlassOverlay}"
+                                        IsHitTestVisible="False"
+                                        Opacity="0"/>
+
+                                <!-- 选中状态的复合玻璃效果 -->
+                                <ContentPresenter x:Name="SelectedGlassEffect"
+                                                  Width="110" Height="85"
+                                                  Content="{StaticResource AeroSelectedGlass}"
+                                                  Opacity="0"
+                                                  IsHitTestVisible="False"/>
+                            </Grid>
+
+                            <!-- 文件名 -->
+                            <TextBlock Text="{Binding Name}"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource AeroForegroundBrush}"
+                                       FontFamily="{DynamicResource AeroFontFamily}"
+                                       FontWeight="Medium"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="100"
+                                       Margin="0,5,0,0"
+                                       ToolTip="{Binding ToolTip}"/>
+
+                            <!-- 修改时间 -->
+                            <TextBlock Text="{Binding LastModified, StringFormat='{}{0:MM/dd HH:mm}'}"
+                                       FontSize="8"
+                                       Foreground="{DynamicResource AeroForegroundBrush}" Opacity="0.7"
+                                       FontFamily="{DynamicResource AeroFontFamily}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Margin="0,1,0,0"/>
+                        </StackPanel>
+
+                        <DataTemplate.Triggers>
+                            <!-- 父容器悬停时显示透明玻璃效果 - 平滑透明度动画 -->
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="GlassOverlay"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="1" Duration="0:0:0.25"
+                                                           AccelerationRatio="0.3"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="GlassOverlay"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="0" Duration="0:0:0.2"
+                                                           DecelerationRatio="0.3"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+
+                            <!-- 父容器选中时显示增强的透明玻璃效果 - 平滑透明度动画 -->
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="SelectedGlassEffect"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="1" Duration="0:0:0.3"
+                                                           AccelerationRatio="0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="SelectedGlassEffect"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="0" Duration="0:0:0.25"
+                                                           DecelerationRatio="0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+
+        <!-- 空状态提示 -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="{Binding FilmPreviewItems.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+            <TextBlock Text="📁" FontSize="48"
+                       Foreground="{DynamicResource AeroForegroundBrush}" Opacity="0.6"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="暂无节点图文件" FontSize="14"
+                       Foreground="{DynamicResource AeroForegroundBrush}" Opacity="0.8"
+                       FontFamily="{DynamicResource AeroFontFamily}"
+                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            <TextBlock Text="保存节点图后将在此显示" FontSize="12"
+                       Foreground="{DynamicResource AeroForegroundBrush}" Opacity="0.6"
+                       FontFamily="{DynamicResource AeroFontFamily}"
+                       HorizontalAlignment="Center" Margin="0,5,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

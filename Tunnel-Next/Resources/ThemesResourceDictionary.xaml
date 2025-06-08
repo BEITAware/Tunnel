@@ -1,0 +1,19 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.MergedDictionaries>
+        <!-- 主题基础 - 必须首先加载，确保所有基础资源都可用 -->
+        <ResourceDictionary Source="Themes/ThemeBase.xaml"/>
+        <ResourceDictionary Source="Themes/AeroTheme.xaml"/>
+
+        <!-- 控件样式 - 依赖于主题基础，按依赖关系排序 -->
+        <ResourceDictionary Source="Controls/ButtonStyles.xaml"/>
+        <ResourceDictionary Source="Controls/GroupBoxStyles.xaml"/>
+        <ResourceDictionary Source="Controls/SplitterStyles.xaml"/>
+        <ResourceDictionary Source="Controls/StatusBarStyles.xaml"/>
+        <ResourceDictionary Source="Controls/ListBoxStyles.xaml"/>
+        <ResourceDictionary Source="Controls/ScrollBarStyles.xaml"/>
+        <ResourceDictionary Source="Controls/TreeViewStyles.xaml"/>
+        <!-- TabControl放在最后，因为它依赖ToolbarBackgroundBrush -->
+        <ResourceDictionary Source="Controls/TabControlStyles.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

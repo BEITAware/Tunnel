@@ -1,0 +1,89 @@
+<UserControl x:Class="Tunnel_Next.Controls.ImagePreviewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="600">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Revival Scripts图像显示区域 -->
+        <ScrollViewer Grid.Row="0"
+                      x:Name="ImageScrollViewer"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="#FF1A1F28">
+
+            <!-- Revival Scripts图像容器 -->
+            <Grid x:Name="ImageContainer" Background="Transparent">
+                <!-- 透明度棋盘背景 -->
+                <Rectangle x:Name="TransparencyBackground"
+                           Visibility="Collapsed"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center">
+                    <Rectangle.Fill>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <GeometryDrawing Brush="#FFE0E0E0">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,20,20"/>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="#FFF0F0F0">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,10,10"/>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="#FFF0F0F0">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="10,10,10,10"/>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <!-- 图像显示 -->
+                <Image x:Name="PreviewImage"
+                       RenderOptions.BitmapScalingMode="Fant"
+                       RenderOptions.EdgeMode="Aliased"
+                       Stretch="Fill"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+
+                <!-- 无图像提示 -->
+                <TextBlock x:Name="NoImageText"
+                           Text="无图像预览"
+                           FontSize="16"
+                           Foreground="Gray"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="1" BorderBrush="#FFCCCCCC" BorderThickness="0,1,0,0">
+            <Border.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black"/>
+                    <GradientStop Color="#FF242E4A" Offset="1"/>
+                    <GradientStop Color="#FF626262" Offset="0.525"/>
+                    <GradientStop Color="#FF929292" Offset="0.53"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Orientation="Horizontal" Margin="5,2">
+                <TextBlock x:Name="ImageInfoText" Text="无图像" VerticalAlignment="Center" Foreground="White"/>
+                <Separator Margin="10,0"/>
+                <TextBlock x:Name="MousePositionText" Text="位置: -" VerticalAlignment="Center" Foreground="White"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

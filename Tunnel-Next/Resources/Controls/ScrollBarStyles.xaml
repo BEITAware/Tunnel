@@ -1,0 +1,283 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 垂直滚动条样式 -->
+    <Style x:Key="AeroVerticalScrollBarStyle" TargetType="ScrollBar">
+        <Setter Property="Background" Value="#1A1F28"/>
+        <Setter Property="BorderBrush" Value="#0F1419"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="MinWidth" Value="16"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 向上箭头 -->
+                        <RepeatButton Grid.Row="0"
+                                    Height="16"
+                                    Command="ScrollBar.LineUpCommand"
+                                    Style="{DynamicResource AeroScrollBarButtonStyle}">
+                            <Path Width="6" Height="3"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Data="M 0,3 L 6,3 L 3,0 Z"
+                                Fill="#8A9BA8"/>
+                        </RepeatButton>
+
+                        <!-- 滚动轨道 -->
+                        <Track Grid.Row="1"
+                             Name="PART_Track"
+                             IsDirectionReversed="True">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand"
+                                            Style="{DynamicResource AeroScrollBarPageButtonStyle}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{DynamicResource AeroScrollBarThumbStyle}"/>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand"
+                                            Style="{DynamicResource AeroScrollBarPageButtonStyle}"/>
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+
+                        <!-- 向下箭头 -->
+                        <RepeatButton Grid.Row="2"
+                                    Height="16"
+                                    Command="ScrollBar.LineDownCommand"
+                                    Style="{DynamicResource AeroScrollBarButtonStyle}">
+                            <Path Width="6" Height="3"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Data="M 0,0 L 3,3 L 6,0 Z"
+                                Fill="#8A9BA8"/>
+                        </RepeatButton>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 水平滚动条样式 -->
+    <Style x:Key="AeroHorizontalScrollBarStyle" TargetType="ScrollBar">
+        <Setter Property="Background" Value="#1A1F28"/>
+        <Setter Property="BorderBrush" Value="#0F1419"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="MinHeight" Value="16"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 向左箭头 -->
+                        <RepeatButton Grid.Column="0"
+                                    Width="16"
+                                    Command="ScrollBar.LineLeftCommand"
+                                    Style="{DynamicResource AeroScrollBarButtonStyle}">
+                            <Path Width="3" Height="6"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Data="M 3,0 L 3,6 L 0,3 Z"
+                                Fill="#8A9BA8"/>
+                        </RepeatButton>
+
+                        <!-- 滚动轨道 -->
+                        <Track Grid.Column="1"
+                             Name="PART_Track"
+                             Orientation="Horizontal">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageLeftCommand"
+                                            Style="{DynamicResource AeroScrollBarPageButtonStyle}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{DynamicResource AeroScrollBarThumbStyle}"/>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageRightCommand"
+                                            Style="{DynamicResource AeroScrollBarPageButtonStyle}"/>
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+
+                        <!-- 向右箭头 -->
+                        <RepeatButton Grid.Column="2"
+                                    Width="16"
+                                    Command="ScrollBar.LineRightCommand"
+                                    Style="{DynamicResource AeroScrollBarButtonStyle}">
+                            <Path Width="3" Height="6"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Data="M 0,0 L 3,3 L 0,6 Z"
+                                Fill="#8A9BA8"/>
+                        </RepeatButton>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 通用滚动条样式 - 使用垂直样式作为基础 -->
+    <Style x:Key="AeroScrollBarStyle" TargetType="ScrollBar" BasedOn="{StaticResource AeroVerticalScrollBarStyle}"/>
+
+    <!-- 滚动条滑块样式 -->
+    <Style x:Key="AeroScrollBarThumbStyle" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="ThumbBorder"
+                            BorderBrush="#1A1F28"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Margin="2">
+                        <!-- 添加微妙的渐变效果 -->
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#3A4550" Offset="0"/>
+                                <GradientStop Color="#2A3540" Offset="0.5"/>
+                                <GradientStop Color="#1A2530" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#4A5560" Offset="0"/>
+                                        <GradientStop Color="#3A4550" Offset="0.5"/>
+                                        <GradientStop Color="#2A3540" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="#4A5560"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#5A6570" Offset="0"/>
+                                        <GradientStop Color="#4A5560" Offset="0.5"/>
+                                        <GradientStop Color="#3A4550" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="#5A6570"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 滚动条按钮样式 -->
+    <Style x:Key="AeroScrollBarButtonStyle" TargetType="RepeatButton">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Background" Value="#1A1F28"/>
+        <Setter Property="BorderBrush" Value="#0F1419"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border x:Name="ButtonBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="0">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="#2A3540"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="#3A4550"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 滚动条页面按钮样式 -->
+    <Style x:Key="AeroScrollBarPageButtonStyle" TargetType="RepeatButton">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Rectangle Fill="Transparent"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 滚动视图样式 -->
+    <Style x:Key="AeroScrollViewerStyle" TargetType="ScrollViewer">
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ScrollContentPresenter Grid.Column="0" Grid.Row="0"
+                                            Margin="{TemplateBinding Padding}"/>
+
+                        <ScrollBar x:Name="PART_VerticalScrollBar"
+                                 Grid.Column="1" Grid.Row="0"
+                                 Style="{DynamicResource AeroVerticalScrollBarStyle}"
+                                 Value="{TemplateBinding VerticalOffset}"
+                                 Maximum="{TemplateBinding ScrollableHeight}"
+                                 ViewportSize="{TemplateBinding ViewportHeight}"
+                                 Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+
+                        <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                 Orientation="Horizontal"
+                                 Grid.Column="0" Grid.Row="1"
+                                 Style="{DynamicResource AeroHorizontalScrollBarStyle}"
+                                 Value="{TemplateBinding HorizontalOffset}"
+                                 Maximum="{TemplateBinding ScrollableWidth}"
+                                 ViewportSize="{TemplateBinding ViewportWidth}"
+                                 Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+
+                        <Rectangle Grid.Column="1" Grid.Row="1"
+                                 Fill="#1A1F28"
+                                 Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 全局ScrollBar样式 - 自动应用到所有ScrollBar -->
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource AeroScrollBarStyle}"/>
+
+    <!-- 全局ScrollViewer样式 - 自动应用到所有ScrollViewer -->
+    <Style TargetType="ScrollViewer" BasedOn="{StaticResource AeroScrollViewerStyle}"/>
+</ResourceDictionary>

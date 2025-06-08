@@ -1,0 +1,535 @@
+﻿<Window x:Class="Tunnel_Next.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Tunnel_Next"
+        xmlns:controls="clr-namespace:Tunnel_Next.Controls"
+        mc:Ignorable="d"
+        Title="Tunnel Preview" Height="720" Width="1280"
+        MinHeight="576" MinWidth="1024"
+        WindowState="Maximized"
+        Icon="pack://application:,,,/Resources/imgpp.png">
+
+    <Window.Resources>
+        <!-- 工作区域样式 -->
+        <Style x:Key="WorkAreaStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FF1A1F28"/>
+            <Setter Property="BorderBrush" Value="#FF1A1F28"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Ribbon区域 -->
+        <Border DockPanel.Dock="Top"
+                Background="{StaticResource ToolbarBackgroundBrush}"
+                BorderBrush="#FF000000"
+                BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="120"/>
+                </Grid.RowDefinitions>
+
+                <!-- 快速访问工具栏 -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,4" HorizontalAlignment="Left">
+                    <Button Style="{StaticResource RibbonButtonStyle}"
+                            ToolTip="保存 (Ctrl+S)"
+                            Command="{Binding SaveNodeGraphCommand}"
+                            Width="24" Height="22">
+                        <Image Source="pack://application:,,,/Resources/save.png" Width="16" Height="16"
+                               RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                    </Button>
+                    <Button Style="{StaticResource RibbonButtonStyle}"
+                            ToolTip="撤销 (Ctrl+Z)"
+                            Command="{Binding UndoCommand}"
+                            Width="24" Height="22">
+                        <Image Source="pack://application:,,,/Resources/BackwardArrow.png" Width="16" Height="16"
+                               RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                    </Button>
+                    <Button Style="{StaticResource RibbonButtonStyle}"
+                            ToolTip="重做 (Ctrl+Y)"
+                            Command="{Binding RedoCommand}"
+                            Width="24" Height="22">
+                        <Image Source="pack://application:,,,/Resources/ForwardArrow.png" Width="16" Height="16"
+                               RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Ribbon 标签页控件 -->
+                <TabControl x:Name="RibbonTabControl"
+                            Grid.Row="1"
+                            Background="{StaticResource ToolbarBackgroundBrush}"
+                            BorderThickness="0"
+                            Height="120"
+                            Margin="2,0,2,0">
+                    <TabControl.Resources>
+                        <Style TargetType="TabItem" BasedOn="{StaticResource RibbonTabStyle}"/>
+                    </TabControl.Resources>
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Tab标签头面板 -->
+                                <TabPanel x:Name="HeaderPanel"
+                                          Panel.ZIndex="1"
+                                          IsItemsHost="True"
+                                          Background="Transparent"
+                                          Grid.Row="0"/>
+
+                                <!-- Tab内容区域 -->
+                                <Border x:Name="ContentPanel"
+                                        Grid.Row="1"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                      ContentSource="SelectedContent"
+                                                      Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </TabControl.Template>
+
+                    <!-- 文件标签页 -->
+                    <TabItem Header="文件">
+                        <Border Background="{StaticResource ToolbarBackgroundBrush}" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- 文件操作组 -->
+                                <GroupBox Header="文件操作" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="新建节点图 (Ctrl+N)"
+                                                Command="{Binding NewNodeGraphCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/NewNodeGraphAlt.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="新建" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="打开节点图 (Ctrl+O)"
+                                                Command="{Binding OpenNodeGraphCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/open.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="打开" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="保存节点图 (Ctrl+S)"
+                                                Command="{Binding SaveNodeGraphCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/save.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="保存" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- 图像操作组 -->
+                                <GroupBox Header="图像" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="导入图像"
+                                                Command="{Binding ImportImageCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/image.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="导入" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="导出图像"
+                                                Command="{Binding ExportImageCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/export.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="导出" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+
+                    <!-- 视图标签页 -->
+                    <TabItem Header="视图">
+                        <Border Background="{StaticResource ToolbarBackgroundBrush}" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- 缩放组 -->
+                                <GroupBox Header="缩放" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="缩放适应 (Ctrl+0)"
+                                                Command="{Binding ZoomFitCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/zoom_fit.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="适应" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <StackPanel>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="放大 (Ctrl+=)"
+                                                    Command="{Binding ZoomInCommand}"
+                                                    Margin="0,0,0,2">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/zoom_in.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="放大" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="缩小 (Ctrl+-)"
+                                                    Command="{Binding ZoomOutCommand}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/zoom_out.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="缩小" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- 显示选项组 -->
+                                <GroupBox Header="显示" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel>
+                                            <CheckBox Content="显示网格" FontSize="10" Margin="4,2"/>
+                                            <CheckBox Content="显示标尺" FontSize="10" Margin="4,2"/>
+                                            <CheckBox Content="显示连接线" FontSize="10" Margin="4,2"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+
+                    <!-- 节点标签页 -->
+                    <TabItem Header="节点">
+                        <Border Background="{StaticResource ToolbarBackgroundBrush}" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- 节点操作组 -->
+                                <GroupBox Header="节点操作" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="AddNodeButton"
+                                                Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="添加节点 (Ctrl+A)&#x0a;点击显示节点菜单"
+                                                Click="AddNodeButton_Click">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/add_node.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="添加" FontSize="10"/>
+                                                    <TextBlock Text=" ▼" FontSize="8" Margin="2,0,0,0" VerticalAlignment="Bottom"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="删除节点 (Delete)"
+                                                Command="{Binding DeleteNodeCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/delete_node.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="删除" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- 处理组 -->
+                                <GroupBox Header="处理" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="手动处理节点图 (F5)&#x0a;当前为自动处理模式"
+                                                Command="{Binding NodeEditor.ProcessNodeGraphCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/Refresh.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="处理" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <StackPanel Margin="5,0,0,0">
+                                            <CheckBox Content="自动" FontSize="9" Margin="0,2" IsChecked="True" IsEnabled="False"/>
+                                            <TextBlock Text="实时处理" FontSize="8" Foreground="Gray" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- 布局组 -->
+                                <GroupBox Header="布局" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="整理节点 (Ctrl+L)"
+                                                Command="{Binding ArrangeNodesCommand}">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/arrange_nodes.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="整理" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <StackPanel>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="水平对齐"
+                                                    Margin="0,0,0,2">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="水平" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="垂直对齐">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="垂直" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+
+                    <!-- 版本控制标签页 -->
+                    <TabItem Header="版本控制">
+                        <Border Background="{StaticResource ToolbarBackgroundBrush}" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- 版本操作组 -->
+                                <GroupBox Header="版本操作" Style="{StaticResource RibbonGroupStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource RibbonLargeButtonStyle}"
+                                                ToolTip="创建版本树">
+                                            <StackPanel>
+                                                <Image Source="pack://application:,,,/Resources/NewNodeGraphAlt.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                <TextBlock Text="新建树" HorizontalAlignment="Center" FontSize="10"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <StackPanel>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="后退"
+                                                    Margin="0,0,0,2">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/BackwardArrow.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="后退" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource RibbonButtonStyle}"
+                                                    ToolTip="前进">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="pack://application:,,,/Resources/ForwardArrow.png" Width="16" Height="16" Margin="0,0,4,0"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                                    <TextBlock Text="前进" FontSize="10"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Border>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Border>
+
+            <!-- 状态栏 -->
+            <StatusBar DockPanel.Dock="Bottom" Style="{StaticResource AeroStatusBarStyle}" Height="25">
+                <StatusBarItem Style="{StaticResource AeroStatusBarItemStyle}">
+                    <TextBlock x:Name="TaskLabel" Text="就绪" Style="{StaticResource AeroStatusBarLabelStyle}"/>
+                </StatusBarItem>
+                <Separator Style="{StaticResource AeroStatusBarSeparatorStyle}"/>
+                <StatusBarItem Style="{StaticResource AeroStatusBarItemStyle}">
+                    <TextBlock x:Name="ZoomLabel" Text="缩放: 100%" Style="{StaticResource AeroStatusBarLabelStyle}"/>
+                </StatusBarItem>
+                <Separator Style="{StaticResource AeroStatusBarSeparatorStyle}"/>
+                <StatusBarItem Style="{StaticResource AeroStatusBarItemStyle}">
+                    <TextBlock x:Name="NodeCountLabel" Text="节点: 0" Style="{StaticResource AeroStatusBarLabelStyle}"/>
+                </StatusBarItem>
+            </StatusBar>
+
+            <!-- 主工作区域 -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- 左侧：版本管理和资源库（变窄） -->
+                    <ColumnDefinition Width="1*" MinWidth="200"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- 中间：图像预览和胶片条 -->
+                    <ColumnDefinition Width="3*" MinWidth="400"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- 右侧：节点编辑器和参数设置（变宽） -->
+                    <ColumnDefinition Width="2.5*" MinWidth="350"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 左侧：版本管理和资源库 -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" MinHeight="150"/>
+                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="1*" MinHeight="150"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 版本管理区域 -->
+                    <Border Grid.Row="0" Style="{StaticResource WorkAreaStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 标题栏 -->
+                            <Border Grid.Row="0" Background="{StaticResource PanelHeaderBackgroundBrush}"
+                                BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
+                                <TextBlock Text="版本管理" FontWeight="Bold"
+                                       Foreground="White"
+                                       FontFamily="{StaticResource AeroFontFamily}"
+                                       FontSize="{StaticResource AeroFontSize}"/>
+                            </Border>
+
+                            <!-- 版本控制按钮 -->
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,5" Background="{StaticResource ToolbarBackgroundBrush}">
+                                <Button Content="后退" Margin="0,0,5,0" Style="{StaticResource AeroButtonStyle}"/>
+                                <Button Content="前进" Margin="0,0,5,0" Style="{StaticResource AeroButtonStyle}"/>
+                                <Button Content="新建树" Style="{StaticResource AeroButtonStyle}"/>
+                            </StackPanel>
+
+                            <!-- 版本树视图 -->
+                            <TreeView Grid.Row="2" x:Name="VersionTreeView" Margin="5"
+                                  Style="{StaticResource AeroTreeViewStyle}"
+                                  ItemContainerStyle="{StaticResource AeroTreeViewItemStyle}"
+                                  BorderThickness="0">
+                                <TreeViewItem Header="版本树" IsExpanded="True">
+                                    <TreeViewItem Header="v1 - 初始版本"/>
+                                </TreeViewItem>
+                            </TreeView>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter Grid.Row="1" Style="{StaticResource AeroHorizontalSplitterStyle}"/>
+
+                    <!-- 资源库区域 -->
+                    <Border Grid.Row="2" Style="{StaticResource WorkAreaStyle}">
+                        <controls:ResourceLibraryControl x:Name="ResourceLibraryControl"
+                                                     DataContext="{Binding}"
+                                                     ResourceItemSelected="ResourceLibraryControl_ResourceItemSelected"
+                                                     ResourceItemDoubleClicked="ResourceLibraryControl_ResourceItemDoubleClicked"
+                                                     RefreshRequested="ResourceLibraryControl_RefreshRequested"
+                                                     ImportRequested="ResourceLibraryControl_ImportRequested"/>
+                    </Border>
+                </Grid>
+
+                <GridSplitter Grid.Column="1" Style="{StaticResource AeroVerticalSplitterStyle}"/>
+
+                <!-- 中间：图像预览和胶片条 -->
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" MinHeight="300"/>
+                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="Auto" MinHeight="120" MaxHeight="180"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 多文档Tab区域 -->
+                    <Border Grid.Row="0" Style="{StaticResource WorkAreaStyle}">
+                        <controls:DocumentTabControl x:Name="DocumentTabControl"
+                                                   DocumentManager="{Binding DocumentManager}"/>
+                    </Border>
+
+                    <GridSplitter Grid.Row="1" Style="{StaticResource AeroHorizontalSplitterStyle}"/>
+
+                    <!-- 胶片条区域 -->
+                    <Border Grid.Row="2" Style="{StaticResource WorkAreaStyle}">
+                        <controls:FilmPreviewControl x:Name="FilmPreviewControl"
+                                                 DataContext="{Binding}"
+                                                 FilmItemSelected="FilmPreviewControl_FilmItemSelected"
+                                                 FilmItemDoubleClicked="FilmPreviewControl_FilmItemDoubleClicked"
+                                                 RefreshRequested="FilmPreviewControl_RefreshRequested"/>
+                    </Border>
+                </Grid>
+
+                <GridSplitter Grid.Column="3" Style="{StaticResource AeroVerticalSplitterStyle}"/>
+
+                <!-- 右侧：节点编辑器和参数设置 -->
+                <Grid Grid.Column="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*" MinHeight="250"/>
+                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="1*" MinHeight="150"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 节点编辑器区域 -->
+                    <Border Grid.Row="0" Style="{StaticResource WorkAreaStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 标题栏 -->
+                            <Border Grid.Row="0" Background="{StaticResource PanelHeaderBackgroundBrush}"
+                                BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="节点图编辑器" FontWeight="Bold"
+                                           Foreground="White"
+                                           FontFamily="{StaticResource AeroFontFamily}"
+                                           FontSize="{StaticResource AeroFontSize}"
+                                           VerticalAlignment="Center"/>
+
+                                    <Button Grid.Column="1" x:Name="NodeEditorAddNodeButton"
+                                            Style="{StaticResource SmallRibbonButtonStyle}"
+                                            ToolTip="添加节点"
+                                            Click="NodeEditorAddNodeButton_Click">
+                                        <Image Source="pack://application:,,,/Resources/add_node.png" Width="12" Height="12"
+                                               RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <controls:NodeEditorControl Grid.Row="1" x:Name="NodeEditorControl"
+                                                    DataContext="{Binding NodeEditor}"/>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter Grid.Row="1" Style="{StaticResource AeroHorizontalSplitterStyle}"/>
+
+                    <!-- 节点参数设置区域 -->
+                    <Border Grid.Row="2" Style="{StaticResource WorkAreaStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 标题栏 -->
+                            <Border Grid.Row="0" Background="{StaticResource PanelHeaderBackgroundBrush}"
+                                BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
+                                <TextBlock Text="节点参数设定" FontWeight="Bold"
+                                       Foreground="White"
+                                       FontFamily="{StaticResource AeroFontFamily}"
+                                       FontSize="{StaticResource AeroFontSize}"/>
+                            </Border>
+
+                            <controls:ParameterEditorControl Grid.Row="1" x:Name="ParameterEditorControl"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+    </DockPanel>
+</Window>

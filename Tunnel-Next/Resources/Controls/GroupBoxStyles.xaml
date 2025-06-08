@@ -1,0 +1,98 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Ribbon分组框样式 -->
+    <Style x:Key="RibbonGroupStyle" TargetType="GroupBox">
+        <Setter Property="Margin" Value="2,0"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="#FFB8C5D1"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="Transparent"
+                                BorderBrush="#FFD0D0D0"
+                                BorderThickness="0,0,1,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <TextBlock Grid.Row="1"
+                                   Text="{TemplateBinding Header}"
+                                   HorizontalAlignment="Center"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   Margin="0,2,0,0"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 标准GroupBox样式 -->
+    <Style x:Key="AeroGroupBoxStyle" TargetType="GroupBox">
+        <Setter Property="BorderBrush" Value="#FF1A1F28"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,6,8,8"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+        <Setter Property="FontSize" Value="{DynamicResource AeroFontSize}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.RowSpan="2"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Margin="0"/>
+                        <Border Grid.Row="0"
+                                Margin="8,0,0,0"
+                                HorizontalAlignment="Left"
+                                Padding="4,0,4,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#1A1F28" Offset="0"/>
+                                    <GradientStop Color="#1A1F28" Offset="0.5"/>
+                                    <GradientStop Color="#1A1F28" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter ContentSource="Header"
+                                              RecognizesAccessKey="True"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </Border>
+                        <ContentPresenter Grid.Row="1"
+                                          Margin="{TemplateBinding Padding}"
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 设置面板GroupBox样式 -->
+    <Style x:Key="SettingsPanelGroupBoxStyle" TargetType="GroupBox" BasedOn="{StaticResource AeroGroupBoxStyle}">
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#F8F8F8" Offset="0"/>
+                    <GradientStop Color="#F0F0F0" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+        <Setter Property="Margin" Value="5"/>
+    </Style>
+</ResourceDictionary> 

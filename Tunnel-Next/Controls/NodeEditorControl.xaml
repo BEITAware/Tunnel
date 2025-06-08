@@ -1,0 +1,72 @@
+<UserControl x:Class="Tunnel_Next.Controls.NodeEditorControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid>
+        <ScrollViewer x:Name="NodeScrollViewer"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="#1F3449">
+            <!-- 网格背景 - 密集横向条纹 -->
+            <Grid x:Name="GridBackground"
+                  Width="2000"
+                  Height="2000">
+                <Grid.Background>
+                    <!-- 密集横向条纹背景 -->
+                    <DrawingBrush TileMode="Tile"
+                                  Viewport="0,0,1,2"
+                                  ViewportUnits="Absolute">
+                        <DrawingBrush.Drawing>
+                            <DrawingGroup>
+                                <!-- 基础色条纹 -->
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry Rect="0,0,1,1"/>
+                                    </GeometryDrawing.Geometry>
+                                    <GeometryDrawing.Brush>
+                                        <SolidColorBrush Color="#1F3449"/>
+                                    </GeometryDrawing.Brush>
+                                </GeometryDrawing>
+                                <!-- 深色条纹 -->
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry Rect="0,1,1,1"/>
+                                    </GeometryDrawing.Geometry>
+                                    <GeometryDrawing.Brush>
+                                        <SolidColorBrush Color="#010303"/>
+                                    </GeometryDrawing.Brush>
+                                </GeometryDrawing>
+                            </DrawingGroup>
+                        </DrawingBrush.Drawing>
+                    </DrawingBrush>
+                </Grid.Background>
+
+
+
+                <!-- 连接线Canvas - 放在节点Canvas下方，作为兄弟元素 -->
+                <Canvas x:Name="ConnectionCanvas"
+                        Width="2000"
+                        Height="2000"
+                        Panel.ZIndex="1"
+                        Background="Transparent"
+                        IsHitTestVisible="False"/>
+
+                <!-- 节点Canvas - 在连接线Canvas之上 -->
+                <Canvas x:Name="NodeCanvas"
+                        Background="Transparent"
+                        Width="2000"
+                        Height="2000"
+                        Panel.ZIndex="2"
+                        MouseLeftButtonDown="NodeCanvas_MouseLeftButtonDown"
+                        MouseRightButtonDown="NodeCanvas_MouseRightButtonDown"
+                        MouseMove="NodeCanvas_MouseMove">
+                    <!-- 节点将在这里动态添加 -->
+                </Canvas>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

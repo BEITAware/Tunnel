@@ -1,0 +1,195 @@
+<UserControl x:Class="Tunnel_Next.Controls.ResourceLibraryControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="250">
+    
+    <UserControl.Resources>
+        <!-- TreeView样式 -->
+        <Style x:Key="ResourceTreeViewStyle" TargetType="TreeView">
+            <Setter Property="Background" Value="{DynamicResource AeroBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AeroForegroundBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+            <Setter Property="FontSize" Value="{DynamicResource AeroFontSize}"/>
+        </Style>
+
+        <!-- TreeViewItem样式 -->
+        <Style x:Key="ResourceTreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="Foreground" Value="{DynamicResource AeroForegroundBrush}"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+            <Setter Property="FontSize" Value="{DynamicResource AeroFontSize}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Border x:Name="Bd" Grid.Row="0" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    CornerRadius="2">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleButton x:Name="Expander" Grid.Column="0"
+                                                  ClickMode="Press"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  Background="Transparent" BorderThickness="0"
+                                                  Width="16" Height="16" Margin="0,0,5,0">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Focusable" Value="False"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ToggleButton">
+                                                            <Border Background="Transparent">
+                                                                <TextBlock x:Name="ExpanderText" Text="▶"
+                                                                           FontSize="10" Foreground="{DynamicResource AeroForegroundBrush}"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsChecked" Value="True">
+                                                                    <Setter TargetName="ExpanderText" Property="Text" Value="▼"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+                                    <ContentPresenter x:Name="PART_Header" Grid.Column="1"
+                                                      ContentSource="Header"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                </Grid>
+                            </Border>
+                            <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Margin="20,0,0,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="False">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AeroHoverBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AeroBorderBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FFE6F3FF" Offset="0"/>
+                                            <GradientStop Color="#FFBDD9FF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题栏 -->
+        <Border Grid.Row="0" Background="{DynamicResource PanelHeaderBackgroundBrush}"
+                BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="资源库" FontWeight="Bold"
+                           Foreground="White"
+                           FontFamily="{DynamicResource AeroFontFamily}"
+                           FontSize="{DynamicResource AeroFontSize}"
+                           VerticalAlignment="Center"/>
+                <Button x:Name="RefreshButton" Content="🔄" Margin="10,0,0,0"
+                        Style="{StaticResource RibbonButtonStyle}"
+                        ToolTip="刷新资源库" Click="RefreshButton_Click"/>
+                <Button x:Name="ImportButton" Content="📁" Margin="5,0,0,0"
+                        Style="{StaticResource RibbonButtonStyle}"
+                        ToolTip="导入图片" Click="ImportButton_Click"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- 资源树 -->
+        <TreeView Grid.Row="1" x:Name="ResourceTreeView"
+                  Style="{StaticResource ResourceTreeViewStyle}"
+                  ItemContainerStyle="{StaticResource ResourceTreeViewItemStyle}"
+                  SelectedItemChanged="ResourceTreeView_SelectedItemChanged"
+                  MouseDoubleClick="ResourceTreeView_MouseDoubleClick">
+            
+            <!-- 图片文件节点 -->
+            <TreeViewItem Header="图片文件" IsExpanded="True" x:Name="ImageFilesNode">
+                <TreeViewItem.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🖼️" Margin="0,0,5,0"/>
+                            <TextBlock Text="图片文件"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TreeViewItem.HeaderTemplate>
+            </TreeViewItem>
+            
+            <!-- 预设节点 -->
+            <TreeViewItem Header="预设" IsExpanded="False">
+                <TreeViewItem.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️" Margin="0,0,5,0"/>
+                            <TextBlock Text="预设"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TreeViewItem.HeaderTemplate>
+                <TreeViewItem Header="基础调整"/>
+                <TreeViewItem Header="色彩校正"/>
+                <TreeViewItem Header="艺术效果"/>
+            </TreeViewItem>
+            
+            <!-- 模板节点 -->
+            <TreeViewItem Header="模板" IsExpanded="False">
+                <TreeViewItem.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📋" Margin="0,0,5,0"/>
+                            <TextBlock Text="模板"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TreeViewItem.HeaderTemplate>
+                <TreeViewItem Header="人像处理"/>
+                <TreeViewItem Header="风景摄影"/>
+            </TreeViewItem>
+        </TreeView>
+        
+        <!-- 空状态提示 -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    x:Name="EmptyStatePanel" Visibility="Collapsed">
+            <TextBlock Text="📂" FontSize="48"
+                       Foreground="{DynamicResource AeroForegroundBrush}"
+                       HorizontalAlignment="Center" Opacity="0.6"/>
+            <TextBlock Text="暂无资源文件" FontSize="14"
+                       Foreground="{DynamicResource AeroForegroundBrush}"
+                       FontFamily="{DynamicResource AeroFontFamily}"
+                       HorizontalAlignment="Center" Margin="0,10,0,0" Opacity="0.8"/>
+            <TextBlock Text="点击导入按钮添加图片" FontSize="12"
+                       Foreground="{DynamicResource AeroForegroundBrush}"
+                       FontFamily="{DynamicResource AeroFontFamily}"
+                       HorizontalAlignment="Center" Margin="0,5,0,0" Opacity="0.6"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

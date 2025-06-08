@@ -1,0 +1,72 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 颜色变量 - 基于Windows Aero设计风格 -->
+    <Color x:Key="AeroBorderColor">#FF1A1F28</Color>
+    <Color x:Key="AeroGlassStart">#1A1F28</Color>
+    <Color x:Key="AeroGlassMiddle">#1A1F28</Color>
+    <Color x:Key="AeroGlassEnd">#1A1F28</Color>
+    <Color x:Key="AeroHighlightColor">#FF0078D7</Color>
+    <Color x:Key="AeroHoverStartColor">#FF1A1F28</Color>
+    <Color x:Key="AeroHoverEndColor">#FF1A1F28</Color>
+    <Color x:Key="AeroPressedStartColor">#FF1A1F28</Color>
+    <Color x:Key="AeroPressedEndColor">#FF1A1F28</Color>
+    <Color x:Key="AeroBackgroundColor">#FF1A1F28</Color>
+    <Color x:Key="AeroTextColor">#FF2E5C8A</Color>
+    <Color x:Key="AeroDisabledTextColor">#FF777777</Color>
+    <Color x:Key="AeroDisabledBgColor">#FFE8E8E8</Color>
+    
+    <!-- 字体设置 -->
+    <FontFamily x:Key="AeroFontFamily">Segoe UI, Microsoft YaHei UI, Arial</FontFamily>
+    <system:Double x:Key="AeroFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">11</system:Double>
+    <system:Double x:Key="AeroSmallFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">10</system:Double>
+    <system:Double x:Key="AeroLargeFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">12</system:Double>
+    
+    <!-- 尺寸变量 -->
+    <Thickness x:Key="StandardPadding">6,4</Thickness>
+    <Thickness x:Key="ButtonPadding">6,4</Thickness>
+    <Thickness x:Key="ControlBorderThickness">1</Thickness>
+    <CornerRadius x:Key="StandardCornerRadius">3</CornerRadius>
+    
+    <!-- 通用画笔 -->
+    <SolidColorBrush x:Key="AeroBorderBrush" Color="{DynamicResource AeroBorderColor}"/>
+    <SolidColorBrush x:Key="AeroHighlightBrush" Color="{DynamicResource AeroHighlightColor}"/>
+    <SolidColorBrush x:Key="AeroBackgroundBrush" Color="{DynamicResource AeroBackgroundColor}"/>
+    <SolidColorBrush x:Key="AeroForegroundBrush" Color="{DynamicResource AeroTextColor}"/>
+    <SolidColorBrush x:Key="AeroDisabledForegroundBrush" Color="{DynamicResource AeroDisabledTextColor}"/>
+    <SolidColorBrush x:Key="AeroDisabledBackgroundBrush" Color="{DynamicResource AeroDisabledBgColor}"/>
+    
+    <!-- 渐变画笔 -->
+    <LinearGradientBrush x:Key="AeroGlassBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{DynamicResource AeroGlassStart}" Offset="0"/>
+        <GradientStop Color="{DynamicResource AeroGlassMiddle}" Offset="0.5"/>
+        <GradientStop Color="{DynamicResource AeroGlassEnd}" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- 新的工具栏背景画笔 - 基于designs/toolbar.xaml -->
+    <LinearGradientBrush x:Key="ToolbarBackgroundBrush" StartPoint="0.5,-0.381866" EndPoint="0.5,1.38187">
+        <GradientStop Color="#FF3E5E85" Offset="0"/>
+        <GradientStop Color="#FF1D2E54" Offset="0.480519"/>
+        <GradientStop Color="#FE000004" Offset="0.487941"/>
+        <GradientStop Color="#FF385EB2" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- 面板标题栏背景画笔 - 基于designs/interfacepanelbar.xaml -->
+    <LinearGradientBrush x:Key="PanelHeaderBackgroundBrush" StartPoint="0.499999,0" EndPoint="0.499999,1">
+        <GradientStop Color="#FF1A1F28" Offset="0"/>
+        <GradientStop Color="#FF1C2432" Offset="0.510204"/>
+        <GradientStop Color="#FE1C2533" Offset="0.562152"/>
+        <GradientStop Color="#FE30445F" Offset="0.87013"/>
+        <GradientStop Color="#FE384F6C" Offset="0.918367"/>
+        <GradientStop Color="#FF405671" Offset="0.974026"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="AeroHoverBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{DynamicResource AeroHoverStartColor}" Offset="0"/>
+        <GradientStop Color="{DynamicResource AeroHoverEndColor}" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="AeroPressedBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{DynamicResource AeroPressedStartColor}" Offset="0"/>
+        <GradientStop Color="{DynamicResource AeroPressedEndColor}" Offset="1"/>
+    </LinearGradientBrush>
+</ResourceDictionary> 
