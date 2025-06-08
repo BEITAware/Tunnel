@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -102,6 +104,10 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
+                var errorMsg = $"[脚本目录扫描失败] {directory}: {ex.Message}";
+                Console.WriteLine(errorMsg);
+                Debug.WriteLine(errorMsg);
+                Trace.WriteLine(errorMsg);
             }
         }
 
@@ -131,6 +137,11 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
+                var scriptName = Path.GetFileName(filePath);
+                var errorMsg = $"[脚本注册失败] {scriptName}: {ex.Message}";
+                Console.WriteLine(errorMsg);
+                Debug.WriteLine(errorMsg);
+                Trace.WriteLine(errorMsg);
             }
         }
 
@@ -156,8 +167,17 @@ namespace Tunnel_Next.Services.Scripting
 
                 if (!emitResult.Success)
                 {
+                    var scriptName = Path.GetFileName(filePath);
+                    Console.WriteLine($"[脚本解析失败] {scriptName}");
+                    Debug.WriteLine($"[脚本解析失败] {scriptName}");
+                    Trace.WriteLine($"[脚本解析失败] {scriptName}");
+
                     foreach (var error in emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
                     {
+                        var errorMsg = $"  错误: {error}";
+                        Console.WriteLine(errorMsg);
+                        Debug.WriteLine(errorMsg);
+                        Trace.WriteLine(errorMsg);
                     }
                     return null;
                 }
@@ -300,11 +320,24 @@ namespace Tunnel_Next.Services.Scripting
                     }
                     else
                     {
+                        var scriptName = Path.GetFileName(scriptInfo.FilePath);
+                        Console.WriteLine($"[脚本编译失败] {scriptName}");
+                        Debug.WriteLine($"[脚本编译失败] {scriptName}");
+                        Trace.WriteLine($"[脚本编译失败] {scriptName}");
+
                         foreach (var error in result.Errors)
                         {
+                            var errorMsg = $"  错误: {error}";
+                            Console.WriteLine(errorMsg);
+                            Debug.WriteLine(errorMsg);
+                            Trace.WriteLine(errorMsg);
                         }
                         foreach (var warning in result.Warnings)
                         {
+                            var warningMsg = $"  警告: {warning}";
+                            Console.WriteLine(warningMsg);
+                            Debug.WriteLine(warningMsg);
+                            Trace.WriteLine(warningMsg);
                         }
                     }
                 }
@@ -358,11 +391,24 @@ namespace Tunnel_Next.Services.Scripting
                 }
                 else
                 {
+                    var scriptName = Path.GetFileName(scriptInfo.FilePath);
+                    Console.WriteLine($"[脚本实例创建失败] {scriptName}");
+                    Debug.WriteLine($"[脚本实例创建失败] {scriptName}");
+                    Trace.WriteLine($"[脚本实例创建失败] {scriptName}");
+
                     foreach (var error in result.Errors)
                     {
+                        var errorMsg = $"  错误: {error}";
+                        Console.WriteLine(errorMsg);
+                        Debug.WriteLine(errorMsg);
+                        Trace.WriteLine(errorMsg);
                     }
                     foreach (var warning in result.Warnings)
                     {
+                        var warningMsg = $"  警告: {warning}";
+                        Console.WriteLine(warningMsg);
+                        Debug.WriteLine(warningMsg);
+                        Trace.WriteLine(warningMsg);
                     }
                     return null;
                 }
@@ -472,12 +518,48 @@ namespace Tunnel_Next.Services.Scripting
                         .Where(d => d.Severity == DiagnosticSeverity.Warning)
                         .Select(d => d.ToString())
                         .ToList();
+
+                    // 输出编译失败信息
+                    var scriptName = Path.GetFileName(scriptInfo.FilePath);
+                    Console.WriteLine($"[脚本编译失败] {scriptName}");
+                    Debug.WriteLine($"[脚本编译失败] {scriptName}");
+                    Trace.WriteLine($"[脚本编译失败] {scriptName}");
+
+                    foreach (var error in result.Errors)
+                    {
+                        var errorMsg = $"  错误: {error}";
+                        Console.WriteLine(errorMsg);
+                        Debug.WriteLine(errorMsg);
+                        Trace.WriteLine(errorMsg);
+                    }
+                    foreach (var warning in result.Warnings)
+                    {
+                        var warningMsg = $"  警告: {warning}";
+                        Console.WriteLine(warningMsg);
+                        Debug.WriteLine(warningMsg);
+                        Trace.WriteLine(warningMsg);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 result.Success = false;
                 result.Errors.Add($"编译异常: {ex.Message}");
+
+                // 输出编译异常信息
+                var scriptName = Path.GetFileName(scriptInfo.FilePath);
+                var exceptionMsg = $"[脚本编译异常] {scriptName}: {ex.Message}";
+                Console.WriteLine(exceptionMsg);
+                Debug.WriteLine(exceptionMsg);
+                Trace.WriteLine(exceptionMsg);
+
+                if (ex.StackTrace != null)
+                {
+                    var stackTraceMsg = $"  堆栈跟踪: {ex.StackTrace}";
+                    Console.WriteLine(stackTraceMsg);
+                    Debug.WriteLine(stackTraceMsg);
+                    Trace.WriteLine(stackTraceMsg);
+                }
             }
 
             return result;
