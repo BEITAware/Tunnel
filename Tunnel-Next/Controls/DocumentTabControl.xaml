@@ -222,7 +222,7 @@
             <TabItem Header="欢迎" Tag="False">
                 <Grid>
                     <Grid.Background>
-                        <ImageBrush ImageSource="../Resources/Aurora.png" Stretch="Fill"/>
+                        <ImageBrush ImageSource="pack://application:,,,/Resources/Aurora.png" Stretch="Fill"/>
                     </Grid.Background>
 
                     <!-- Aero风格半透明背景层 -->
@@ -261,7 +261,7 @@
                                         <TextBlock Text="欢迎使用Tunnel" FontSize="28" FontWeight="Bold"
                                                    FontFamily="{DynamicResource AeroFontFamily}"
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Image Source="../Resources/TunnelAppLogo.png" Width="40" Height="40"
+                                        <Image Source="pack://application:,,,/Resources/TunnelAppLogo.png" Width="40" Height="40"
                                                Margin="12,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
 
@@ -292,7 +292,7 @@
 
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <Image Source="../Resources/bootup.png" Width="20" Height="20"
+                                        <Image Source="pack://application:,,,/Resources/bootup.png" Width="20" Height="20"
                                                VerticalAlignment="Top" Margin="0,2,8,0"/>
                                         <StackPanel MaxWidth="500">
                                             <TextBlock FontFamily="{DynamicResource AeroFontFamily}" FontSize="12"
@@ -302,7 +302,7 @@
                                                 <Run Text="标签页点选"/>
                                                 <Run Text="&quot;新建按钮&quot;" FontWeight="Bold"/>
                                                 <InlineUIContainer>
-                                                    <Image Source="../Resources/NewNodeGraphAlt.png" Width="16" Height="16"
+                                                    <Image Source="pack://application:,,,/Resources/NewNodeGraphAlt.png" Width="16" Height="16"
                                                            VerticalAlignment="Center" Margin="4,0"/>
                                                 </InlineUIContainer>
                                                 <Run Text="来创建一张新的节点图。"/>
@@ -337,7 +337,7 @@
 
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <Image Source="../Resources/imgpp.png" Width="20" Height="20"
+                                        <Image Source="pack://application:,,,/Resources/imgpp.png" Width="20" Height="20"
                                                VerticalAlignment="Top" Margin="0,2,8,0"/>
                                         <StackPanel MaxWidth="500">
                                             <TextBlock Text="本软件以MPL 2.0协议授权。" FontSize="12"
