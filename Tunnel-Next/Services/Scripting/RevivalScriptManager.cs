@@ -2,12 +2,14 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tunnel_Next.Services.Scripting
@@ -21,11 +23,12 @@ namespace Tunnel_Next.Services.Scripting
         private readonly string _userResourcesFolder;
         private readonly string _compiledFolder;
         private readonly string _compilationCacheFile;
-        private readonly Dictionary<string, RevivalScriptInfo> _scriptRegistry = new();
+        private readonly ConcurrentDictionary<string, RevivalScriptInfo> _scriptRegistry = new();
         private readonly AssemblyReferenceManager _assemblyReferenceManager;
         private CompilationCache _compilationCache = new();
         // 移除了_compiledScripts字段，不再缓存实例
-        private bool _isInitialized = false;
+        private volatile bool _isInitialized = false;
+        private readonly object _compilationCacheLock = new object();
 
         /// <summary>
         /// 脚本系统是否已初始化
@@ -67,7 +70,6 @@ namespace Tunnel_Next.Services.Scripting
         /// </summary>
         public void ScanRevivalScripts()
         {
-
             // 检查并执行引用配置文件迁移
             MigrateReferenceConfigsIfNeeded();
 
@@ -75,7 +77,52 @@ namespace Tunnel_Next.Services.Scripting
 
             // 递归扫描所有.cs文件
             ScanDirectory(_userScriptsFolder);
+        }
 
+        /// <summary>
+        /// 异步扫描Revival Scripts（多线程版本）
+        /// </summary>
+        public async Task ScanRevivalScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+        {
+            progress?.Report("正在迁移引用配置文件...");
+
+            // 检查并执行引用配置文件迁移
+            MigrateReferenceConfigsIfNeeded();
+
+            _scriptRegistry.Clear();
+
+            progress?.Report("正在收集脚本文件...");
+
+            // 收集所有脚本文件
+            var scriptFiles = new List<string>();
+            await Task.Run(() => CollectScriptFiles(_userScriptsFolder, scriptFiles), cancellationToken);
+
+            if (scriptFiles.Count == 0)
+            {
+                progress?.Report("未找到脚本文件");
+                return;
+            }
+
+            progress?.Report($"找到 {scriptFiles.Count} 个脚本文件，开始并行解析...");
+
+            // 使用并行处理来解析脚本
+            var semaphore = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
+            var tasks = scriptFiles.Select(async filePath =>
+            {
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    await Task.Run(() => RegisterRevivalScript(filePath), cancellationToken);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            progress?.Report($"脚本解析完成，成功注册 {_scriptRegistry.Count} 个脚本");
         }
 
         /// <summary>
@@ -105,7 +152,35 @@ namespace Tunnel_Next.Services.Scripting
             catch (Exception ex)
             {
                 var errorMsg = $"[脚本目录扫描失败] {directory}: {ex.Message}";
-                Console.WriteLine(errorMsg);
+                Debug.WriteLine(errorMsg);
+                Trace.WriteLine(errorMsg);
+            }
+        }
+
+        /// <summary>
+        /// 收集脚本文件（用于多线程处理）
+        /// </summary>
+        private void CollectScriptFiles(string directory, List<string> scriptFiles)
+        {
+            try
+            {
+                // 收集C#脚本文件
+                scriptFiles.AddRange(Directory.GetFiles(directory, "*.cs"));
+
+                // 递归收集子目录
+                foreach (var subDir in Directory.GetDirectories(directory))
+                {
+                    // 跳过编译输出目录和资源目录
+                    var dirName = Path.GetFileName(subDir);
+                    if (dirName == "compiled" || dirName == "rivivalresources")
+                        continue;
+
+                    CollectScriptFiles(subDir, scriptFiles);
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"[脚本文件收集失败] {directory}: {ex.Message}";
                 Debug.WriteLine(errorMsg);
                 Trace.WriteLine(errorMsg);
             }
@@ -139,7 +214,6 @@ namespace Tunnel_Next.Services.Scripting
             {
                 var scriptName = Path.GetFileName(filePath);
                 var errorMsg = $"[脚本注册失败] {scriptName}: {ex.Message}";
-                Console.WriteLine(errorMsg);
                 Debug.WriteLine(errorMsg);
                 Trace.WriteLine(errorMsg);
             }
@@ -156,8 +230,12 @@ namespace Tunnel_Next.Services.Scripting
                 // 先尝试编译脚本以获取类型信息
                 var sourceCode = File.ReadAllText(filePath);
 
+                // 为每个脚本生成唯一的临时程序集名称
+                var scriptName = Path.GetFileNameWithoutExtension(filePath);
+                var tempAssemblyName = $"TempAssembly_{scriptName}_{Guid.NewGuid():N}";
+
                 var compilation = CSharpCompilation.Create(
-                    "TempAssembly",
+                    tempAssemblyName,
                     new[] { CSharpSyntaxTree.ParseText(sourceCode) },
                     GetReferences(filePath),
                     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
@@ -167,15 +245,13 @@ namespace Tunnel_Next.Services.Scripting
 
                 if (!emitResult.Success)
                 {
-                    var scriptName = Path.GetFileName(filePath);
-                    Console.WriteLine($"[脚本解析失败] {scriptName}");
-                    Debug.WriteLine($"[脚本解析失败] {scriptName}");
-                    Trace.WriteLine($"[脚本解析失败] {scriptName}");
+                    var scriptFileName = Path.GetFileName(filePath);
+                    Debug.WriteLine($"[脚本解析失败] {scriptFileName}");
+                    Trace.WriteLine($"[脚本解析失败] {scriptFileName}");
 
                     foreach (var error in emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
                     {
                         var errorMsg = $"  错误: {error}";
-                        Console.WriteLine(errorMsg);
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
                     }
@@ -300,7 +376,6 @@ namespace Tunnel_Next.Services.Scripting
         /// </summary>
         public void CompileRevivalScripts()
         {
-
             foreach (var kvp in _scriptRegistry)
             {
                 var relativePath = kvp.Key;
@@ -321,21 +396,18 @@ namespace Tunnel_Next.Services.Scripting
                     else
                     {
                         var scriptName = Path.GetFileName(scriptInfo.FilePath);
-                        Console.WriteLine($"[脚本编译失败] {scriptName}");
                         Debug.WriteLine($"[脚本编译失败] {scriptName}");
                         Trace.WriteLine($"[脚本编译失败] {scriptName}");
 
                         foreach (var error in result.Errors)
                         {
                             var errorMsg = $"  错误: {error}";
-                            Console.WriteLine(errorMsg);
                             Debug.WriteLine(errorMsg);
                             Trace.WriteLine(errorMsg);
                         }
                         foreach (var warning in result.Warnings)
                         {
                             var warningMsg = $"  警告: {warning}";
-                            Console.WriteLine(warningMsg);
                             Debug.WriteLine(warningMsg);
                             Trace.WriteLine(warningMsg);
                         }
@@ -353,6 +425,88 @@ namespace Tunnel_Next.Services.Scripting
             }
 
             _isInitialized = true;
+        }
+
+        /// <summary>
+        /// 异步编译所有Revival Scripts（多线程版本）
+        /// </summary>
+        public async Task CompileRevivalScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+        {
+            var scriptsToCompile = _scriptRegistry.Values
+                .Where(NeedsRecompilation)
+                .ToList();
+
+            if (scriptsToCompile.Count == 0)
+            {
+                progress?.Report("所有脚本都是最新的，无需编译");
+                _isInitialized = true;
+                return;
+            }
+
+            progress?.Report($"需要编译 {scriptsToCompile.Count} 个脚本，开始并行编译...");
+
+            var semaphore = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
+            var compiledCount = 0;
+            var failedCount = 0;
+
+            var tasks = scriptsToCompile.Select(async scriptInfo =>
+            {
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var result = await Task.Run(() => CompileRevivalScript(scriptInfo), cancellationToken);
+
+                    if (result.Success)
+                    {
+                        scriptInfo.IsCompiled = true;
+                        scriptInfo.CompiledAssemblyPath = result.AssemblyPath;
+                        Interlocked.Increment(ref compiledCount);
+                    }
+                    else
+                    {
+                        var scriptName = Path.GetFileName(scriptInfo.FilePath);
+                        Debug.WriteLine($"[脚本编译失败] {scriptName}");
+                        Trace.WriteLine($"[脚本编译失败] {scriptName}");
+
+                        foreach (var error in result.Errors)
+                        {
+                            var errorMsg = $"  错误: {error}";
+                            Debug.WriteLine(errorMsg);
+                            Trace.WriteLine(errorMsg);
+                        }
+                        foreach (var warning in result.Warnings)
+                        {
+                            var warningMsg = $"  警告: {warning}";
+                            Debug.WriteLine(warningMsg);
+                            Trace.WriteLine(warningMsg);
+                        }
+                        Interlocked.Increment(ref failedCount);
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            // 标记未需要编译的脚本为已编译
+            foreach (var kvp in _scriptRegistry)
+            {
+                var scriptInfo = kvp.Value;
+                if (!NeedsRecompilation(scriptInfo))
+                {
+                    if (!string.IsNullOrEmpty(scriptInfo.CompiledAssemblyPath) &&
+                        File.Exists(scriptInfo.CompiledAssemblyPath))
+                    {
+                        scriptInfo.IsCompiled = true;
+                    }
+                }
+            }
+
+            _isInitialized = true;
+            progress?.Report($"编译完成：成功 {compiledCount} 个，失败 {failedCount} 个");
         }
 
         // 移除了LoadCompiledRevivalScript方法，不再缓存实例
@@ -392,21 +546,18 @@ namespace Tunnel_Next.Services.Scripting
                 else
                 {
                     var scriptName = Path.GetFileName(scriptInfo.FilePath);
-                    Console.WriteLine($"[脚本实例创建失败] {scriptName}");
                     Debug.WriteLine($"[脚本实例创建失败] {scriptName}");
                     Trace.WriteLine($"[脚本实例创建失败] {scriptName}");
 
                     foreach (var error in result.Errors)
                     {
                         var errorMsg = $"  错误: {error}";
-                        Console.WriteLine(errorMsg);
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
                     }
                     foreach (var warning in result.Warnings)
                     {
                         var warningMsg = $"  警告: {warning}";
-                        Console.WriteLine(warningMsg);
                         Debug.WriteLine(warningMsg);
                         Trace.WriteLine(warningMsg);
                     }
@@ -494,7 +645,7 @@ namespace Tunnel_Next.Services.Scripting
                     result.Success = true;
                     result.AssemblyPath = outputPath;
 
-                    // 更新编译缓存
+                    // 更新编译缓存（线程安全）
                     var cacheEntry = new CompilationCacheEntry
                     {
                         ScriptPath = relativePath,
@@ -502,7 +653,10 @@ namespace Tunnel_Next.Services.Scripting
                         LastModified = File.GetLastWriteTime(scriptInfo.FilePath),
                         CompiledAt = DateTime.Now
                     };
-                    _compilationCache.CompiledScripts[relativePath] = cacheEntry;
+                    lock (_compilationCacheLock)
+                    {
+                        _compilationCache.CompiledScripts[relativePath] = cacheEntry;
+                    }
                     SaveCompilationCache();
 
                     // 输出编译成功信息
@@ -521,21 +675,18 @@ namespace Tunnel_Next.Services.Scripting
 
                     // 输出编译失败信息
                     var scriptName = Path.GetFileName(scriptInfo.FilePath);
-                    Console.WriteLine($"[脚本编译失败] {scriptName}");
                     Debug.WriteLine($"[脚本编译失败] {scriptName}");
                     Trace.WriteLine($"[脚本编译失败] {scriptName}");
 
                     foreach (var error in result.Errors)
                     {
                         var errorMsg = $"  错误: {error}";
-                        Console.WriteLine(errorMsg);
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
                     }
                     foreach (var warning in result.Warnings)
                     {
                         var warningMsg = $"  警告: {warning}";
-                        Console.WriteLine(warningMsg);
                         Debug.WriteLine(warningMsg);
                         Trace.WriteLine(warningMsg);
                     }
@@ -549,14 +700,12 @@ namespace Tunnel_Next.Services.Scripting
                 // 输出编译异常信息
                 var scriptName = Path.GetFileName(scriptInfo.FilePath);
                 var exceptionMsg = $"[脚本编译异常] {scriptName}: {ex.Message}";
-                Console.WriteLine(exceptionMsg);
                 Debug.WriteLine(exceptionMsg);
                 Trace.WriteLine(exceptionMsg);
 
                 if (ex.StackTrace != null)
                 {
                     var stackTraceMsg = $"  堆栈跟踪: {ex.StackTrace}";
-                    Console.WriteLine(stackTraceMsg);
                     Debug.WriteLine(stackTraceMsg);
                     Trace.WriteLine(stackTraceMsg);
                 }
@@ -733,17 +882,20 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 保存编译缓存
+        /// 保存编译缓存（线程安全）
         /// </summary>
         private void SaveCompilationCache()
         {
             try
             {
-                var json = JsonSerializer.Serialize(_compilationCache, new JsonSerializerOptions
+                lock (_compilationCacheLock)
                 {
-                    WriteIndented = true
-                });
-                File.WriteAllText(_compilationCacheFile, json);
+                    var json = JsonSerializer.Serialize(_compilationCache, new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+                    File.WriteAllText(_compilationCacheFile, json);
+                }
             }
             catch (Exception ex)
             {

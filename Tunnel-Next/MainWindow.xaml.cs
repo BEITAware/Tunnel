@@ -98,20 +98,22 @@ namespace Tunnel_Next
                     workFolderService.UserScriptsFolder,
                     workFolderService.UserResourcesFolder);
 
-                _viewModel.TaskStatus = "正在扫描Revival Scripts...";
+                // 创建进度报告器
+                var progress = new Progress<string>(status =>
+                {
+                    Dispatcher.InvokeAsync(() => _viewModel.TaskStatus = status);
+                });
 
-                // 扫描Revival Scripts
-                _revivalScriptManager.ScanRevivalScripts();
+                // 使用多线程扫描Revival Scripts
+                await _revivalScriptManager.ScanRevivalScriptsAsync(progress);
 
                 _viewModel.TaskStatus = "正在创建脚本资源文件夹...";
 
                 // 确保所有脚本的资源文件夹存在
                 _revivalScriptManager.EnsureAllScriptResourceFolders();
 
-                _viewModel.TaskStatus = "正在编译Revival Scripts...";
-
-                // 编译Revival Scripts
-                await Task.Run(() => _revivalScriptManager.CompileRevivalScripts());
+                // 使用多线程编译Revival Scripts
+                await _revivalScriptManager.CompileRevivalScriptsAsync(progress);
 
                 // 在UI线程上完成初始化
                 await Dispatcher.InvokeAsync(async () =>

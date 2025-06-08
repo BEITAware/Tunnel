@@ -95,6 +95,11 @@ namespace Tunnel_Next.Services.ImageProcessing
                         $"完全处理({nodesToProcess.Count}个节点)" :
                         $"选择性处理({nodesToProcess.Count}个待处理节点)";
 
+                    // 调试信息：记录哪些节点被标记为需要处理
+                    if (changedNodeIds != null && nodesToProcess.Any())
+                    {
+                        var markedNodeTitles = string.Join(", ", nodesToProcess.Select(n => n.Title));
+                    }
 
                     if (!nodesToProcess.Any())
                     {
@@ -548,7 +553,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 选择性拓扑排序算法 - 只处理标记为ToBeProcessed的节点，但考虑所有依赖关系
+        /// 选择性拓扑排序算法 - 处理标记为ToBeProcessed的节点及其必要的上游依赖
         /// </summary>
         private static List<Node>? SelectiveTopologicalSort(NodeGraph nodeGraph, List<Node> nodesToProcess)
         {
@@ -561,7 +566,15 @@ namespace Tunnel_Next.Services.ImageProcessing
             var inDegree = new Dictionary<int, int>();
             var nodesToProcessSet = new HashSet<int>(nodesToProcess.Select(n => n.Id));
 
-            // 1. 计算每个节点的入度（考虑所有节点，不仅仅是待处理的）
+            // 1. 收集所有需要处理的节点（包括上游依赖）
+            var allNodesToProcess = new HashSet<Node>(nodesToProcess);
+            foreach (var node in nodesToProcess)
+            {
+                CollectUpstreamNodes(node, nodeGraph, allNodesToProcess);
+            }
+
+
+            // 2. 计算每个节点的入度（考虑所有节点）
             foreach (var node in nodeGraph.Nodes)
             {
                 inDegree[node.Id] = 0;
@@ -575,35 +588,18 @@ namespace Tunnel_Next.Services.ImageProcessing
                 }
             }
 
-            foreach (var node in nodesToProcess)
+            // 3. 找到入度为0的节点作为起始点（从所有需要处理的节点中找）
+            var currentLayer = allNodesToProcess.Where(n => inDegree[n.Id] == 0).ToList();
+
+            if (currentLayer.Count == 0 && allNodesToProcess.Any())
             {
-            }
-
-            // 2. 找到待处理节点中入度为0的节点作为起始点
-            var currentLayer = nodesToProcess.Where(n => inDegree[n.Id] == 0).ToList();
-
-            // 如果没有入度为0的待处理节点，需要找到依赖链的起点
-            if (currentLayer.Count == 0)
-            {
-                // 找到待处理节点的所有上游依赖
-                var upstreamNodes = new HashSet<Node>();
-                foreach (var node in nodesToProcess)
-                {
-                    CollectUpstreamNodes(node, nodeGraph, upstreamNodes);
-                }
-
-                // 从上游节点中找到入度为0的节点
-                currentLayer = upstreamNodes.Where(n => inDegree[n.Id] == 0).ToList();
-
-                if (currentLayer.Count == 0 && nodesToProcess.Any())
-                {
-                    // 最后的备选方案：选择第一个待处理节点
-                    currentLayer.Add(nodesToProcess.First());
-                }
+                // 如果没有入度为0的节点，选择第一个节点（可能存在循环依赖）
+                currentLayer.Add(allNodesToProcess.First());
             }
 
 
-            // 3. 逐层处理节点
+
+            // 4. 逐层处理节点
             var maxIterations = nodeGraph.Nodes.Count + 10;
             var iterations = 0;
 
@@ -611,19 +607,13 @@ namespace Tunnel_Next.Services.ImageProcessing
             {
                 iterations++;
 
-                // 将当前层的节点添加到结果中（只添加需要处理的节点）
-                var nodesToAdd = currentLayer.Where(n => nodesToProcessSet.Contains(n.Id)).ToList();
-                result.AddRange(nodesToAdd);
+                // 将当前层的所有节点添加到结果中（包括上游依赖节点）
+                result.AddRange(currentLayer);
 
                 foreach (var node in currentLayer)
                 {
                     processed.Add(node.Id);
-                    if (nodesToProcessSet.Contains(node.Id))
-                    {
-                    }
-                    else
-                    {
-                    }
+                    var nodeType = nodesToProcessSet.Contains(node.Id) ? "目标节点" : "依赖节点";
                 }
 
                 // 找到下一层的节点
@@ -639,7 +629,9 @@ namespace Tunnel_Next.Services.ImageProcessing
                             var inputNode = connection.InputNode;
                             inDegree[inputNode.Id]--;
 
-                            if (inDegree[inputNode.Id] == 0 && !processed.Contains(inputNode.Id))
+                            // 只有在需要处理的节点集合中的节点才加入下一层
+                            if (inDegree[inputNode.Id] == 0 && !processed.Contains(inputNode.Id) &&
+                                allNodesToProcess.Contains(inputNode))
                             {
                                 if (!nextLayer.Contains(inputNode))
                                 {

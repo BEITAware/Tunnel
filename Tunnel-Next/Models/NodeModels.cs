@@ -653,6 +653,11 @@ namespace Tunnel_Next.Models
 
             // 查找所有从此节点输出的连接
             var outputConnections = nodeGraph.Connections.Where(c => c.OutputNode?.Id == Id);
+            var downstreamCount = outputConnections.Count();
+
+            if (downstreamCount > 0)
+            {
+            }
 
             foreach (var connection in outputConnections)
             {
@@ -761,10 +766,10 @@ namespace Tunnel_Next.Models
         /// <param name="connection">发生变化的连接</param>
         public void HandleConnectionChange(NodeConnection connection)
         {
-            if (connection.InputNode != null)
+            if (connection.OutputNode != null)
             {
-                // 标记输入节点及其下游节点需要处理
-                connection.InputNode.MarkDownstreamForProcessing(this);
+                // 标记连接发出方（输出节点）及其所有下游节点需要处理
+                connection.OutputNode.MarkDownstreamForProcessing(this);
             }
         }
     }

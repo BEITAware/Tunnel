@@ -594,13 +594,17 @@ namespace Tunnel_Next.ViewModels
 
                 if (connectionsCreated > 0)
                 {
-                    // 连接创建后触发增量处理
+                    // 自动连接创建后触发增量处理 - 处理连接发出方的下游节点
                     _ = Task.Run(async () =>
                     {
                         try
                         {
                             var nodeGraph = CreateNodeGraph();
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { inputNode });
+
+                            // 标记输出节点及其下游节点需要处理
+                            outputNode.MarkDownstreamForProcessing(nodeGraph);
+
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode });
 
                             if (result.Success)
                             {
@@ -837,21 +841,30 @@ namespace Tunnel_Next.ViewModels
 
                     if (connection != null)
                     {
-                        // 连接创建后触发增量处理
+                        // 连接创建后触发增量处理 - 处理连接发出方的下游节点
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 var nodeGraph = CreateNodeGraph();
-                                var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { node });
 
-                                if (result.Success)
+                                // 处理连接变化，标记连接发出方的下游节点
+                                nodeGraph.HandleConnectionChange(connection);
+
+                                // 处理连接发出方（输出节点）
+                                var outputNode = connection.OutputNode;
+                                if (outputNode != null)
                                 {
-                                    // 在UI线程触发预览更新
-                                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                                    var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode });
+
+                                    if (result.Success)
                                     {
-                                        PreviewUpdateRequested?.Invoke();
-                                    });
+                                        // 在UI线程触发预览更新
+                                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                                        {
+                                            PreviewUpdateRequested?.Invoke();
+                                        });
+                                    }
                                 }
                             }
                             catch (Exception)
@@ -929,7 +942,7 @@ namespace Tunnel_Next.ViewModels
                 }
             }
 
-            // 如果有连接被删除，触发处理
+            // 如果有连接被删除，触发处理 - 处理连接发出方的下游节点
             if (connectionsToRemove.Count > 0)
             {
                 _ = Task.Run(async () =>
@@ -937,15 +950,32 @@ namespace Tunnel_Next.ViewModels
                     try
                     {
                         var nodeGraph = CreateNodeGraph();
-                        var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { node });
 
-                        if (result.Success)
+                        // 收集所有受影响的输出节点
+                        var affectedOutputNodes = new HashSet<Node>();
+
+                        foreach (var connection in connectionsToRemove)
                         {
-                            // 在UI线程触发预览更新
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            if (connection.OutputNode != null)
                             {
-                                PreviewUpdateRequested?.Invoke();
-                            });
+                                // 标记连接发出方的下游节点需要处理
+                                connection.OutputNode.MarkDownstreamForProcessing(nodeGraph);
+                                affectedOutputNodes.Add(connection.OutputNode);
+                            }
+                        }
+
+                        if (affectedOutputNodes.Count > 0)
+                        {
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, affectedOutputNodes.ToArray());
+
+                            if (result.Success)
+                            {
+                                // 在UI线程触发预览更新
+                                await Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    PreviewUpdateRequested?.Invoke();
+                                });
+                            }
                         }
                     }
                     catch (Exception)
@@ -1021,19 +1051,21 @@ namespace Tunnel_Next.ViewModels
 
             if (connection != null)
             {
-                // 拖拽连接创建后触发选择性处理
+                // 拖拽连接创建后触发选择性处理 - 处理连接发出方的下游节点
                 _ = Task.Run(async () =>
                 {
                     try
                     {
                         var nodeGraph = CreateNodeGraph();
-                        var targetNode = connection.InputNode;
-                        if (targetNode != null)
-                        {
-                            // 处理连接变化，标记受影响的节点
-                            nodeGraph.HandleConnectionChange(connection);
 
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, [targetNode]);
+                        // 处理连接变化，标记连接发出方的下游节点
+                        nodeGraph.HandleConnectionChange(connection);
+
+                        // 处理连接发出方（输出节点）
+                        var outputNode = connection.OutputNode;
+                        if (outputNode != null)
+                        {
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, [outputNode]);
 
                             if (result.Success)
                             {
