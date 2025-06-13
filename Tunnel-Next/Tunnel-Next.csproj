@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\*.png" />
+	<Resource Include="resources\*.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,15 +9,15 @@
     <Color x:Key="WindowForegroundColor">#FF333333</Color>
     
     <!-- 主题特定画笔 -->
-    <SolidColorBrush x:Key="WorkAreaBackgroundBrush" Color="{DynamicResource WorkAreaBackgroundColor}"/>
-    <SolidColorBrush x:Key="WorkAreaBorderBrush" Color="{DynamicResource WorkAreaBorderColor}"/>
+    <SolidColorBrush x:Key="AeroWorkAreaBackgroundBrush" Color="{DynamicResource WorkAreaBackgroundColor}"/>
+    <SolidColorBrush x:Key="AeroWorkAreaBorderBrush" Color="{DynamicResource WorkAreaBorderColor}"/>
     <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{DynamicResource WindowBackgroundColor}"/>
     <SolidColorBrush x:Key="WindowForegroundBrush" Color="{DynamicResource WindowForegroundColor}"/>
     
     <!-- 面板和工作区风格 -->
-    <Style x:Key="WorkAreaStyle" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource WorkAreaBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource WorkAreaBorderBrush}"/>
+    <Style x:Key="AeroWorkAreaStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource AeroWorkAreaBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AeroWorkAreaBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="3"/>
     </Style>

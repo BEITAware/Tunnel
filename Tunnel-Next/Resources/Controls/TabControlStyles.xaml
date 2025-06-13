@@ -5,31 +5,44 @@
     <Style x:Key="RibbonTabStyle" TargetType="TabItem">
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontSize" Value="12"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="#99FFFFFF"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Border x:Name="border"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            CornerRadius="2,2,0,0"
-                            Margin="0,0,2,0">
-                        <!-- 默认未选中状态背景 -->
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0.499993,0" EndPoint="0.499993,1">
-                                <GradientStop Color="#FF435A69" Offset="0"/>
-                                <GradientStop Color="#FF374D5A" Offset="0.517625"/>
-                                <GradientStop Color="#FE334853" Offset="0.528757"/>
-                                <GradientStop Color="#FF324551" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <Grid>
+                        <!-- 添加阴影效果 -->
+                        <Border x:Name="shadowBorder"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="2,2,0,0"
+                                Margin="1,1,3,0">
+                            <Border.Effect>
+                                <DropShadowEffect ShadowDepth="1" BlurRadius="3" Opacity="0.3" Direction="315" />
+                            </Border.Effect>
+                        </Border>
+                        
+                        <Border x:Name="border"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="2,2,0,0"
+                                Margin="0,0,2,0">
+                            <!-- 默认未选中状态背景 - 使用idletab样式 -->
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0.499992,0" EndPoint="0.499992,1">
+                                    <GradientStop Color="#FFFFFFFF" Offset="0"/>
+                                    <GradientStop Color="#35CEEEFF" Offset="0.55102"/>
+                                    <GradientStop Color="#652D4957" Offset="0.554731"/>
+                                    <GradientStop Color="#55FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
 
-                        <ContentPresenter x:Name="ContentSite"
-                                        VerticalAlignment="Center"
-                                        HorizontalAlignment="Center"
-                                        ContentSource="Header"
-                                        Margin="{TemplateBinding Padding}"/>
-                    </Border>
+                            <ContentPresenter x:Name="ContentSite"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            ContentSource="Header"
+                                            Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <!-- 悬停状态 -->
                         <Trigger Property="IsMouseOver" Value="True">
@@ -38,16 +51,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FF5A7085" Duration="0:0:0.2"/>
+                                                      To="#FFECF5FF" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#FF4C6370" Duration="0:0:0.2"/>
+                                                      To="#55CEEEFF" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#FE485E69" Duration="0:0:0.2"/>
+                                                      To="#752D4957" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#FF475B67" Duration="0:0:0.2"/>
+                                                      To="#75FFFFFF" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -56,16 +69,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FF435A69" Duration="0:0:0.2"/>
+                                                      To="#FFFFFFFF" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#FF374D5A" Duration="0:0:0.2"/>
+                                                      To="#35CEEEFF" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#FE334853" Duration="0:0:0.2"/>
+                                                      To="#652D4957" Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#FF324551" Duration="0:0:0.2"/>
+                                                      To="#55FFFFFF" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -73,6 +86,12 @@
 
                         <!-- 选中状态 -->
                         <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="shadowBorder" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect ShadowDepth="1.5" BlurRadius="5" Opacity="0.4" Direction="315" />
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground" Value="White" />
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -96,16 +115,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FF435A69" Duration="0:0:0.3"/>
+                                                      To="#FFFFFFFF" Duration="0:0:0.3"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#FF374D5A" Duration="0:0:0.3"/>
+                                                      To="#35CEEEFF" Duration="0:0:0.3"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#FE334853" Duration="0:0:0.3"/>
+                                                      To="#652D4957" Duration="0:0:0.3"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#FF324551" Duration="0:0:0.3"/>
+                                                      To="#55FFFFFF" Duration="0:0:0.3"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>

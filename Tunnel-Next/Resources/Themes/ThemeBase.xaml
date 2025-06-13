@@ -69,4 +69,22 @@
         <GradientStop Color="{DynamicResource AeroPressedStartColor}" Offset="0"/>
         <GradientStop Color="{DynamicResource AeroPressedEndColor}" Offset="1"/>
     </LinearGradientBrush>
+    
+    <!-- Ribbon内容区域背景画笔 - 基于designs/RibbonContentBackgroundV3.xaml -->
+    <LinearGradientBrush x:Key="RibbonContentBackgroundBrush" StartPoint="0.5,-0.381867" EndPoint="0.5,1.38187">
+        <GradientStop Color="#FF6A94C5" Offset="0"/>
+        <GradientStop Color="#FF4679B3" Offset="0.0871985"/>
+        <GradientStop Color="#FF052C63" Offset="0.410019"/>
+        <GradientStop Color="#FE03133E" Offset="0.576994"/>
+        <GradientStop Color="#FF000B2D" Offset="0.706865"/>
+    </LinearGradientBrush>
+    
+    <!-- Ribbon内容区域遮罩画笔 - 基于designs/RibbonContentBackgroundV3CoverMask.xaml -->
+    <LinearGradientBrush x:Key="RibbonContentCoverMaskBrush" StartPoint="-6.56999e-008,0.500001" EndPoint="1,0.500001">
+        <GradientStop Color="#3B6A94C5" Offset="0"/>
+        <GradientStop Color="#264679B3" Offset="0.0871985"/>
+        <GradientStop Color="#3C052C63" Offset="0.317254"/>
+        <GradientStop Color="#5203133E" Offset="0.576994"/>
+        <GradientStop Color="#C5000B2D" Offset="0.862709"/>
+    </LinearGradientBrush>
 </ResourceDictionary> 

@@ -4,6 +4,8 @@
         <!-- 主题基础 - 必须首先加载，确保所有基础资源都可用 -->
         <ResourceDictionary Source="Themes/ThemeBase.xaml"/>
         <ResourceDictionary Source="Themes/AeroTheme.xaml"/>
+        <!-- 主窗口资源 -->
+        <ResourceDictionary Source="Themes/MainWindowResources.xaml"/>
 
         <!-- 控件样式 - 依赖于主题基础，按依赖关系排序 -->
         <ResourceDictionary Source="Controls/ButtonStyles.xaml"/>

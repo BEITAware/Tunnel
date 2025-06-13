@@ -165,7 +165,7 @@
         </Grid.RowDefinitions>
 
         <!-- 标题栏 -->
-        <Border Grid.Row="0" Background="{DynamicResource PanelHeaderBackgroundBrush}"
+        <Border Grid.Row="0" Background="{DynamicResource ButtonHoverBackground}"
                 BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="胶片预览" FontWeight="Bold"

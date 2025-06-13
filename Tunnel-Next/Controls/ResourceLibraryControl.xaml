@@ -110,7 +110,7 @@
         </Grid.RowDefinitions>
         
         <!-- 标题栏 -->
-        <Border Grid.Row="0" Background="{DynamicResource PanelHeaderBackgroundBrush}"
+        <Border Grid.Row="0" Background="{DynamicResource ToolbarBackgroundBrush}"
                 BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="资源库" FontWeight="Bold"

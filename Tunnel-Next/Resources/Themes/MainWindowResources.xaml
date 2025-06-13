@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 颜色资源 -->
+    <SolidColorBrush x:Key="WorkAreaBackgroundBrush" Color="#FF1A1F28"/>
+    <SolidColorBrush x:Key="WorkAreaBorderBrush" Color="#FF1A1F28"/>
+    <SolidColorBrush x:Key="LightTextBrush" Color="White"/>
+    <SolidColorBrush x:Key="StatusActiveBrush" Color="#FF00FF00"/>
+    <SolidColorBrush x:Key="TransparentBrush" Color="Transparent"/>
+    <SolidColorBrush x:Key="DarkBorderBrush" Color="#FF000000"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#E0E0E0"/>
+
+    <!-- 布局资源 -->
+    <Thickness x:Key="ZeroThickness">0</Thickness>
+    <Thickness x:Key="StandardMargin">5</Thickness>
+    <Thickness x:Key="SmallMargin">2</Thickness>
+    <Thickness x:Key="HeaderPadding">8,5</Thickness>
+    <Thickness x:Key="ContentPadding">8,4</Thickness>
+    <Thickness x:Key="ToolMargin">0,2,0,2</Thickness>
+    <Thickness x:Key="IconMargin">0,0,4,0</Thickness>
+    <Thickness x:Key="ButtonSpacing">0,0,5,0</Thickness>
+    <Thickness x:Key="TabControlMargin">2,0,2,0</Thickness>
+    
+    <!-- 工作区域样式 -->
+    <Style x:Key="WorkAreaStyle" TargetType="Border">
+        <Setter Property="Background">
+            <Setter.Value>
+                <SolidColorBrush Color="#FF1A1F28"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderBrush">
+            <Setter.Value>
+                <SolidColorBrush Color="#FF1A1F28"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    
+    <!-- Tab页内容边框样式 -->
+    <Style x:Key="TabContentBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource RibbonContentBackgroundBrush}"/>
+        <Setter Property="Padding" Value="8,4"/>
+    </Style>
+    
+    <!-- 带遮罩的Tab页内容容器 -->
+    <Style x:Key="RibbonContentContainerStyle" TargetType="Grid">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    
+</ResourceDictionary> 
