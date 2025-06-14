@@ -1,9 +1,12 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
+    <!-- 动画缓动函数 -->
+    <CubicEase x:Key="EaseInOut" EasingMode="EaseInOut"/>
+    
     <!-- Ribbon标签页样式 -->
     <Style x:Key="RibbonTabStyle" TargetType="TabItem">
-        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Padding" Value="18,6"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="#99FFFFFF"/>
         <Setter Property="Template">
@@ -23,7 +26,7 @@
                         
                         <Border x:Name="border"
                                 BorderBrush="Transparent"
-                                BorderThickness="-1"
+                                BorderThickness="0"
                                 CornerRadius="1,1,0,0"
                                 Margin="0,0,2,0">
                             <!-- 默认未选中状态背景 - 使用idletab样式 -->
@@ -44,23 +47,23 @@
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <!-- 悬停状态 -->
+                        <!-- 悬停状态 - 动画优化更流畅 -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FFECF5FF" Duration="0:0:0.2"/>
+                                                      To="#FFECF5FF" Duration="0:0:0.12" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#55CEEEFF" Duration="0:0:0.2"/>
+                                                      To="#55CEEEFF" Duration="0:0:0.12" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#752D4957" Duration="0:0:0.2"/>
+                                                      To="#752D4957" Duration="0:0:0.12" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#75FFFFFF" Duration="0:0:0.2"/>
+                                                      To="#75FFFFFF" Duration="0:0:0.12" EasingFunction="{StaticResource EaseInOut}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -69,26 +72,26 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FFFFFFFF" Duration="0:0:0.2"/>
+                                                      To="#FFFFFFFF" Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#35CEEEFF" Duration="0:0:0.2"/>
+                                                      To="#35CEEEFF" Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#652D4957" Duration="0:0:0.2"/>
+                                                      To="#652D4957" Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#55FFFFFF" Duration="0:0:0.2"/>
+                                                      To="#55FFFFFF" Duration="0:0:0.15" EasingFunction="{StaticResource EaseInOut}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
 
-                        <!-- 选中状态 -->
+                        <!-- 选中状态 - 动画优化更灵动 -->
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="shadowBorder" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect ShadowDepth="1.5" BlurRadius="5" Opacity="0.4" Direction="315" />
+                                    <DropShadowEffect ShadowDepth="1.5" BlurRadius="5" Opacity="0.45" Direction="315" />
                                 </Setter.Value>
                             </Setter>
                             <Setter Property="Foreground" Value="White" />
@@ -97,16 +100,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#28FFFFFF" Duration="0:0:0.3"/>
+                                                      To="#28FFFFFF" Duration="0:0:0.18" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#35CEEEFF" Duration="0:0:0.3"/>
+                                                      To="#35CEEEFF" Duration="0:0:0.18" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#652D4957" Duration="0:0:0.3"/>
+                                                      To="#652D4957" Duration="0:0:0.18" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#FF6FD4D1" Duration="0:0:0.3"/>
+                                                      To="#FF6FD4D1" Duration="0:0:0.18" EasingFunction="{StaticResource EaseInOut}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -115,16 +118,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)"
-                                                      To="#FFFFFFFF" Duration="0:0:0.3"/>
+                                                      To="#FFFFFFFF" Duration="0:0:0.22" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                      To="#35CEEEFF" Duration="0:0:0.3"/>
+                                                      To="#35CEEEFF" Duration="0:0:0.22" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[2].(GradientStop.Color)"
-                                                      To="#652D4957" Duration="0:0:0.3"/>
+                                                      To="#652D4957" Duration="0:0:0.22" EasingFunction="{StaticResource EaseInOut}"/>
                                         <ColorAnimation Storyboard.TargetName="border"
                                                       Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.GradientStops)[3].(GradientStop.Color)"
-                                                      To="#55FFFFFF" Duration="0:0:0.3"/>
+                                                      To="#55FFFFFF" Duration="0:0:0.22" EasingFunction="{StaticResource EaseInOut}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>

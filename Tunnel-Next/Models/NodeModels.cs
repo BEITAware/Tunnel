@@ -416,6 +416,7 @@ namespace Tunnel_Next.Models
         private object? _viewModel;
         private bool _toBeProcessed = true; // 默认新节点需要处理
         private bool _showStatusIndicator = false; // 是否显示状态指示器
+        private string _styleType = "V1"; // 节点样式类型：V1或V2
 
         public int Id
         {
@@ -555,6 +556,15 @@ namespace Tunnel_Next.Models
         {
             get => _showStatusIndicator;
             set { _showStatusIndicator = value; OnPropertyChanged(); }
+        }
+        
+        /// <summary>
+        /// 节点样式类型（V1或V2）
+        /// </summary>
+        public string StyleType
+        {
+            get => _styleType;
+            set { _styleType = value; OnPropertyChanged(); }
         }
 
         /// <summary>

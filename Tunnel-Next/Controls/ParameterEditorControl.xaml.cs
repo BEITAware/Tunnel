@@ -150,28 +150,45 @@ namespace Tunnel_Next.Controls
 
         private StackPanel CreateNodeInfoPanel()
         {
+            // 创建主面板
             var panel = new StackPanel
             {
-                Margin = new Thickness(0, 0, 0, 15),
-                Background = System.Windows.Media.Brushes.LightBlue
+                Margin = new Thickness(0, 0, 0, 15)
             };
-
-            panel.Children.Add(new TextBlock
+            
+            // 使用全局定义的基于设计文件的样式
+            var headerBorder = new Border
+            {
+                Style = (Style)Application.Current.Resources["AeroParameterPanelHeaderStyle"]
+            };
+            
+            // 创建内部内容面板 - 使用StackPanel更简单地排列
+            var contentPanel = new StackPanel();
+            
+            // 添加标题文本
+            var titleTextBlock = new TextBlock
             {
                 Text = SelectedNode!.Title,
-                FontWeight = FontWeights.Bold,
-                FontSize = 14,
-                Margin = new Thickness(8, 6, 8, 2)
-            });
+                Style = (Style)Application.Current.Resources["AeroParameterPanelHeaderTextStyle"]
+            };
+            contentPanel.Children.Add(titleTextBlock);
 
-            panel.Children.Add(new TextBlock
+            // 添加描述文本
+            if (!string.IsNullOrEmpty(SelectedNode.Description))
             {
-                Text = SelectedNode.Description,
-                FontSize = 11,
-                Foreground = System.Windows.Media.Brushes.DarkBlue,
-                Margin = new Thickness(8, 0, 8, 6),
-                TextWrapping = TextWrapping.Wrap
-            });
+                var descriptionTextBlock = new TextBlock
+                {
+                    Text = SelectedNode.Description,
+                    Style = (Style)Application.Current.Resources["AeroParameterPanelDescriptionTextStyle"]
+                };
+                contentPanel.Children.Add(descriptionTextBlock);
+            }
+            
+            // 将内容面板添加到标题栏边框
+            headerBorder.Child = contentPanel;
+            
+            // 将标题栏边框添加到主面板
+            panel.Children.Add(headerBorder);
 
             return panel;
         }

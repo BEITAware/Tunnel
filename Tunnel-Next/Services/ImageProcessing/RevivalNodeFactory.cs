@@ -15,6 +15,7 @@ namespace Tunnel_Next.Services.ImageProcessing
     public static class RevivalNodeFactory
     {
         private static RevivalScriptManager? _revivalScriptManager;
+        private static Random _random = new Random(); // 用于随机样式
 
         /// <summary>
         /// 获取所有可用的Revival Scripts节点类型
@@ -78,7 +79,6 @@ namespace Tunnel_Next.Services.ImageProcessing
         {
             try
             {
-
                 // 创建节点
                 var node = new Node
                 {
@@ -92,14 +92,14 @@ namespace Tunnel_Next.Services.ImageProcessing
                     Color = scriptInfo.Color
                 };
 
-                // 现在所有节点都是Revival Script节点，不需要特殊标记
+                // 随机分配V1或V2样式标记
+                node.StyleType = _random.Next(2) == 0 ? "V1" : "V2";
 
                 // 创建脚本实例
                 var scriptInstance = CreateRevivalScriptInstance(scriptInfo);
 
                 if (scriptInstance != null)
                 {
-
                     // 将脚本实例绑定到节点
                     node.Tag = scriptInstance;
 
@@ -118,8 +118,6 @@ namespace Tunnel_Next.Services.ImageProcessing
                 throw;
             }
         }
-
-
 
         /// <summary>
         /// 创建Revival Script实例

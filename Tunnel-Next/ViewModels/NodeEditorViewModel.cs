@@ -581,6 +581,9 @@ namespace Tunnel_Next.ViewModels
 
             // 4. 重置连接状态
             ResetConnectionState();
+            
+            // 5. 通知UI清理
+            ClearUIRequested?.Invoke();
         }
 
         private void ExecuteAutoConnectNodes(object[]? nodeArray)
@@ -1144,14 +1147,44 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
-
-                // 完全清除当前节点图
+                // 通知UI层清理节点控件，等待清理完成
+                var clearUITask = new TaskCompletionSource<bool>();
+                
+                // 注册一次性事件处理器，等待UI清理完成
+                EventHandler? uiClearedHandler = null;
+                uiClearedHandler = (s, e) => {
+                    clearUITask.TrySetResult(true);
+                    // 解除事件订阅
+                    if (UIClearedEvent != null && uiClearedHandler != null)
+                        UIClearedEvent -= uiClearedHandler;
+                };
+                
+                // 订阅UI清理完成事件
+                if (UIClearedEvent != null)
+                    UIClearedEvent += uiClearedHandler;
+                
+                // 触发UI清理请求
+                ClearUIRequested?.Invoke();
+                
+                // 等待UI清理完成，设置超时
+                var timeoutTask = Task.Delay(3000); // 3秒超时
+                var completedTask = await Task.WhenAny(clearUITask.Task, timeoutTask);
+                
+                // 如果是超时任务完成，记录日志
+                if (completedTask == timeoutTask)
+                {
+                    System.Diagnostics.Debug.WriteLine("等待UI清理超时，继续加载节点图");
+                    // 解除事件订阅
+                    if (UIClearedEvent != null && uiClearedHandler != null)
+                        UIClearedEvent -= uiClearedHandler;
+                }
+                
+                // 完全清除当前节点图（模型层面的清理）
                 ClearNodeGraph();
 
                 // 加载节点
                 foreach (var node in nodeGraph.Nodes)
                 {
-
                     // 监听节点参数变化
                     foreach (var parameter in node.Parameters)
                     {
@@ -1183,10 +1216,6 @@ namespace Tunnel_Next.ViewModels
                     {
                         rsb.ParameterExternallyChanged += HandleScriptParameterExternallyChanged;
                     }
-                    else
-                    {
-                    }
-
                 }
 
                 // 加载连接
@@ -1197,14 +1226,10 @@ namespace Tunnel_Next.ViewModels
                     {
                         Connections.Add(connection);
                     }
-                    else
-                    {
-                    }
                 }
 
                 // 重置选择状态
                 SelectedNode = null;
-
 
                 // 触发节点图修改事件以更新UI
                 NodeGraphModified?.Invoke();
@@ -1214,8 +1239,22 @@ namespace Tunnel_Next.ViewModels
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"加载节点图失败: {ex.Message}");
                 throw;
             }
+        }
+        
+        /// <summary>
+        /// UI清理完成事件
+        /// </summary>
+        public event EventHandler? UIClearedEvent;
+        
+        /// <summary>
+        /// 触发UI清理完成事件
+        /// </summary>
+        public void NotifyUIClearedEvent()
+        {
+            UIClearedEvent?.Invoke(this, EventArgs.Empty);
         }
 
         // 旧的EnsureAllNodesParametersRebuilt方法已移除，等待重构

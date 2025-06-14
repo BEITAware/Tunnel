@@ -8,6 +8,8 @@ using System.Windows.Shapes;
 using Tunnel_Next.Models;
 using Tunnel_Next.Services.ImageProcessing;
 using Tunnel_Next.Windows;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 
 namespace Tunnel_Next.Controls
 {
@@ -19,6 +21,8 @@ namespace Tunnel_Next.Controls
         private Node? _node;
         private bool _isDragging;
         private Point _lastMousePosition;
+        private const double DEFAULT_FONT_SIZE = 12.0; // 默认字体大小
+        private Random _random = new Random(); // 用于随机动画效果
 
         /// <summary>
         /// 移除ImageProcessor依赖，使用MVVM解耦架构
@@ -29,6 +33,485 @@ namespace Tunnel_Next.Controls
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        /// <summary>
+        /// 播放节点添加动画
+        /// </summary>
+        public void PlayAddAnimation()
+        {
+            // 初始状态设置
+            this.Opacity = 0;
+            
+            // 设置变换原点
+            this.RenderTransformOrigin = new Point(0.5, 0.5);
+            
+            // 创建缩放变换，但保留现有变换类型（如果已存在）
+            if (this.RenderTransform is ScaleTransform existingTransform)
+            {
+                existingTransform.ScaleX = 0.5;
+                existingTransform.ScaleY = 0.5;
+            }
+            else
+            {
+                this.RenderTransform = new ScaleTransform(0.5, 0.5);
+            }
+            
+            // 创建动画故事板
+            var storyboard = new Storyboard();
+            
+            // 透明度动画
+            var opacityAnimation = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(400),
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 }
+            };
+            Storyboard.SetTarget(opacityAnimation, this);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            storyboard.Children.Add(opacityAnimation);
+            
+            // X轴缩放动画 - 从小到大
+            var scaleXAnimation = new DoubleAnimation
+            {
+                From = 0.5,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(500),
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 }
+            };
+            Storyboard.SetTarget(scaleXAnimation, this);
+            Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+            storyboard.Children.Add(scaleXAnimation);
+            
+            // Y轴缩放动画 - 从小到大
+            var scaleYAnimation = new DoubleAnimation
+            {
+                From = 0.5,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(500),
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 }
+            };
+            Storyboard.SetTarget(scaleYAnimation, this);
+            Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+            storyboard.Children.Add(scaleYAnimation);
+            
+            // 添加阴影动画
+            var shadowEffect = NodeBorder.Effect as DropShadowEffect;
+            if (shadowEffect != null)
+            {
+                var shadowAnimation = new DoubleAnimation
+                {
+                    From = 0,
+                    To = shadowEffect.BlurRadius,
+                    Duration = TimeSpan.FromMilliseconds(500),
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                };
+                Storyboard.SetTarget(shadowAnimation, NodeBorder);
+                Storyboard.SetTargetProperty(shadowAnimation, new PropertyPath("Effect.BlurRadius"));
+                storyboard.Children.Add(shadowAnimation);
+            }
+            
+            // 保存故事板引用以便清理
+            _addAnimationStoryboard = storyboard;
+            
+            // 动画完成后清理
+            storyboard.Completed += OnAddAnimationCompleted;
+            
+            // 启动动画，明确指定目标对象
+            storyboard.Begin(this, true);
+        }
+        
+        // 添加动画的故事板引用
+        private Storyboard? _addAnimationStoryboard;
+        
+        /// <summary>
+        /// 添加动画完成事件处理
+        /// </summary>
+        private void OnAddAnimationCompleted(object sender, EventArgs e)
+        {
+            try
+            {
+                // 清理故事板事件
+                if (_addAnimationStoryboard != null)
+                {
+                    _addAnimationStoryboard.Completed -= OnAddAnimationCompleted;
+                    _addAnimationStoryboard = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Add animation completion error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 控件卸载事件处理
+        /// </summary>
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            // 控件卸载时清理所有资源
+            Cleanup();
+        }
+        
+        /// <summary>
+        /// 播放节点移除动画
+        /// </summary>
+        /// <param name="completedCallback">动画完成后的回调</param>
+        public void PlayRemoveAnimation(Action completedCallback)
+        {
+            // 保存回调以供后续使用
+            _removeAnimationCallback = completedCallback;
+            
+            // 创建动画故事板
+            var storyboard = new Storyboard();
+            
+            // 透明度动画 - 更快速
+            var opacityAnimation = new DoubleAnimation
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(250), // 更快的动画
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseIn, Exponent = 3 } // 更急促的缓动
+            };
+            Storyboard.SetTarget(opacityAnimation, this);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            storyboard.Children.Add(opacityAnimation);
+            
+            // 随机选择动画效果，增加灵动感
+            var random = new Random();
+            int effectType = random.Next(3); // 0, 1, 2 三种效果
+            
+            if (effectType == 0) // 缩小并旋转效果
+            {
+                // X轴缩放动画 - 快速缩小
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.3 }
+                };
+                Storyboard.SetTarget(scaleXAnimation, this);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+                storyboard.Children.Add(scaleXAnimation);
+                
+                // Y轴缩放动画 - 快速缩小
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseIn, Amplitude = 0.3 }
+                };
+                Storyboard.SetTarget(scaleYAnimation, this);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+                storyboard.Children.Add(scaleYAnimation);
+                
+                // 添加旋转动画
+                var rotateAnimation = new DoubleAnimation
+                {
+                    To = random.Next(2) == 0 ? 90 : -90, // 随机顺时针或逆时针旋转
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CircleEase { EasingMode = EasingMode.EaseIn }
+                };
+                
+                // 确保有RotateTransform
+                if (this.RenderTransform is ScaleTransform)
+                {
+                    // 创建TransformGroup来组合缩放和旋转
+                    var oldTransform = this.RenderTransform as ScaleTransform;
+                    var transformGroup = new TransformGroup();
+                    transformGroup.Children.Add(new ScaleTransform(oldTransform.ScaleX, oldTransform.ScaleY));
+                    transformGroup.Children.Add(new RotateTransform(0));
+                    this.RenderTransform = transformGroup;
+                    
+                    // 设置旋转动画目标
+                    Storyboard.SetTarget(rotateAnimation, this);
+                    Storyboard.SetTargetProperty(rotateAnimation, new PropertyPath("RenderTransform.Children[1].Angle"));
+                    storyboard.Children.Add(rotateAnimation);
+                }
+            }
+            else if (effectType == 1) // 弹出效果
+            {
+                // X轴缩放动画 - 先变大再快速缩小
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseIn, Oscillations = 1, Springiness = 3 }
+                };
+                Storyboard.SetTarget(scaleXAnimation, this);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+                storyboard.Children.Add(scaleXAnimation);
+                
+                // Y轴缩放动画 - 先变大再快速缩小
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseIn, Oscillations = 1, Springiness = 3 }
+                };
+                Storyboard.SetTarget(scaleYAnimation, this);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+                storyboard.Children.Add(scaleYAnimation);
+            }
+            else // 快速收缩效果
+            {
+                // X轴缩放动画 - 快速收缩
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+                Storyboard.SetTarget(scaleXAnimation, this);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+                storyboard.Children.Add(scaleXAnimation);
+                
+                // Y轴缩放动画 - 快速收缩
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+                Storyboard.SetTarget(scaleYAnimation, this);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+                storyboard.Children.Add(scaleYAnimation);
+            }
+            
+            // 添加阴影动画
+            var shadowEffect = NodeBorder.Effect as DropShadowEffect;
+            if (shadowEffect != null)
+            {
+                var shadowAnimation = new DoubleAnimation
+                {
+                    From = shadowEffect.BlurRadius,
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(200), // 更快速的阴影消失
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
+                };
+                Storyboard.SetTarget(shadowAnimation, NodeBorder);
+                Storyboard.SetTargetProperty(shadowAnimation, new PropertyPath("Effect.BlurRadius"));
+                storyboard.Children.Add(shadowAnimation);
+            }
+            
+            // 动画完成后执行回调 - 使用实例方法而非lambda表达式
+            storyboard.Completed += OnRemoveAnimationCompleted;
+            
+            // 保存故事板引用以便清理
+            _removeAnimationStoryboard = storyboard;
+            
+            // 启动动画，明确指定目标对象
+            storyboard.Begin(this, true);
+        }
+        
+        // 移除动画的回调和故事板引用
+        private Action? _removeAnimationCallback;
+        private Storyboard? _removeAnimationStoryboard;
+        
+        /// <summary>
+        /// 移除动画完成事件处理
+        /// </summary>
+        private void OnRemoveAnimationCompleted(object sender, EventArgs e)
+        {
+            try
+            {
+                // 清理故事板事件
+                if (_removeAnimationStoryboard != null)
+                {
+                    _removeAnimationStoryboard.Completed -= OnRemoveAnimationCompleted;
+                    _removeAnimationStoryboard = null;
+                }
+                
+                // 执行回调
+                _removeAnimationCallback?.Invoke();
+                _removeAnimationCallback = null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Remove animation completion error: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 清理所有资源和事件
+        /// </summary>
+        public void Cleanup()
+        {
+            try
+            {
+                // 清理移除动画故事板
+                if (_removeAnimationStoryboard != null)
+                {
+                    _removeAnimationStoryboard.Completed -= OnRemoveAnimationCompleted;
+                    _removeAnimationStoryboard = null;
+                }
+                
+                // 清理添加动画故事板
+                if (_addAnimationStoryboard != null)
+                {
+                    _addAnimationStoryboard.Completed -= OnAddAnimationCompleted;
+                    _addAnimationStoryboard = null;
+                }
+                
+                // 清理回调
+                _removeAnimationCallback = null;
+                
+                // 清理节点引用
+                if (_node != null)
+                {
+                    _node.PropertyChanged -= OnNodePropertyChanged;
+                    _node.InputPorts.CollectionChanged -= OnInputPortsChanged;
+                    _node.OutputPorts.CollectionChanged -= OnOutputPortsChanged;
+                    _node = null;
+                }
+                
+                // 移除事件处理器
+                Loaded -= OnLoaded;
+                Unloaded -= OnUnloaded;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Cleanup error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 播放鼠标按下动画效果 (Metro风格)
+        /// </summary>
+        private void PlayMousePressAnimation(bool isPressed)
+        {
+            
+            var storyboard = new Storyboard();
+            
+            if (isPressed)
+            {
+                // 按下效果：轻微缩小
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    To = 0.95,
+                    Duration = TimeSpan.FromMilliseconds(100),
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                };
+                Storyboard.SetTarget(scaleXAnimation, this);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+                storyboard.Children.Add(scaleXAnimation);
+                
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    To = 0.95,
+                    Duration = TimeSpan.FromMilliseconds(100),
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                };
+                Storyboard.SetTarget(scaleYAnimation, this);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+                storyboard.Children.Add(scaleYAnimation);
+                
+                // 修改阴影效果
+                var shadowEffect = NodeBorder.Effect as DropShadowEffect;
+                if (shadowEffect != null)
+                {
+                    var shadowBlurAnimation = new DoubleAnimation
+                    {
+                        To = shadowEffect.BlurRadius * 0.7,
+                        Duration = TimeSpan.FromMilliseconds(100)
+                    };
+                    Storyboard.SetTarget(shadowBlurAnimation, NodeBorder);
+                    Storyboard.SetTargetProperty(shadowBlurAnimation, new PropertyPath("Effect.BlurRadius"));
+                    storyboard.Children.Add(shadowBlurAnimation);
+                    
+                    var shadowDepthAnimation = new DoubleAnimation
+                    {
+                        To = 3,
+                        Duration = TimeSpan.FromMilliseconds(100)
+                    };
+                    Storyboard.SetTarget(shadowDepthAnimation, NodeBorder);
+                    Storyboard.SetTargetProperty(shadowDepthAnimation, new PropertyPath("Effect.ShadowDepth"));
+                    storyboard.Children.Add(shadowDepthAnimation);
+                }
+            }
+            else
+            {
+                // 释放效果：恢复正常大小，带有弹性效果
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    To = 1.0,
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 2 }
+                };
+                Storyboard.SetTarget(scaleXAnimation, this);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath("RenderTransform.ScaleX"));
+                storyboard.Children.Add(scaleXAnimation);
+                
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    To = 1.0,
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 2 }
+                };
+                Storyboard.SetTarget(scaleYAnimation, this);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath("RenderTransform.ScaleY"));
+                storyboard.Children.Add(scaleYAnimation);
+                
+                // 恢复阴影效果
+                var shadowEffect = NodeBorder.Effect as DropShadowEffect;
+                if (shadowEffect != null)
+                {
+                    var shadowBlurAnimation = new DoubleAnimation
+                    {
+                        To = 12,
+                        Duration = TimeSpan.FromMilliseconds(200)
+                    };
+                    Storyboard.SetTarget(shadowBlurAnimation, NodeBorder);
+                    Storyboard.SetTargetProperty(shadowBlurAnimation, new PropertyPath("Effect.BlurRadius"));
+                    storyboard.Children.Add(shadowBlurAnimation);
+                    
+                    var shadowDepthAnimation = new DoubleAnimation
+                    {
+                        To = 6,
+                        Duration = TimeSpan.FromMilliseconds(200)
+                    };
+                    Storyboard.SetTarget(shadowDepthAnimation, NodeBorder);
+                    Storyboard.SetTargetProperty(shadowDepthAnimation, new PropertyPath("Effect.ShadowDepth"));
+                    storyboard.Children.Add(shadowDepthAnimation);
+                }
+            }
+            
+            storyboard.Begin();
+        }
+
+        /// <summary>
+        /// 根据当前缩放比例更新字体大小
+        /// </summary>
+        /// <param name="scale">当前缩放比例</param>
+        public void UpdateFontSizeForScale(double scale)
+        {
+            // 查找标题文本块
+            var titleTextBlock = TitleTextBlock;
+            
+            if (titleTextBlock != null)
+            {
+                // 当缩放比例小于1时，增大字体大小，但不超过节点本身
+                if (scale < 1.0)
+                {
+                    // 反比例调整：缩放越小，字体越大，但有上限
+                    double scaleFactor = Math.Min(3.0, 1.0 / scale); // 最大放大3倍
+                    double newFontSize = DEFAULT_FONT_SIZE * Math.Min(scaleFactor, 1.5); // 限制最大字体大小
+                    titleTextBlock.FontSize = newFontSize;
+                }
+                else
+                {
+                    // 恢复默认字体大小
+                    titleTextBlock.FontSize = DEFAULT_FONT_SIZE;
+                }
+            }
         }
 
         public Node? Node
@@ -80,6 +563,12 @@ namespace Tunnel_Next.Controls
             {
                 Canvas.SetLeft(this, _node.X);
                 Canvas.SetTop(this, _node.Y);
+            }
+            
+            // 设置变换原点，但不重置变换本身
+            if (this.RenderTransformOrigin != new Point(0.5, 0.5))
+            {
+                this.RenderTransformOrigin = new Point(0.5, 0.5);
             }
         }
 
@@ -134,15 +623,23 @@ namespace Tunnel_Next.Controls
 
                 portEllipse.MouseLeftButtonDown += (s, e) =>
                 {
-                    // 输入端口不开始拖拽，只能作为连接目标
-                    PortClicked?.Invoke(this, (_node, port.Name, false));
+                    // 确保_node不为null
+                    if (_node != null)
+                    {
+                        // 输入端口不开始拖拽，只能作为连接目标
+                        PortClicked?.Invoke(this, (_node, port.Name, false));
+                    }
                     e.Handled = true;
                 };
 
                 // 添加右键菜单处理
                 portEllipse.MouseRightButtonDown += (s, e) =>
                 {
-                    ShowPortContextMenu(port, false, portEllipse);
+                    // 确保_node不为null
+                    if (_node != null)
+                    {
+                        ShowPortContextMenu(port, false, portEllipse);
+                    }
                     e.Handled = true;
                 };
 
@@ -185,15 +682,19 @@ namespace Tunnel_Next.Controls
 
                 portEllipse.PreviewMouseLeftButtonDown += (s, e) =>
                 {
-
                     try {
-                        // 开始拖拽连接
-                        PortDragStarted?.Invoke(this, (_node, port.Name, true));
+                        // 确保_node不为null
+                        if (_node != null)
+                        {
+                            // 开始拖拽连接
+                            PortDragStarted?.Invoke(this, (_node, port.Name, true));
 
-                        // 捕获鼠标，开始拖拽
-                        portEllipse.CaptureMouse();
+                            // 捕获鼠标，开始拖拽
+                            portEllipse.CaptureMouse();
+                        }
                     }
                     catch (Exception ex) {
+                        System.Diagnostics.Debug.WriteLine($"Port drag start error: {ex.Message}");
                     }
                     e.Handled = true;
                 };
@@ -207,7 +708,7 @@ namespace Tunnel_Next.Controls
                 portEllipse.MouseMove += (s, e) =>
                 {
                     // 如果鼠标被捕获且按下左键，继续拖拽
-                    if (portEllipse.IsMouseCaptured && e.LeftButton == MouseButtonState.Pressed)
+                    if (portEllipse.IsMouseCaptured && e.LeftButton == MouseButtonState.Pressed && _node != null)
                     {
                         try {
                             // 获取相对于画布的位置
@@ -215,54 +716,61 @@ namespace Tunnel_Next.Controls
 
                             var position = canvas != null ? e.GetPosition(canvas) : e.GetPosition(Parent as UIElement);
 
+                            // 确保_node不为null
                             PortDragMove?.Invoke(this, (_node, port.Name, true, position));
                         }
                         catch (Exception ex) {
+                            // 记录异常信息
+                            System.Diagnostics.Debug.WriteLine($"Port drag move error: {ex.Message}");
                         }
                     }
                 };
 
                 portEllipse.MouseLeftButtonUp += (s, e) =>
                 {
-
                     if (portEllipse.IsMouseCaptured)
                     {
-
                         try {
                             portEllipse.ReleaseMouseCapture();
 
-                            // 获取鼠标位置下的元素
-                            var canvas = FindParentCanvas(this);
-
-                            if (canvas != null)
+                            // 确保_node不为null
+                            if (_node != null)
                             {
-                                var mousePosition = e.GetPosition(canvas);
+                                // 获取鼠标位置下的元素
+                                var canvas = FindParentCanvas(this);
 
-                                var elementUnderMouse = canvas.InputHitTest(mousePosition) as FrameworkElement;
+                                if (canvas != null)
+                                {
+                                    var mousePosition = e.GetPosition(canvas);
 
-                                PortDragEnded?.Invoke(this, (_node, port.Name, true, elementUnderMouse));
-                            }
-                            else
-                            {
-                                PortDragEnded?.Invoke(this, (_node, port.Name, true, null));
+                                    var elementUnderMouse = canvas.InputHitTest(mousePosition) as FrameworkElement;
+
+                                    PortDragEnded?.Invoke(this, (_node, port.Name, true, elementUnderMouse));
+                                }
+                                else
+                                {
+                                    PortDragEnded?.Invoke(this, (_node, port.Name, true, null));
+                                }
                             }
                         }
                         catch (Exception ex) {
                             // 确保即使出现异常也能释放鼠标
                             try { portEllipse.ReleaseMouseCapture(); } catch { }
+                            System.Diagnostics.Debug.WriteLine($"Port drag end error: {ex.Message}");
                         }
 
                         e.Handled = true;
-                    }
-                    else
-                    {
                     }
                 };
 
                 // 添加右键菜单处理
                 portEllipse.MouseRightButtonDown += (s, e) =>
                 {
-                    ShowPortContextMenu(port, true, portEllipse);
+                    // 确保_node不为null
+                    if (_node != null)
+                    {
+                        ShowPortContextMenu(port, true, portEllipse);
+                    }
                     e.Handled = true;
                 };
 
@@ -294,9 +802,8 @@ namespace Tunnel_Next.Controls
         /// </summary>
         private void OnInputPortsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-
             // 当端口集合发生变化时，重新更新端口UI
-            Dispatcher.BeginInvoke(() => UpdatePorts());
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(UpdatePorts));
         }
 
         /// <summary>
@@ -304,15 +811,13 @@ namespace Tunnel_Next.Controls
         /// </summary>
         private void OnOutputPortsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-
             // 当端口集合发生变化时，重新更新端口UI
-            Dispatcher.BeginInvoke(() => UpdatePorts());
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(UpdatePorts));
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
-
 
             if (_node == null)
             {
@@ -330,6 +835,9 @@ namespace Tunnel_Next.Controls
             {
                 return;
             }
+
+            // 播放Metro风格按下动画
+            PlayMousePressAnimation(true);
 
             // 选中节点
             NodeSelected?.Invoke(this, _node);
@@ -367,6 +875,9 @@ namespace Tunnel_Next.Controls
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonUp(e);
+
+            // 播放Metro风格释放动画
+            PlayMousePressAnimation(false);
 
             if (_isDragging)
             {

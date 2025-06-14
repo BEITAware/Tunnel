@@ -87,4 +87,59 @@
         <GradientStop Color="#5203133E" Offset="0.576994"/>
         <GradientStop Color="#C5000B2D" Offset="0.862709"/>
     </LinearGradientBrush>
+    
+    <!-- 参数面板标题栏背景 - 来自designs/ParameterControlTitleBanner.xaml -->
+    <RadialGradientBrush x:Key="ParameterPanelHeaderBrush" 
+                         RadiusX="2.15218" RadiusY="1.68352" 
+                         Center="0.499962,-0.057919" 
+                         GradientOrigin="0.499962,-0.057919">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#BA2D72A0" Offset="0"/>
+            <GradientStop Color="#00000004" Offset="0.506494"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.517625"/>
+            <GradientStop Color="#3FFFFFFF" Offset="0.821892"/>
+            <GradientStop Color="#4AFFFFFF" Offset="0.892393"/>
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+    
+    <!-- 参数面板标题栏样式 - 完整样式，基于设计文件，无边框无圆角 -->
+    <Style x:Key="AeroParameterPanelHeaderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource ParameterPanelHeaderBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#20000000" Direction="270" ShadowDepth="1" BlurRadius="3" Opacity="0.5"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Height" Value="38"/>
+    </Style>
+    
+    <!-- 参数面板标题文字样式 - 匹配设计文件 -->
+    <Style x:Key="AeroParameterPanelHeaderTextStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Foreground" Value="#FFFAFAFA"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#FF002244" Direction="320" ShadowDepth="1" BlurRadius="1" Opacity="0.8"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    
+    <!-- 参数面板描述文字样式 - 匹配设计文件 -->
+    <Style x:Key="AeroParameterPanelDescriptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="#FFE8F4FF"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,2,0,0"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#FF001122" Direction="320" ShadowDepth="1" BlurRadius="1" Opacity="0.65"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary> 

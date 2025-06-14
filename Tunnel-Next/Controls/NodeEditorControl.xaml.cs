@@ -77,38 +77,75 @@ namespace Tunnel_Next.Controls
 
         private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-
-            // 先清除所有现有的UI控件
-            ClearAllNodeControls();
-
-            if (_viewModel != null)
+            if (e.NewValue is NodeEditorViewModel viewModel)
             {
-                _viewModel.Nodes.CollectionChanged -= OnNodesCollectionChanged;
-                _viewModel.Connections.CollectionChanged -= OnConnectionsCollectionChanged;
-                _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            }
+                // 清除旧的事件订阅
+                if (_viewModel != null)
+                {
+                    _viewModel.Nodes.CollectionChanged -= OnNodesCollectionChanged;
+                    _viewModel.Connections.CollectionChanged -= OnConnectionsCollectionChanged;
+                    _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                    _viewModel.ClearUIRequested -= OnClearUIRequested;
+                    _viewModel.UIClearedEvent -= OnUIClearedEvent; // 解除UI清理完成事件
+                }
 
-            _viewModel = DataContext as NodeEditorViewModel;
+                _viewModel = viewModel;
 
-            if (_viewModel != null)
-            {
+                // 订阅新的事件
                 _viewModel.Nodes.CollectionChanged += OnNodesCollectionChanged;
                 _viewModel.Connections.CollectionChanged += OnConnectionsCollectionChanged;
                 _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+                _viewModel.ClearUIRequested += OnClearUIRequested;
+                _viewModel.UIClearedEvent += OnUIClearedEvent; // 订阅UI清理完成事件
 
-                // 初始化现有节点
+                // 清除现有节点控件
+                ClearAllNodeControls();
+
+                // 添加新的节点控件
                 foreach (var node in _viewModel.Nodes)
                 {
                     AddNodeControl(node);
                 }
 
-                // 初始化现有连接
+                // 更新连接线
                 UpdateConnections();
 
+                // 更新所有节点的字体大小以适应当前缩放级别
+                foreach (var nodeControl in _nodeControls.Values)
+                {
+                    nodeControl.UpdateFontSizeForScale(_currentScale);
+                }
             }
-            else
+        }
+        
+        /// <summary>
+        /// 处理UI清理请求事件
+        /// </summary>
+        private async void OnClearUIRequested()
+        {
+            try
             {
+                // 异步清理所有节点控件
+                await ClearAllNodeControlsAsync();
+                
+                // 通知ViewModel清理完成
+                _viewModel?.NotifyUIClearedEvent();
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UI清理失败: {ex.Message}");
+                // 即使出错也要通知ViewModel清理完成
+                _viewModel?.NotifyUIClearedEvent();
+            }
+        }
+        
+        /// <summary>
+        /// 处理UI清理完成事件
+        /// </summary>
+        private void OnUIClearedEvent(object? sender, EventArgs e)
+        {
+            // 这个方法可以用来处理UI清理完成后的逻辑
+            System.Diagnostics.Debug.WriteLine("UI清理完成事件已触发");
         }
 
         private void OnNodesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -157,45 +194,53 @@ namespace Tunnel_Next.Controls
 
         private void AddNodeControl(Node node)
         {
-
             var nodeControl = new NodeControl
             {
                 Node = node
-                // 不再直接设置ImageProcessor，使用MVVM解耦
             };
 
-            // 设置节点在Canvas上的初始位置
+            // 设置节点位置
             Canvas.SetLeft(nodeControl, node.X);
             Canvas.SetTop(nodeControl, node.Y);
 
-            // 监听节点位置变化，同步更新Canvas位置并重绘连接线
-            PropertyChangedEventHandler nodePropertyHandler = (s, e) =>
+            // 添加到画布
+            NodeCanvas.Children.Add(nodeControl);
+
+            // 应用当前缩放比例设置字体大小
+            nodeControl.UpdateFontSizeForScale(_currentScale);
+
+            // 添加到字典中
+            _nodeControls[node] = nodeControl;
+
+            // 添加节点出现动画
+            nodeControl.PlayAddAnimation();
+
+            // 监听节点属性变化
+            var handler = new PropertyChangedEventHandler((s, e) =>
             {
-                if (e.PropertyName == nameof(Node.X))
+                if (e.PropertyName == nameof(node.X) || e.PropertyName == nameof(node.Y))
                 {
                     Canvas.SetLeft(nodeControl, node.X);
-                    // 位置改变时重新绘制连接线
-                    UpdateConnections();
-                }
-                else if (e.PropertyName == nameof(Node.Y))
-                {
                     Canvas.SetTop(nodeControl, node.Y);
                     // 位置改变时重新绘制连接线
                     UpdateConnections();
                 }
-            };
-            node.PropertyChanged += nodePropertyHandler;
-            _nodePropertyHandlers[node] = nodePropertyHandler;
+            });
+
+            node.PropertyChanged += handler;
+            _nodePropertyHandlers[node] = handler;
 
             nodeControl.NodeSelected += (s, n) =>
             {
                 _viewModel?.SelectNode(n);
             };
+            
             nodeControl.NodeMoved += (s, n) => UpdateConnections();
             nodeControl.NodeDeleteRequested += (s, n) => {
-                _viewModel?.SelectNode(n); // 先选中节点
-                _viewModel?.DeleteNodeCommand?.Execute(null); // 然后执行删除命令
+                _viewModel?.SelectNode(n);
+                _viewModel?.DeleteNodeCommand?.Execute(null);
             };
+
             nodeControl.PortClicked += (s, args) => {
                 _viewModel?.HandlePortClick(args.node, args.portName, args.isOutput);
             };
@@ -218,17 +263,12 @@ namespace Tunnel_Next.Controls
             nodeControl.PortDragEnded += (s, args) => {
                 HandlePortDragEnd(args.node, args.portName, args.isOutput, args.targetElement);
             };
-
-            _nodeControls[node] = nodeControl;
-            NodeCanvas.Children.Add(nodeControl);
-
         }
 
         private void RemoveNodeControl(Node node)
         {
             if (_nodeControls.TryGetValue(node, out var nodeControl))
             {
-
                 // 解绑节点属性变化事件处理器
                 if (_nodePropertyHandlers.TryGetValue(node, out var propertyHandler))
                 {
@@ -244,12 +284,31 @@ namespace Tunnel_Next.Controls
                     _viewModel?.DeleteNodeCommand?.Execute(null);
                 };
 
-                // 从画布中移除控件
-                NodeCanvas.Children.Remove(nodeControl);
+                // 播放删除动画，动画完成后移除节点
+                try 
+                {
+                    nodeControl.PlayRemoveAnimation(() => {
+                        try 
+                        {
+                            // 从画布中移除控件
+                            NodeCanvas.Children.Remove(nodeControl);
 
-                // 从字典中移除
-                _nodeControls.Remove(node);
-
+                            // 从字典中移除
+                            _nodeControls.Remove(node);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Node removal error: {ex.Message}");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"PlayRemoveAnimation error: {ex.Message}");
+                    // 出错时直接移除节点
+                    NodeCanvas.Children.Remove(nodeControl);
+                    _nodeControls.Remove(node);
+                }
             }
             else
             {
@@ -259,19 +318,176 @@ namespace Tunnel_Next.Controls
         /// <summary>
         /// 清除所有节点控件（用于完全清除节点图）
         /// </summary>
-        public void ClearAllNodeControls()
+        /// <returns>一个任务，表示清除操作完成</returns>
+        public Task ClearAllNodeControlsAsync()
         {
-
+            var tcs = new TaskCompletionSource<bool>();
             var nodesToRemove = _nodeControls.Keys.ToList();
+            
+            // 如果没有节点，直接返回已完成的任务
+            if (nodesToRemove.Count == 0)
+            {
+                tcs.SetResult(true);
+                return tcs.Task;
+            }
+            
+            // 立即清理所有节点的事件处理器，防止内存泄漏
             foreach (var node in nodesToRemove)
             {
-                RemoveNodeControl(node);
+                if (_nodePropertyHandlers.TryGetValue(node, out var propertyHandler))
+                {
+                    node.PropertyChanged -= propertyHandler;
+                    _nodePropertyHandlers.Remove(node);
+                }
             }
-
-            // 确保画布完全清空
-            NodeCanvas.Children.Clear();
-            _nodeControls.Clear();
-
+                
+            // 创建一个计数器来跟踪已完成的动画数量
+            int completedAnimations = 0;
+            int totalAnimations = nodesToRemove.Count;
+            
+            // 为每个节点创建延迟动画，使它们不会同时消失
+            for (int i = 0; i < nodesToRemove.Count; i++)
+            {
+                var node = nodesToRemove[i];
+                if (_nodeControls.TryGetValue(node, out var nodeControl))
+                {
+                    // 添加短延迟，使它们不会同时消失，但保持快速感
+                    var delay = TimeSpan.FromMilliseconds(i * 15);
+                    
+                    // 使用Dispatcher延迟执行动画
+                    Dispatcher.BeginInvoke(new Action(() => 
+                    {
+                        try
+                        {
+                            // 播放删除动画
+                            nodeControl.PlayRemoveAnimation(() => 
+                            {
+                                try
+                                {
+                                    // 从画布中移除控件
+                                    NodeCanvas.Children.Remove(nodeControl);
+                                    
+                                    // 从字典中移除
+                                    _nodeControls.Remove(node);
+                                    
+                                    // 增加完成计数
+                                    completedAnimations++;
+                                    
+                                    // 如果所有动画都完成了，清理剩余资源并完成任务
+                                    if (completedAnimations >= totalAnimations)
+                                    {
+                                        // 确保画布完全清空，移除所有可能残留的节点控件
+                                        NodeCanvas.Children.Clear();
+                                        _nodeControls.Clear();
+                                        _nodePropertyHandlers.Clear();
+                                        
+                                        // 通知任务完成
+                                        tcs.TrySetResult(true);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Node removal completion error: {ex.Message}");
+                                    // 即使出错也要增加计数，确保流程能继续
+                                    completedAnimations++;
+                                    
+                                    if (completedAnimations >= totalAnimations)
+                                    {
+                                        // 确保任务能完成
+                                        tcs.TrySetResult(true);
+                                    }
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Node animation start error: {ex.Message}");
+                            // 出错时直接移除节点
+                            try
+                            {
+                                NodeCanvas.Children.Remove(nodeControl);
+                                _nodeControls.Remove(node);
+                            }
+                            catch { }
+                            
+                            completedAnimations++;
+                            if (completedAnimations >= totalAnimations)
+                            {
+                                // 确保任务能完成
+                                tcs.TrySetResult(true);
+                            }
+                        }
+                    }), System.Windows.Threading.DispatcherPriority.ApplicationIdle, delay);
+                }
+                else
+                {
+                    // 如果找不到节点控件，也要增加计数
+                    completedAnimations++;
+                    if (completedAnimations >= totalAnimations)
+                    {
+                        // 确保任务能完成
+                        tcs.TrySetResult(true);
+                    }
+                }
+            }
+            
+            // 设置超时保障，防止任务永远不完成
+            var timeoutTask = Task.Delay(3000); // 3秒超时
+            timeoutTask.ContinueWith(_ => 
+            {
+                // 如果任务还没完成，强制完成
+                if (!tcs.Task.IsCompleted)
+                {
+                    System.Diagnostics.Debug.WriteLine("节点清理操作超时，强制完成");
+                    // 强制清理
+                    Dispatcher.Invoke(() => 
+                    {
+                        NodeCanvas.Children.Clear();
+                        _nodeControls.Clear();
+                        _nodePropertyHandlers.Clear();
+                    });
+                    tcs.TrySetResult(true);
+                }
+            });
+            
+            return tcs.Task;
+        }
+        
+        /// <summary>
+        /// 清除所有节点控件（同步版本，为了保持兼容性）
+        /// </summary>
+        public void ClearAllNodeControls()
+        {
+            // 同步调用异步方法
+            try
+            {
+                // 立即清理所有节点
+                var nodesToRemove = _nodeControls.Keys.ToList();
+                foreach (var node in nodesToRemove)
+                {
+                    if (_nodeControls.TryGetValue(node, out var nodeControl))
+                    {
+                        // 解绑节点属性变化事件处理器
+                        if (_nodePropertyHandlers.TryGetValue(node, out var propertyHandler))
+                        {
+                            node.PropertyChanged -= propertyHandler;
+                            _nodePropertyHandlers.Remove(node);
+                        }
+                        
+                        // 立即移除节点控件，不播放动画
+                        NodeCanvas.Children.Remove(nodeControl);
+                    }
+                }
+                
+                // 清空所有集合
+                _nodeControls.Clear();
+                _nodePropertyHandlers.Clear();
+                NodeCanvas.Children.Clear();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"同步清理节点出错: {ex.Message}");
+            }
         }
 
         private void UpdateConnections()
@@ -1024,6 +1240,12 @@ namespace Tunnel_Next.Controls
             _currentScale = newScale;
             ScaleTransform.ScaleX = _currentScale;
             ScaleTransform.ScaleY = _currentScale;
+
+            // 更新所有节点的字体大小
+            foreach (var nodeControl in _nodeControls.Values)
+            {
+                nodeControl.UpdateFontSizeForScale(_currentScale);
+            }
 
             // 强制更新布局以应用缩放
             GridBackground.UpdateLayout();

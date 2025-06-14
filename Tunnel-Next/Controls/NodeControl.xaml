@@ -7,11 +7,11 @@
              d:DesignHeight="80" d:DesignWidth="120">
 
     <UserControl.Resources>
-        <!-- Aero风格端口样式 - 增加端口大小和命中区域 -->
+        <!-- 增强Aero风格端口样式 - 适应收缩后的布局 -->
         <Style x:Key="PortStyle" TargetType="Ellipse">
-            <Setter Property="Width" Value="16"/>
-            <Setter Property="Height" Value="16"/>
-            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Margin" Value="3"/>
             <Setter Property="Fill">
                 <Setter.Value>
                     <RadialGradientBrush>
@@ -30,7 +30,7 @@
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="StrokeThickness" Value="1.5"/>
+            <Setter Property="StrokeThickness" Value="1.2"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="IsHitTestVisible" Value="True"/>
             <Setter Property="Effect">
@@ -39,7 +39,7 @@
                                     Direction="315"
                                     ShadowDepth="2"
                                     BlurRadius="4"
-                                    Opacity="0.6"/>
+                                    Opacity="0.7"/>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
@@ -50,26 +50,26 @@
                                             Direction="315"
                                             ShadowDepth="3"
                                             BlurRadius="6"
-                                            Opacity="0.8"/>
+                                            Opacity="0.9"/>
                         </Setter.Value>
                     </Setter>
-                    <Setter Property="StrokeThickness" Value="2"/>
-                    <Setter Property="Width" Value="18"/>
-                    <Setter Property="Height" Value="18"/>
+                    <Setter Property="StrokeThickness" Value="1.8"/>
+                    <Setter Property="Width" Value="16"/>
+                    <Setter Property="Height" Value="16"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Aero风格节点边框样式 -->
+        <!-- 进一步增强Aero风格节点边框样式 - 最大化玻璃效果 -->
         <Style x:Key="NodeBorderStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="BorderThickness" Value="1.8"/>
             <Setter Property="BorderBrush">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#80FFFFFF" Offset="0"/>
-                        <GradientStop Color="#40FFFFFF" Offset="0.5"/>
-                        <GradientStop Color="#20000000" Offset="1"/>
+                        <GradientStop Color="#C0FFFFFF" Offset="0"/>
+                        <GradientStop Color="#80FFFFFF" Offset="0.5"/>
+                        <GradientStop Color="#40000000" Offset="1"/>
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
@@ -77,9 +77,9 @@
                 <Setter.Value>
                     <DropShadowEffect Color="#60000000"
                                       Direction="315"
-                                      ShadowDepth="4"
-                                      BlurRadius="8"
-                                      Opacity="0.7"/>
+                                      ShadowDepth="6"
+                                      BlurRadius="12"
+                                      Opacity="0.8"/>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -110,35 +110,44 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- 高光层 -->
+            <!-- 进一步增强高光层 - 更加明显的玻璃效果 -->
             <Border Grid.RowSpan="3"
-                    CornerRadius="8"
+                    CornerRadius="10"
                     BorderThickness="0"
-                    Opacity="0.4"
+                    Opacity="0.75"
                     IsHitTestVisible="False">
                 <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,0.3">
-                        <GradientStop Color="#80FFFFFF" Offset="0"/>
-                        <GradientStop Color="#40FFFFFF" Offset="0.5"/>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,0.5">
+                        <GradientStop Color="#C0FFFFFF" Offset="0"/>
+                        <GradientStop Color="#90FFFFFF" Offset="0.25"/>
+                        <GradientStop Color="#60FFFFFF" Offset="0.5"/>
+                        <GradientStop Color="#30FFFFFF" Offset="0.75"/>
                         <GradientStop Color="Transparent" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
+                <Border.Effect>
+                    <BlurEffect Radius="1.5" KernelType="Gaussian"/>
+                </Border.Effect>
             </Border>
 
-            <!-- 节点标题 - Aero风格 -->
+            <!-- 节点标题 - 增强Aero风格 -->
             <Border Grid.Row="0"
-                    CornerRadius="8,8,0,0"
-                    Padding="8,4"
-                    Margin="0,0,0,2">
+                    CornerRadius="10,10,0,0"
+                    Padding="8,5"
+                    Margin="0,0,0,0">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#60FFFFFF" Offset="0"/>
-                        <GradientStop Color="#30FFFFFF" Offset="0.5"/>
-                        <GradientStop Color="#10FFFFFF" Offset="1"/>
+                        <GradientStop Color="#80FFFFFF" Offset="0"/>
+                        <GradientStop Color="#50FFFFFF" Offset="0.5"/>
+                        <GradientStop Color="#20FFFFFF" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
+                <Border.Effect>
+                    <BlurEffect Radius="0.5" KernelType="Gaussian"/>
+                </Border.Effect>
 
-                <TextBlock Text="{Binding Title}"
+                <TextBlock x:Name="TitleTextBlock"
+                           Text="{Binding Title}"
                            Foreground="White"
                            FontWeight="SemiBold"
                            FontSize="12"
@@ -147,15 +156,15 @@
                     <TextBlock.Effect>
                         <DropShadowEffect Color="#80000000"
                                           Direction="270"
-                                          ShadowDepth="1"
-                                          BlurRadius="2"
+                                          ShadowDepth="1.5"
+                                          BlurRadius="3"
                                           Opacity="0.9"/>
                     </TextBlock.Effect>
                 </TextBlock>
             </Border>
 
-            <!-- 节点内容区域 -->
-            <Grid Grid.Row="1" Margin="5">
+            <!-- 节点内容区域 - 进一步收缩内芯显示更多玻璃图层 -->
+            <Grid Grid.Row="1" Margin="14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -166,12 +175,12 @@
                 <StackPanel Grid.Column="0"
                             x:Name="InputPortsPanel"
                             VerticalAlignment="Center"
-                            Margin="4,8">
+                            Margin="0,2">
                     <!-- 输入端口将在代码中动态添加，通过Margin控制间距 -->
                 </StackPanel>
 
-                <!-- 中间内容区域 -->
-                <Grid Grid.Column="1" Margin="8,4">
+                <!-- 中间内容区域 - 进一步减小内芯尺寸 -->
+                <Grid Grid.Column="1" Margin="4,0">
                     <!-- 可以放置节点特定的UI元素 -->
                 </Grid>
 
@@ -179,32 +188,35 @@
                 <StackPanel Grid.Column="2"
                             x:Name="OutputPortsPanel"
                             VerticalAlignment="Center"
-                            Margin="4,8">
+                            Margin="0,2">
                     <!-- 输出端口将在代码中动态添加，通过Margin控制间距 -->
                 </StackPanel>
             </Grid>
 
-            <!-- 状态指示器 - Aero风格 -->
+            <!-- 状态指示器 - 增强Aero风格 -->
             <Border Grid.Row="2"
-                    Height="5"
-                    CornerRadius="0,0,8,8"
+                    Height="6"
+                    CornerRadius="0,0,10,10"
                     Margin="1,0,1,1">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#E0E8F0" Offset="0"/>
-                        <GradientStop Color="#C0D0E0" Offset="1"/>
+                        <GradientStop Color="#F0F8FF" Offset="0"/>
+                        <GradientStop Color="#D0E0F0" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
+                <Border.Effect>
+                    <BlurEffect Radius="0.5" KernelType="Gaussian"/>
+                </Border.Effect>
                 <!-- 根据节点状态显示不同颜色：绿色：已处理，红色：错误，灰色：未处理 -->
             </Border>
 
-            <!-- 选中状态的边框 - Aero风格 -->
+            <!-- 选中状态的边框 - 最终增强Aero风格 -->
             <Border x:Name="SelectionBorder"
                     Grid.RowSpan="3"
-                    CornerRadius="10"
+                    CornerRadius="14"
                     BorderThickness="2"
                     Visibility="Collapsed"
-                    Margin="-2">
+                    Margin="-4">
                 <Border.BorderBrush>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                         <GradientStop Color="#FFD700" Offset="0"/>
@@ -216,18 +228,18 @@
                     <DropShadowEffect Color="#80FFD700"
                                       Direction="0"
                                       ShadowDepth="0"
-                                      BlurRadius="8"
-                                      Opacity="0.8"/>
+                                      BlurRadius="12"
+                                      Opacity="0.85"/>
                 </Border.Effect>
             </Border>
 
-            <!-- 高亮状态的边框 - Aero风格 -->
+            <!-- 高亮状态的边框 - 最终增强Aero风格 -->
             <Border x:Name="HighlightBorder"
                     Grid.RowSpan="3"
-                    CornerRadius="10"
+                    CornerRadius="14"
                     BorderThickness="2"
                     Visibility="Collapsed"
-                    Margin="-2">
+                    Margin="-4">
                 <Border.BorderBrush>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                         <GradientStop Color="#32CD32" Offset="0"/>
@@ -239,8 +251,8 @@
                     <DropShadowEffect Color="#8032CD32"
                                       Direction="0"
                                       ShadowDepth="0"
-                                      BlurRadius="6"
-                                      Opacity="0.7"/>
+                                      BlurRadius="10"
+                                      Opacity="0.8"/>
                 </Border.Effect>
             </Border>
 
