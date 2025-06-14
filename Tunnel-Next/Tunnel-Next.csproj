@@ -28,13 +28,20 @@
 
   <ItemGroup>
     <Resource Include="Resources\*.png" />
-	<Resource Include="resources\*.png" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="Scripts\**\*.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="YetAnotherAurora.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="YetAnotherAurora.png" />
   </ItemGroup>
 
 </Project>

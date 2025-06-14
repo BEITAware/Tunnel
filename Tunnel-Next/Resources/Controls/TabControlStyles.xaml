@@ -23,8 +23,8 @@
                         
                         <Border x:Name="border"
                                 BorderBrush="Transparent"
-                                BorderThickness="0"
-                                CornerRadius="2,2,0,0"
+                                BorderThickness="-1"
+                                CornerRadius="1,1,0,0"
                                 Margin="0,0,2,0">
                             <!-- 默认未选中状态背景 - 使用idletab样式 -->
                             <Border.Background>

@@ -13,15 +13,17 @@
 
     <DockPanel>
         <!-- Ribbon区域 -->
+
+        <!-- Ribbon区域 -->
         <Border DockPanel.Dock="Top"
                 BorderBrush="{DynamicResource DarkBorderBrush}"
                 BorderThickness="1">
             <Border.Background>
                 <LinearGradientBrush EndPoint="0.5,1.38187" StartPoint="0.5,-0.381866">
-                    <GradientStop Color="#FF3E5E85" Offset="0.558"/>
-                    <GradientStop Color="#FF1D2E54" Offset="0.518"/>
-                    <GradientStop Color="#FE000004" Offset="0.177"/>
-                    <GradientStop Color="#FF385EB2" Offset="0.845"/>
+                    <GradientStop Color="#FF2E4A6C" Offset="0.325"/>
+                    <GradientStop Color="#FF1D2E54" Offset="0.237"/>
+                    <GradientStop Color="#FE070714" Offset="0.325"/>
+                    <GradientStop Color="#FF162F67" Offset="0.562"/>
                 </LinearGradientBrush>
             </Border.Background>
             <Grid>
@@ -63,10 +65,10 @@
                             Height="120"
                             Margin="{DynamicResource TabControlMargin}">
                     <TabControl.Resources>
-                        <Style TargetType="TabItem" BasedOn="{StaticResource RibbonTabStyle}"/>
+                        <Style TargetType="{x:Type TabItem}" BasedOn="{StaticResource RibbonTabStyle}"/>
                     </TabControl.Resources>
                     <TabControl.Template>
-                        <ControlTemplate TargetType="TabControl">
+                        <ControlTemplate TargetType="{x:Type TabControl}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -98,13 +100,16 @@
                     <TabItem Header="文件">
                         <Grid>
                             <!-- 背景层 -->
+
+                            <!-- 背景层 -->
+                            <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
-                            
                             <!-- 遮罩层 -->
                             <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-                            
+
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
+                                <!-- 文件操作组 -->
                                 <!-- 文件操作组 -->
                                 <GroupBox Header="文件操作" Style="{DynamicResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
@@ -142,7 +147,7 @@
                                 <GroupBox Header="图像" Style="{DynamicResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{DynamicResource RibbonLargeButtonStyle}"
-                                                ToolTip="导入图像&#x0a;支持选择一张或多张图像文件&#x0a;将自动创建对应的图像输入节点"
+                                                ToolTip="导入图像&#xA;支持选择一张或多张图像文件&#xA;将自动创建对应的图像输入节点"
                                                 Command="{Binding ImportImageCommand}">
                                             <StackPanel>
                                                 <Image Source="pack://application:,,,/Resources/image.png" Width="32" Height="32" Margin="0,2,0,2"
@@ -170,10 +175,10 @@
                         <Grid>
                             <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
-                            
+
                             <!-- 遮罩层 -->
                             <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-                            
+
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
                                 <!-- 缩放组 -->
@@ -231,10 +236,10 @@
                         <Grid>
                             <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
-                            
+
                             <!-- 遮罩层 -->
                             <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-                            
+
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
                                 <!-- 节点操作组 -->
@@ -242,7 +247,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <Button x:Name="AddNodeButton"
                                                 Style="{DynamicResource RibbonLargeButtonStyle}"
-                                                ToolTip="添加节点 (Ctrl+A)&#x0a;点击显示节点菜单"
+                                                ToolTip="添加节点 (Ctrl+A)&#xA;点击显示节点菜单"
                                                 Click="AddNodeButton_Click">
                                             <StackPanel>
                                                 <Image Source="pack://application:,,,/Resources/add_node.png" Width="32" Height="32" Margin="0,2,0,2"
@@ -269,7 +274,7 @@
                                 <GroupBox Header="处理" Style="{DynamicResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{DynamicResource RibbonLargeButtonStyle}"
-                                                ToolTip="手动处理节点图 (F5)&#x0a;当前为自动处理模式"
+                                                ToolTip="手动处理节点图 (F5)&#xA;当前为自动处理模式"
                                                 Command="{Binding NodeEditor.ProcessNodeGraphCommand}">
                                             <StackPanel>
                                                 <Image Source="pack://application:,,,/Resources/Refresh.png" Width="32" Height="32" Margin="0,2,0,2"
@@ -340,7 +345,7 @@
                                                        RenderOptions.BitmapScalingMode="HighQuality"
                                                        UseLayoutRounding="True">
                                                     <Image.Style>
-                                                        <Style TargetType="Image">
+                                                        <Style TargetType="{x:Type Image}">
                                                             <Setter Property="Source" Value="pack://application:,,,/Resources/GreyLight.png"/>
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding IsNodeStatusVisible}" Value="True">
@@ -352,7 +357,7 @@
                                                 </Image>
                                                 <TextBlock HorizontalAlignment="Center" FontSize="10">
                                                     <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
+                                                        <Style TargetType="{x:Type TextBlock}">
                                                             <Setter Property="Text" Value="节点状态"/>
                                                             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                                                             <Style.Triggers>
@@ -377,10 +382,10 @@
                         <Grid>
                             <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
-                            
+
                             <!-- 遮罩层 -->
                             <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-                            
+
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
                                 <!-- 版本操作组 -->
@@ -481,10 +486,10 @@
                         <Grid Grid.Row="1">
                             <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
-                            
+
                             <!-- 遮罩层 -->
                             <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-                            
+
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
                                 <Button Content="后退" Margin="0,0,5,0" Style="{DynamicResource AeroButtonStyle}">

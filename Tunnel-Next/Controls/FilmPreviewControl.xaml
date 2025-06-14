@@ -8,154 +8,157 @@
              d:DesignHeight="150" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <!-- 转换器 -->
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        <local:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+        <ResourceDictionary>
+            
+            <!-- 转换器 -->
+            <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <local:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
 
-        <!-- 轻微阴影 - 有角度且柔和 -->
-        <DropShadowEffect x:Key="FilmItemShadow"
-                          Color="#25000000"
-                          Direction="315"
-                          ShadowDepth="2"
-                          BlurRadius="6"
-                          Opacity="0.3"/>
+            <!-- 轻微阴影 - 有角度且柔和 -->
+            <DropShadowEffect x:Key="FilmItemShadow"
+                              Color="#25000000"
+                              Direction="315"
+                              ShadowDepth="2"
+                              BlurRadius="6"
+                              Opacity="0.3"/>
 
-        <!-- 悬停状态的阴影 -->
-        <DropShadowEffect x:Key="FilmItemHoverShadow"
-                          Color="#35000000"
-                          Direction="315"
-                          ShadowDepth="3"
-                          BlurRadius="8"
-                          Opacity="0.4"/>
+            <!-- 悬停状态的阴影 -->
+            <DropShadowEffect x:Key="FilmItemHoverShadow"
+                              Color="#35000000"
+                              Direction="315"
+                              ShadowDepth="3"
+                              BlurRadius="8"
+                              Opacity="0.4"/>
 
-        <!-- 选中状态的阴影 -->
-        <DropShadowEffect x:Key="FilmItemSelectedShadow"
-                          Color="#45000000"
-                          Direction="315"
-                          ShadowDepth="4"
-                          BlurRadius="10"
-                          Opacity="0.5"/>
+            <!-- 选中状态的阴影 -->
+            <DropShadowEffect x:Key="FilmItemSelectedShadow"
+                              Color="#45000000"
+                              Direction="315"
+                              ShadowDepth="4"
+                              BlurRadius="10"
+                              Opacity="0.5"/>
 
-        <!-- 真正的Aero玻璃效果 - 透明玻璃质感 -->
-        <LinearGradientBrush x:Key="AeroGlassOverlay" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#30FFFFFF" Offset="0"/>
-            <GradientStop Color="#15FFFFFF" Offset="0.2"/>
-            <GradientStop Color="#05FFFFFF" Offset="0.5"/>
-            <GradientStop Color="#00FFFFFF" Offset="0.7"/>
-            <GradientStop Color="#08FFFFFF" Offset="1"/>
-        </LinearGradientBrush>
+            <!-- 真正的Aero玻璃效果 - 透明玻璃质感 -->
+            <LinearGradientBrush x:Key="AeroGlassOverlay" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#30FFFFFF" Offset="0"/>
+                <GradientStop Color="#15FFFFFF" Offset="0.2"/>
+                <GradientStop Color="#05FFFFFF" Offset="0.5"/>
+                <GradientStop Color="#00FFFFFF" Offset="0.7"/>
+                <GradientStop Color="#08FFFFFF" Offset="1"/>
+            </LinearGradientBrush>
 
-        <!-- 选中状态的玻璃效果 - 径向和线性渐变混合 -->
-        <Grid x:Key="AeroSelectedGlass">
-            <Grid.Background>
-                <!-- 径向渐变 - 中心高光 -->
-                <RadialGradientBrush Center="0.5,0.3" RadiusX="0.6" RadiusY="0.4">
-                    <GradientStop Color="#40FFFFFF" Offset="0"/>
-                    <GradientStop Color="#20FFFFFF" Offset="0.3"/>
-                    <GradientStop Color="#08FFFFFF" Offset="0.7"/>
-                    <GradientStop Color="#00FFFFFF" Offset="1"/>
-                </RadialGradientBrush>
-            </Grid.Background>
-            <!-- 线性渐变覆盖层 -->
-            <Border>
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#25FFFFFF" Offset="0"/>
-                        <GradientStop Color="#10FFFFFF" Offset="0.15"/>
-                        <GradientStop Color="#03FFFFFF" Offset="0.4"/>
-                        <GradientStop Color="#00FFFFFF" Offset="0.6"/>
-                        <GradientStop Color="#10FFFFFF" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-            </Border>
-        </Grid>
+            <!-- 选中状态的玻璃效果 - 径向和线性渐变混合 -->
+            <Grid x:Key="AeroSelectedGlass">
+                <Grid.Background>
+                    <!-- 径向渐变 - 中心高光 -->
+                    <RadialGradientBrush Center="0.5,0.3" RadiusX="0.6" RadiusY="0.4">
+                        <GradientStop Color="#40FFFFFF" Offset="0"/>
+                        <GradientStop Color="#20FFFFFF" Offset="0.3"/>
+                        <GradientStop Color="#08FFFFFF" Offset="0.7"/>
+                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                    </RadialGradientBrush>
+                </Grid.Background>
+                <!-- 线性渐变覆盖层 -->
+                <Border>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#25FFFFFF" Offset="0"/>
+                            <GradientStop Color="#10FFFFFF" Offset="0.15"/>
+                            <GradientStop Color="#03FFFFFF" Offset="0.4"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.6"/>
+                            <GradientStop Color="#10FFFFFF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+            </Grid>
 
-        <!-- 胶片项目样式 -->
-        <Style x:Key="FilmItemStyle" TargetType="ListBoxItem">
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <ControlTemplate.Resources>
-                            <!-- 为ItemBorder设置RenderTransform -->
-                            <Style TargetType="Border">
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                            </Style>
-                        </ControlTemplate.Resources>
-                        <Border x:Name="ItemBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Effect="{StaticResource FilmItemShadow}">
-                            <Border.RenderTransform>
-                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                            </Border.RenderTransform>
-                            <Border.RenderTransformOrigin>0.5,0.5</Border.RenderTransformOrigin>
-                            <ContentPresenter x:Name="ContentPresenter"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- 鼠标悬停效果 - 带动画 -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
-                                                                           Storyboard.TargetProperty="Effect">
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemHoverShadow}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
-                                                                           Storyboard.TargetProperty="Effect">
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.2" Value="{StaticResource FilmItemShadow}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
+            <!-- 胶片项目样式 -->
+            <Style x:Key="FilmItemStyle" TargetType="ListBoxItem">
+                <Setter Property="Margin" Value="4"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <ControlTemplate.Resources>
+                                <!-- 为ItemBorder设置RenderTransform -->
+                                <Style TargetType="Border">
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                                </Style>
+                            </ControlTemplate.Resources>
+                            <Border x:Name="ItemBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Effect="{StaticResource FilmItemShadow}">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                </Border.RenderTransform>
+                                <Border.RenderTransformOrigin>0.5,0.5</Border.RenderTransformOrigin>
+                                <ContentPresenter x:Name="ContentPresenter"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <!-- 鼠标悬停效果 - 带动画 -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                               Storyboard.TargetProperty="Effect">
+                                                    <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemHoverShadow}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                               Storyboard.TargetProperty="Effect">
+                                                    <DiscreteObjectKeyFrame KeyTime="0:0:0.2" Value="{StaticResource FilmItemShadow}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
 
-                            <!-- 选中状态效果 - 带动画 -->
-                            <Trigger Property="IsSelected" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
-                                                                           Storyboard.TargetProperty="Effect">
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemSelectedShadow}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
-                                                                           Storyboard.TargetProperty="Effect">
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.3" Value="{StaticResource FilmItemShadow}"/>
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+                                <!-- 选中状态效果 - 带动画 -->
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                               Storyboard.TargetProperty="Effect">
+                                                    <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FilmItemSelectedShadow}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ItemBorder"
+                                                                               Storyboard.TargetProperty="Effect">
+                                                    <DiscreteObjectKeyFrame KeyTime="0:0:0.3" Value="{StaticResource FilmItemShadow}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -165,7 +168,7 @@
         </Grid.RowDefinitions>
 
         <!-- 标题栏 -->
-        <Border Grid.Row="0" Background="{DynamicResource ButtonHoverBackground}"
+        <Border Grid.Row="0" Background="{StaticResource FilmPreviewTabBackground}"
                 BorderBrush="Transparent" BorderThickness="0" Padding="8,5">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="胶片预览" FontWeight="Bold"
