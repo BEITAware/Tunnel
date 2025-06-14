@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Canvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Document" Width="259.68" Height="115.68" Clip="F1 M 0,0L 259.68,0L 259.68,115.68L 0,115.68L 0,0">
+	<Canvas x:Name="Layer_2" Width="800.014" Height="600.339" Canvas.Left="0" Canvas.Top="0">
+		<Rectangle x:Name="Rectangle" Width="259.054" Height="114.915" Canvas.Left="0.453766" Canvas.Top="0.462036" Stretch="Fill" StrokeThickness="1" StrokeLineJoin="Round" Stroke="#FF000000">
+			<Rectangle.Fill>
+				<RadialGradientBrush RadiusX="2.15219" RadiusY="1.68352" Center="0.499962,0.992728" GradientOrigin="0.499962,0.992728">
+					<RadialGradientBrush.GradientStops>
+						<GradientStop Color="#FF38CBF4" Offset="0.0426716"/>
+						<GradientStop Color="#00000004" Offset="0.506494"/>
+						<GradientStop Color="#00FFFFFF" Offset="0.517625"/>
+						<GradientStop Color="#5EFFFFFF" Offset="0.736549"/>
+						<GradientStop Color="#4AFFFFFF" Offset="0.892393"/>
+					</RadialGradientBrush.GradientStops>
+					<RadialGradientBrush.RelativeTransform>
+						<TransformGroup/>
+					</RadialGradientBrush.RelativeTransform>
+				</RadialGradientBrush>
+			</Rectangle.Fill>
+		</Rectangle>
+	</Canvas>
+</Canvas>
