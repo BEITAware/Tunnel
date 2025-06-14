@@ -40,7 +40,9 @@ namespace Tunnel_Next.Services
                     return null;
 
                 var nodeGraphName = Path.GetFileNameWithoutExtension(nodeGraphPath);
-                var thumbnailPath = Path.Combine(_workFolderService.ThumbnailsFolder, $"{nodeGraphName}.png");
+                // 缩略图直接保存在项目文件夹中
+                var projectFolder = Path.GetDirectoryName(nodeGraphPath) ?? _workFolderService.NodeGraphsFolder;
+                var thumbnailPath = Path.Combine(projectFolder, $"{nodeGraphName}.png");
 
                 BitmapSource? thumbnail = null;
 
@@ -248,7 +250,8 @@ namespace Tunnel_Next.Services
         public string GetNodeGraphThumbnailPath(string nodeGraphPath)
         {
             var nodeGraphName = Path.GetFileNameWithoutExtension(nodeGraphPath);
-            return Path.Combine(_workFolderService.ThumbnailsFolder, $"{nodeGraphName}.png");
+            var projectFolder = Path.GetDirectoryName(nodeGraphPath) ?? _workFolderService.NodeGraphsFolder;
+            return Path.Combine(projectFolder, $"{nodeGraphName}.png");
         }
 
         /// <summary>

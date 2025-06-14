@@ -136,14 +136,23 @@ namespace Tunnel_Next.Services
         /// </summary>
         private void UpdateFolderPaths()
         {
-            _nodeGraphsFolder = Path.Combine(_workFolder, "nodegraphs");
-            _thumbnailsFolder = Path.Combine(_nodeGraphsFolder, "thumbnails");
-            _tempFolder = Path.Combine(_nodeGraphsFolder, "temp");
-            _scriptsFolder = Path.Combine(Environment.CurrentDirectory, "Scripts");
-
-            // TNX用户脚本目录
+            // 节点图项目目录改为 TNX\Projects
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             _tnxFolder = Path.Combine(documentsPath, "TNX");
+
+            // 项目化后的节点图存放于 TNX\Projects
+            _nodeGraphsFolder = Path.Combine(_tnxFolder, "Projects");
+
+            // 由于缩略图直接保存在项目目录中，单独的缩略图目录不再需要，保持字段以兼容旧代码
+            _thumbnailsFolder = _nodeGraphsFolder;
+
+            // 临时目录仍放在项目根目录下
+            _tempFolder = Path.Combine(_nodeGraphsFolder, "temp");
+
+            // 脚本文件夹位于应用程序目录
+            _scriptsFolder = Path.Combine(Environment.CurrentDirectory, "Scripts");
+
+            // TNX 下的脚本与资源目录
             _userScriptsFolder = Path.Combine(_tnxFolder, "Scripts");
             _userResourcesFolder = Path.Combine(_userScriptsFolder, "rivivalresources");
         }
@@ -410,15 +419,26 @@ namespace Tunnel_Next.Services
                 if (!Directory.Exists(_nodeGraphsFolder))
                     return new List<string>();
 
-                var nodeGraphFiles = Directory.GetFiles(_nodeGraphsFolder, "*.tnx", SearchOption.TopDirectoryOnly)
-                    .Where(f => !Path.GetFileName(f).Contains("_auto_")) // 排除自动保存文件
+                var nodeGraphFiles = new List<string>();
+
+                // 遍历 Projects 目录下的每个项目文件夹，查找首个 .nodegraph 文件
+                foreach (var dir in Directory.GetDirectories(_nodeGraphsFolder))
+                {
+                    var files = Directory.GetFiles(dir, "*.nodegraph", SearchOption.TopDirectoryOnly)
+                        .Where(f => !Path.GetFileName(f).Contains("_auto_"));
+
+                    // 默认每个项目仅有一个节点图，取第一个即可
+                    var first = files.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(first))
+                        nodeGraphFiles.Add(first);
+                }
+
+                return nodeGraphFiles
                     .OrderBy(f => File.GetLastWriteTime(f))
                     .Reverse()
                     .ToList();
-
-                return nodeGraphFiles;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new List<string>();
             }

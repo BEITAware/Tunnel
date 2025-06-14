@@ -1147,40 +1147,46 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
-                // 通知UI层清理节点控件，等待清理完成
-                var clearUITask = new TaskCompletionSource<bool>();
-                
-                // 注册一次性事件处理器，等待UI清理完成
-                EventHandler? uiClearedHandler = null;
-                uiClearedHandler = (s, e) => {
-                    clearUITask.TrySetResult(true);
-                    // 解除事件订阅
-                    if (UIClearedEvent != null && uiClearedHandler != null)
-                        UIClearedEvent -= uiClearedHandler;
-                };
-                
-                // 订阅UI清理完成事件
-                if (UIClearedEvent != null)
-                    UIClearedEvent += uiClearedHandler;
-                
-                // 触发UI清理请求
-                ClearUIRequested?.Invoke();
-                
-                // 等待UI清理完成，设置超时
-                var timeoutTask = Task.Delay(3000); // 3秒超时
-                var completedTask = await Task.WhenAny(clearUITask.Task, timeoutTask);
-                
-                // 如果是超时任务完成，记录日志
-                if (completedTask == timeoutTask)
+                // 若无订阅者则无需等待UI清理，以免造成不必要的延迟
+                if (ClearUIRequested != null && UIClearedEvent != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("等待UI清理超时，继续加载节点图");
-                    // 解除事件订阅
-                    if (UIClearedEvent != null && uiClearedHandler != null)
+                    var clearUITask = new TaskCompletionSource<bool>();
+
+                    // 注册一次性事件处理器，等待UI清理完成
+                    EventHandler? uiClearedHandler = null;
+                    uiClearedHandler = (s, e) => {
+                        clearUITask.TrySetResult(true);
+                        if (UIClearedEvent != null && uiClearedHandler != null)
+                            UIClearedEvent -= uiClearedHandler;
+                    };
+
+                    UIClearedEvent += uiClearedHandler;
+
+                    // 触发UI清理请求
+                    ClearUIRequested.Invoke();
+
+                    // 等待UI清理完成（800 ms 超时）
+                    var timeoutTask = Task.Delay(800);
+                    var completedTask = await Task.WhenAny(clearUITask.Task, timeoutTask);
+
+                    if (completedTask == timeoutTask)
+                    {
+                        System.Diagnostics.Debug.WriteLine("UI清理等待超时，继续加载节点图");
                         UIClearedEvent -= uiClearedHandler;
+                    }
                 }
-                
+                else
+                {
+                    // 无UI清理需求，直接清除现有节点数据
+                    ClearNodeGraph();
+                }
+
                 // 完全清除当前节点图（模型层面的清理）
-                ClearNodeGraph();
+                // 如果上方未执行，则再确保清理一次
+                if (Nodes.Count > 0 || Connections.Count > 0)
+                {
+                    ClearNodeGraph();
+                }
 
                 // 加载节点
                 foreach (var node in nodeGraph.Nodes)

@@ -356,8 +356,8 @@ namespace Tunnel_Next.ViewModels
                 var dialog = new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "创建新节点图",
-                    Filter = "节点图文件 (*.tnx)|*.tnx",
-                    DefaultExt = "tnx",
+                    Filter = "节点图文件 (*.nodegraph)|*.nodegraph",
+                    DefaultExt = "nodegraph",
                     FileName = defaultName,
                     InitialDirectory = _workFolderService.NodeGraphsFolder
                 };
@@ -393,7 +393,7 @@ namespace Tunnel_Next.ViewModels
                         if (DocumentManager != null)
                         {
                             TaskStatus = $"正在打开新创建的节点图: {fileName}";
-                            var document = await DocumentManager.LoadNodeGraphDocumentAsync(filePath);
+                            var document = await DocumentManager.LoadNodeGraphDocumentAsync(CurrentNodeGraph.FilePath);
                             TaskStatus = $"已创建并打开新节点图: {fileName}";
                         }
                         else
@@ -423,7 +423,7 @@ namespace Tunnel_Next.ViewModels
             {
                 var openDialog = new Microsoft.Win32.OpenFileDialog
                 {
-                    Filter = "节点图文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+                    Filter = "节点图文件 (*.nodegraph)|*.nodegraph|所有文件 (*.*)|*.*",
                     Title = "打开节点图"
                 };
 
@@ -1014,10 +1014,10 @@ namespace Tunnel_Next.ViewModels
                 currentX += layerWidth + Math.Min(layerSpacing, layerWidth * 0.3); // 层间距不超过节点宽度的30%
             }
 
-            // 5. 后处理：微调重叠节点
+            // 后处理：微调重叠节点
             ResolveNodeOverlaps(nodes, nodeSpacing);
 
-            // 6. 通知节点图已修改
+            // 通知节点图已修改
             if (nodes.Any())
             {
                 var firstNode = nodes.First();

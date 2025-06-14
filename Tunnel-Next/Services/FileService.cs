@@ -17,7 +17,7 @@ namespace Tunnel_Next.Services
     /// </summary>
     public class FileService
     {
-        private const string NodeGraphFilter = "TunnelNX 节点图文件 (*.tnx)|*.tnx|所有文件 (*.*)|*.*";
+        private const string NodeGraphFilter = "TunnelNX 节点图文件 (*.nodegraph)|*.nodegraph|所有文件 (*.*)|*.*";
         private const string ImageFilter = "图像文件 (*.jpg;*.jpeg;*.png;*.bmp;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.tiff|所有文件 (*.*)|*.*";
 
         private readonly WorkFolderService? _workFolderService;
@@ -63,12 +63,10 @@ namespace Tunnel_Next.Services
         {
             try
             {
-
                 if (_serializer == null)
                 {
                     throw new InvalidOperationException("节点图序列化器未初始化，请确保传入了RevivalScriptManager");
                 }
-
 
                 // 确定保存路径
                 if (string.IsNullOrEmpty(filePath))
@@ -78,7 +76,7 @@ namespace Tunnel_Next.Services
                     var saveDialog = new SaveFileDialog
                     {
                         Filter = NodeGraphFilter,
-                        DefaultExt = "tnx",
+                        DefaultExt = "nodegraph",
                         AddExtension = true,
                         Title = "保存节点图",
                         InitialDirectory = initialDirectory,
@@ -91,6 +89,41 @@ namespace Tunnel_Next.Services
                     }
 
                     filePath = saveDialog.FileName;
+                }
+
+                // -------- 项目文件夹自动创建逻辑 --------
+                var projectsRoot = _workFolderService?.NodeGraphsFolder;
+                if (!string.IsNullOrEmpty(projectsRoot) && !string.IsNullOrEmpty(filePath))
+                {
+                    var parentDir = Path.GetDirectoryName(filePath) ?? string.Empty;
+
+                    // 当选择路径位于 Projects 根目录，或位于其他非项目目录，但文件名未包含目录分隔符
+                    if (string.Equals(Path.GetFullPath(parentDir), Path.GetFullPath(projectsRoot), StringComparison.OrdinalIgnoreCase))
+                    {
+                        var projectName = Path.GetFileNameWithoutExtension(filePath);
+                        var projectFolder = Path.Combine(projectsRoot, projectName);
+                        if (!Directory.Exists(projectFolder))
+                        {
+                            Directory.CreateDirectory(projectFolder);
+                        }
+
+                        // 更新文件路径到项目文件夹内
+                        filePath = Path.Combine(projectFolder, $"{projectName}.nodegraph");
+
+                        // 创建项目元数据文件
+                        var metadataPath = Path.Combine(projectFolder, $"{projectName}.TNXProject");
+                        if (!File.Exists(metadataPath))
+                        {
+                            File.WriteAllText(metadataPath, "{}");
+                        }
+
+                        // 创建版本目录
+                        var versionsDir = Path.Combine(projectFolder, "versions");
+                        if (!Directory.Exists(versionsDir))
+                        {
+                            Directory.CreateDirectory(versionsDir);
+                        }
+                    }
                 }
 
                 // 确保目录存在
@@ -350,7 +383,7 @@ namespace Tunnel_Next.Services
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
                 {
-                    return Path.Combine(documentsPath, "Tunnel");
+                    return Path.Combine(documentsPath, "TNX", "Projects");
                 }
             }
             catch (Exception ex)
@@ -363,7 +396,7 @@ namespace Tunnel_Next.Services
                 var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 if (!string.IsNullOrEmpty(userProfilePath) && Directory.Exists(userProfilePath))
                 {
-                    return Path.Combine(userProfilePath, "Documents", "Tunnel");
+                    return Path.Combine(userProfilePath, "Documents", "TNX", "Projects");
                 }
             }
             catch (Exception ex)
