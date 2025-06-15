@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<DrawingBrush x:Key="Layer_2" Stretch="Uniform">
+		<DrawingBrush.Drawing>
+			<DrawingGroup>
+				<DrawingGroup.Children>
+					<GeometryDrawing Geometry="F1 M -0.000244141,0L 314.777,0L 314.777,6.16357L -0.000244141,6.16357L -0.000244141,0 Z ">
+						<GeometryDrawing.Pen>
+							<Pen Thickness="1" LineJoin="Round">
+								<Pen.Brush>
+									<LinearGradientBrush StartPoint="0.5,21.1807" EndPoint="0.5,-20.1807">
+										<LinearGradientBrush.GradientStops>
+											<GradientStop Color="#AF00C7FF" Offset="0"/>
+											<GradientStop Color="#00FFFFFF" Offset="0.209647"/>
+											<GradientStop Color="#58FFFFFF" Offset="0.54731"/>
+											<GradientStop Color="#00FFFFFF" Offset="0.751391"/>
+											<GradientStop Color="#00FFFFFF" Offset="0.862709"/>
+											<GradientStop Color="#FF00ECFF" Offset="1"/>
+										</LinearGradientBrush.GradientStops>
+									</LinearGradientBrush>
+								</Pen.Brush>
+							</Pen>
+						</GeometryDrawing.Pen>
+						<GeometryDrawing.Brush>
+							<LinearGradientBrush StartPoint="0.5,21.1807" EndPoint="0.5,-20.1807">
+								<LinearGradientBrush.GradientStops>
+									<GradientStop Color="#2600C7FF" Offset="0.48166"/>
+									<GradientStop Color="#00FFFFFF" Offset="0.500902"/>
+									<GradientStop Color="#2500E3FF" Offset="0.50932"/>
+								</LinearGradientBrush.GradientStops>
+							</LinearGradientBrush>
+						</GeometryDrawing.Brush>
+					</GeometryDrawing>
+				</DrawingGroup.Children>
+			</DrawingGroup>
+		</DrawingBrush.Drawing>
+	</DrawingBrush>
+</ResourceDictionary>
