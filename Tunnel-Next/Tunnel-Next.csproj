@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\*.png" />
+    <Resource Include="designs\*.xaml" />
   </ItemGroup>
 
   <ItemGroup>
