@@ -154,6 +154,7 @@ namespace Tunnel_Next.Services.Scripting
                 var errorMsg = $"[脚本目录扫描失败] {directory}: {ex.Message}";
                 Debug.WriteLine(errorMsg);
                 Trace.WriteLine(errorMsg);
+                Console.WriteLine(errorMsg);
             }
         }
 
@@ -183,6 +184,7 @@ namespace Tunnel_Next.Services.Scripting
                 var errorMsg = $"[脚本文件收集失败] {directory}: {ex.Message}";
                 Debug.WriteLine(errorMsg);
                 Trace.WriteLine(errorMsg);
+                Console.WriteLine(errorMsg);
             }
         }
 
@@ -216,6 +218,7 @@ namespace Tunnel_Next.Services.Scripting
                 var errorMsg = $"[脚本注册失败] {scriptName}: {ex.Message}";
                 Debug.WriteLine(errorMsg);
                 Trace.WriteLine(errorMsg);
+                Console.WriteLine(errorMsg);
             }
         }
 
@@ -226,6 +229,7 @@ namespace Tunnel_Next.Services.Scripting
         {
             try
             {
+                Console.WriteLine($"[脚本解析] 开始解析脚本: {filePath}");
 
                 // 先尝试编译脚本以获取类型信息
                 var sourceCode = File.ReadAllText(filePath);
@@ -248,12 +252,14 @@ namespace Tunnel_Next.Services.Scripting
                     var scriptFileName = Path.GetFileName(filePath);
                     Debug.WriteLine($"[脚本解析失败] {scriptFileName}");
                     Trace.WriteLine($"[脚本解析失败] {scriptFileName}");
+                    Console.WriteLine($"[脚本解析失败] {scriptFileName}");
 
                     foreach (var error in emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
                     {
                         var errorMsg = $"  错误: {error}";
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
+                        Console.WriteLine(errorMsg);
                     }
                     return null;
                 }
@@ -331,6 +337,7 @@ namespace Tunnel_Next.Services.Scripting
                     scriptInfo.Parameters[prop.Name] = paramDef;
                 }
 
+                Console.WriteLine($"[脚本解析成功] {scriptInfo.Name} - 输入端口: {scriptInfo.InputPorts.Count} 输出端口: {scriptInfo.OutputPorts.Count} 参数: {scriptInfo.Parameters.Count}");
                 return scriptInfo;
             }
             catch (Exception ex)
@@ -398,18 +405,21 @@ namespace Tunnel_Next.Services.Scripting
                         var scriptName = Path.GetFileName(scriptInfo.FilePath);
                         Debug.WriteLine($"[脚本编译失败] {scriptName}");
                         Trace.WriteLine($"[脚本编译失败] {scriptName}");
+                        Console.WriteLine($"[脚本编译失败] {scriptName}");
 
                         foreach (var error in result.Errors)
                         {
                             var errorMsg = $"  错误: {error}";
                             Debug.WriteLine(errorMsg);
                             Trace.WriteLine(errorMsg);
+                            Console.WriteLine(errorMsg);
                         }
                         foreach (var warning in result.Warnings)
                         {
                             var warningMsg = $"  警告: {warning}";
                             Debug.WriteLine(warningMsg);
                             Trace.WriteLine(warningMsg);
+                            Console.WriteLine(warningMsg);
                         }
                     }
                 }
@@ -473,12 +483,14 @@ namespace Tunnel_Next.Services.Scripting
                             var errorMsg = $"  错误: {error}";
                             Debug.WriteLine(errorMsg);
                             Trace.WriteLine(errorMsg);
+                            Console.WriteLine(errorMsg);
                         }
                         foreach (var warning in result.Warnings)
                         {
                             var warningMsg = $"  警告: {warning}";
                             Debug.WriteLine(warningMsg);
                             Trace.WriteLine(warningMsg);
+                            Console.WriteLine(warningMsg);
                         }
                         Interlocked.Increment(ref failedCount);
                     }
@@ -554,12 +566,14 @@ namespace Tunnel_Next.Services.Scripting
                         var errorMsg = $"  错误: {error}";
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
+                        Console.WriteLine(errorMsg);
                     }
                     foreach (var warning in result.Warnings)
                     {
                         var warningMsg = $"  警告: {warning}";
                         Debug.WriteLine(warningMsg);
                         Trace.WriteLine(warningMsg);
+                        Console.WriteLine(warningMsg);
                     }
                     return null;
                 }
@@ -617,6 +631,7 @@ namespace Tunnel_Next.Services.Scripting
 
             try
             {
+                Console.WriteLine($"[脚本编译] 开始编译脚本: {scriptInfo.FilePath}");
                 var sourceCode = File.ReadAllText(scriptInfo.FilePath);
                 var relativePath = Path.GetRelativePath(_userScriptsFolder, scriptInfo.FilePath);
 
@@ -644,6 +659,7 @@ namespace Tunnel_Next.Services.Scripting
 
                     result.Success = true;
                     result.AssemblyPath = outputPath;
+                    Console.WriteLine($"[脚本编译成功] {scriptInfo.FilePath} -> {outputPath}");
 
                     // 更新编译缓存（线程安全）
                     var cacheEntry = new CompilationCacheEntry
@@ -677,18 +693,21 @@ namespace Tunnel_Next.Services.Scripting
                     var scriptName = Path.GetFileName(scriptInfo.FilePath);
                     Debug.WriteLine($"[脚本编译失败] {scriptName}");
                     Trace.WriteLine($"[脚本编译失败] {scriptName}");
+                    Console.WriteLine($"[脚本编译失败] {scriptName}");
 
                     foreach (var error in result.Errors)
                     {
                         var errorMsg = $"  错误: {error}";
                         Debug.WriteLine(errorMsg);
                         Trace.WriteLine(errorMsg);
+                        Console.WriteLine(errorMsg);
                     }
                     foreach (var warning in result.Warnings)
                     {
                         var warningMsg = $"  警告: {warning}";
                         Debug.WriteLine(warningMsg);
                         Trace.WriteLine(warningMsg);
+                        Console.WriteLine(warningMsg);
                     }
                 }
             }
