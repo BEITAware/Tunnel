@@ -10,13 +10,38 @@ namespace Tunnel_Next.Services
     /// <summary>
     /// Revival Scripts节点菜单服务 - 基于Revival Scripts系统的节点菜单
     /// </summary>
-    public class RevivalNodeMenuService : INodeMenuService
+    public class RevivalNodeMenuService : INodeMenuService, IDisposable
     {
         private readonly RevivalScriptManager _revivalScriptManager;
 
         public RevivalNodeMenuService(RevivalScriptManager revivalScriptManager)
         {
             _revivalScriptManager = revivalScriptManager ?? throw new ArgumentNullException(nameof(revivalScriptManager));
+            
+            // 订阅脚本编译完成事件，当脚本编译完成时重新排序菜单
+            _revivalScriptManager.ScriptsCompilationCompleted += OnScriptsCompilationCompleted;
+        }
+        
+        /// <summary>
+        /// 脚本编译完成事件处理
+        /// </summary>
+        private void OnScriptsCompilationCompleted(object? sender, EventArgs e)
+        {
+            // 脚本编译完成后，菜单结构会在下次创建菜单时自动排序
+            // 这里不需要额外处理，因为每次调用CreateNodeAddMenu时都会重新构建并排序菜单
+            Console.WriteLine("[Revival Node Menu] 脚本编译完成，下次打开菜单时将重新排序");
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            // 取消事件订阅，避免内存泄漏
+            if (_revivalScriptManager != null)
+            {
+                _revivalScriptManager.ScriptsCompilationCompleted -= OnScriptsCompilationCompleted;
+            }
         }
 
         /// <summary>
@@ -66,7 +91,8 @@ namespace Tunnel_Next.Services
                 AddRevivalScriptToMenuStructure(rootItems, relativePath, scriptInfo);
             }
 
-            return rootItems;
+            // 对根菜单项进行排序，确保文件夹在上方
+            return SortMenuItems(rootItems);
         }
 
         /// <summary>
@@ -127,7 +153,10 @@ namespace Tunnel_Next.Services
                 // 文件夹菜单项
                 menuItem.FontWeight = FontWeights.Bold;
 
-                foreach (var child in item.Children.OrderBy(c => c.IsFolder ? 0 : 1).ThenBy(c => c.Name))
+                // 对子项进行排序：文件夹在前，脚本在后，同类型按名称排序
+                var sortedChildren = SortMenuItems(item.Children);
+                
+                foreach (var child in sortedChildren)
                 {
                     var childMenuItem = CreateMenuItem(child, onNodeSelected);
                     menuItem.Items.Add(childMenuItem);
@@ -173,6 +202,88 @@ namespace Tunnel_Next.Services
             menu.HorizontalOffset = position.X;
             menu.VerticalOffset = position.Y;
             menu.IsOpen = true;
+        }
+
+        /// <summary>
+        /// 对菜单项进行排序，文件夹始终在上方
+        /// 使用快速排序算法实现高效排序
+        /// </summary>
+        /// <param name="items">要排序的菜单项列表</param>
+        /// <returns>排序后的菜单项列表</returns>
+        private List<RevivalNodeMenuItem> SortMenuItems(List<RevivalNodeMenuItem> items)
+        {
+            if (items == null || items.Count <= 1)
+                return items;
+                
+            var result = new List<RevivalNodeMenuItem>(items);
+            QuickSort(result, 0, result.Count - 1);
+            return result;
+        }
+        
+        /// <summary>
+        /// 快速排序算法实现
+        /// </summary>
+        private void QuickSort(List<RevivalNodeMenuItem> items, int left, int right)
+        {
+            if (left < right)
+            {
+                int pivotIndex = Partition(items, left, right);
+                QuickSort(items, left, pivotIndex - 1);
+                QuickSort(items, pivotIndex + 1, right);
+            }
+        }
+        
+        /// <summary>
+        /// 快速排序分区函数
+        /// </summary>
+        private int Partition(List<RevivalNodeMenuItem> items, int left, int right)
+        {
+            var pivot = items[right];
+            int i = left - 1;
+            
+            for (int j = left; j < right; j++)
+            {
+                // 比较规则：1. 文件夹在前，非文件夹在后 2. 同类型按名称字母顺序排序
+                if (CompareMenuItems(items[j], pivot) <= 0)
+                {
+                    i++;
+                    Swap(items, i, j);
+                }
+            }
+            
+            Swap(items, i + 1, right);
+            return i + 1;
+        }
+        
+        /// <summary>
+        /// 交换列表中两个元素的位置
+        /// </summary>
+        private void Swap(List<RevivalNodeMenuItem> items, int i, int j)
+        {
+            var temp = items[i];
+            items[i] = items[j];
+            items[j] = temp;
+        }
+        
+        /// <summary>
+        /// 比较两个菜单项
+        /// </summary>
+        /// <returns>
+        /// 小于0：item1排在item2前面
+        /// 等于0：item1和item2顺序相等
+        /// 大于0：item1排在item2后面
+        /// </returns>
+        private int CompareMenuItems(RevivalNodeMenuItem item1, RevivalNodeMenuItem item2)
+        {
+            // 先比较是否为文件夹（文件夹排在前面）
+            if (item1.IsFolder && !item2.IsFolder)
+                return -1;
+                
+            if (!item1.IsFolder && item2.IsFolder)
+                return 1;
+                
+            // 同为文件夹或同为文件，按名称排序（不区分大小写）
+            return string.Compare(item1.Name, item2.Name, StringComparison.CurrentCultureIgnoreCase);
         }
     }
 

@@ -45,6 +45,11 @@ namespace Tunnel_Next.Services.Scripting
         /// </summary>
         public string UserResourcesFolder => _userResourcesFolder;
 
+        /// <summary>
+        /// 脚本编译完成事件
+        /// </summary>
+        public event EventHandler? ScriptsCompilationCompleted;
+
         public RevivalScriptManager(string userScriptsFolder, string userResourcesFolder)
         {
             _userScriptsFolder = userScriptsFolder ?? throw new ArgumentNullException(nameof(userScriptsFolder));
@@ -435,6 +440,9 @@ namespace Tunnel_Next.Services.Scripting
             }
 
             _isInitialized = true;
+            
+            // 触发脚本编译完成事件
+            ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -519,6 +527,9 @@ namespace Tunnel_Next.Services.Scripting
 
             _isInitialized = true;
             progress?.Report($"编译完成：成功 {compiledCount} 个，失败 {failedCount} 个");
+            
+            // 触发脚本编译完成事件
+            ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
         }
 
         // 移除了LoadCompiledRevivalScript方法，不再缓存实例

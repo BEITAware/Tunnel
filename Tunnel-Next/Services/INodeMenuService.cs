@@ -7,7 +7,7 @@ namespace Tunnel_Next.Services
     /// <summary>
     /// 节点菜单服务接口 - 统一传统脚本和Revival Scripts的菜单接口
     /// </summary>
-    public interface INodeMenuService
+    public interface INodeMenuService : IDisposable
     {
         /// <summary>
         /// 创建节点添加菜单
