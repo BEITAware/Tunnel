@@ -148,7 +148,7 @@ namespace Tunnel_Next.Services.Scripting
                 {
                     // 跳过编译输出目录和资源目录
                     var dirName = Path.GetFileName(subDir);
-                    if (dirName == "compiled" || dirName == "rivivalresources")
+                    if (dirName == "compiled" || dirName == "RevivalResources")
                         continue;
 
                     ScanDirectory(subDir);
@@ -178,7 +178,7 @@ namespace Tunnel_Next.Services.Scripting
                 {
                     // 跳过编译输出目录和资源目录
                     var dirName = Path.GetFileName(subDir);
-                    if (dirName == "compiled" || dirName == "rivivalresources")
+                    if (dirName == "compiled" || dirName == "RevivalResources")
                         continue;
 
                     CollectScriptFiles(subDir, scriptFiles);

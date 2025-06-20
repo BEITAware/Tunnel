@@ -59,7 +59,7 @@ namespace Tunnel_Next.Services
         public string UserScriptsFolder => _userScriptsFolder;
 
         /// <summary>
-        /// 用户脚本资源文件夹路径（用户文档/TNX/Scripts/rivivalresources）
+        /// 用户脚本资源文件夹路径（用户文档/TNX/Scripts/RevivalResources）
         /// </summary>
         public string UserResourcesFolder => _userResourcesFolder;
 
@@ -154,7 +154,7 @@ namespace Tunnel_Next.Services
 
             // TNX 下的脚本与资源目录
             _userScriptsFolder = Path.Combine(_tnxFolder, "Scripts");
-            _userResourcesFolder = Path.Combine(_userScriptsFolder, "rivivalresources");
+            _userResourcesFolder = Path.Combine(_userScriptsFolder, "RevivalResources");
         }
 
         /// <summary>

@@ -7,7 +7,7 @@ namespace Tunnel_Next.Services.Scripting
 {
     /// <summary>
     /// 引用配置文件迁移工具
-    /// 将旧的脚本级引用配置文件从脚本文件夹迁移到RivivalResources文件夹
+    /// 将旧的脚本级引用配置文件从脚本文件夹迁移到RevivalResources文件夹
     /// </summary>
     public class ReferenceConfigMigrator
     {
@@ -112,7 +112,7 @@ namespace Tunnel_Next.Services.Scripting
                 {
                     var dirName = Path.GetFileName(subDir);
                     // 跳过编译输出目录和资源目录
-                    if (dirName == "compiled" || dirName == "rivivalresources")
+                    if (dirName == "compiled" || dirName == "RevivalResources")
                         continue;
 
                     FindConfigFilesRecursive(subDir, configFiles);
