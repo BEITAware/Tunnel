@@ -30,7 +30,10 @@
     <!-- 通用画笔 -->
     <SolidColorBrush x:Key="AeroBorderBrush" Color="{DynamicResource AeroBorderColor}"/>
     <SolidColorBrush x:Key="AeroHighlightBrush" Color="{DynamicResource AeroHighlightColor}"/>
-    <SolidColorBrush x:Key="AeroBackgroundBrush" Color="{DynamicResource AeroBackgroundColor}"/>
+    <LinearGradientBrush x:Key="AeroBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF18202B" Offset="0"/>
+        <GradientStop Color="#FF0A0E16" Offset="1"/>
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="AeroForegroundBrush" Color="{DynamicResource AeroTextColor}"/>
     <SolidColorBrush x:Key="AeroDisabledForegroundBrush" Color="{DynamicResource AeroDisabledTextColor}"/>
     <SolidColorBrush x:Key="AeroDisabledBackgroundBrush" Color="{DynamicResource AeroDisabledBgColor}"/>
@@ -59,6 +62,11 @@
         <GradientStop Color="#FE384F6C" Offset="0.918367"/>
         <GradientStop Color="#FF405671" Offset="0.974026"/>
     </LinearGradientBrush>
+    
+    <RadialGradientBrush x:Key="DocumentTabBackgroundBrush">
+        <GradientStop Color="#FF040912" Offset="1"/>
+        <GradientStop Color="#FF1E242E" Offset="0.387"/>
+    </RadialGradientBrush>
     
     <LinearGradientBrush x:Key="AeroHoverBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{DynamicResource AeroHoverStartColor}" Offset="0"/>

@@ -211,12 +211,14 @@
         <!-- 文档Tab控件 -->
         <TabControl x:Name="DocumentTabs"
                     Grid.Row="1"
-                    Background="#FF1A1F28"
                     BorderThickness="0"
                     SelectionChanged="DocumentTabs_SelectionChanged">
             <TabControl.Resources>
                 <Style TargetType="TabItem" BasedOn="{StaticResource DocumentTabItemStyle}"/>
             </TabControl.Resources>
+            <TabControl.Background>
+                <StaticResource ResourceKey="DocumentTabBackgroundBrush"/>
+            </TabControl.Background>
 
             <!-- 默认空白页面 -->
             <TabItem Header="欢迎" Tag="False">

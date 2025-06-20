@@ -88,7 +88,7 @@
     <!-- 外层Grid用于放置节点和状态指示器 -->
     <Grid>
         <Border x:Name="NodeBorder"
-                Style="{StaticResource NodeBorderStyle}"
+                Style="{DynamicResource NodeBorderStyle}"
                 MinWidth="130"
                 MinHeight="85"
                 Opacity="0.95">

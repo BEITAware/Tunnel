@@ -1,22 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Canvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Document" Width="93.8312" Height="127.25" Clip="F1 M 0,0L 93.8312,0L 93.8312,127.25L 0,127.25L 0,0">
-	<Canvas x:Name="Layer_3" Width="1600.12" Height="1200.36" Canvas.Left="0" Canvas.Top="0">
-		<Rectangle x:Name="Rectangle" Width="93.8312" Height="127.251" Canvas.Left="0" Canvas.Top="-0.000244141" Stretch="Fill" StrokeThickness="1" StrokeLineJoin="Round" Stroke="#FF000000">
-			<Rectangle.Fill>
-				<RadialGradientBrush RadiusX="1" RadiusY="1.4654" Center="0.5,0" GradientOrigin="0.5,0">
-					<RadialGradientBrush.GradientStops>
-						<GradientStop Color="#28FFFFFF" Offset="0.265306"/>
-						<GradientStop Color="#4FCEEEFF" Offset="0.591837"/>
-						<GradientStop Color="#2D2D4957" Offset="0.599258"/>
-						<GradientStop Color="#FF26FFF9" Offset="0.951762"/>
-					</RadialGradientBrush.GradientStops>
-					<RadialGradientBrush.RelativeTransform>
-						<TransformGroup>
-							<RotateTransform CenterX="0.5" CenterY="0" Angle="90"/>
-						</TransformGroup>
-					</RadialGradientBrush.RelativeTransform>
-				</RadialGradientBrush>
-			</Rectangle.Fill>
-		</Rectangle>
-	</Canvas>
-</Canvas>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DrawingBrush x:Key="ButtonActivatedBrush" Stretch="Uniform">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <GeometryDrawing Geometry="F1 M 0,0L 93.8312,0L 93.8312,127.25L 0,127.25L 0,0">
+                        <GeometryDrawing.Pen>
+                            <Pen Thickness="1" LineJoin="Round" Brush="#FF000000"/>
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Brush>
+                            <RadialGradientBrush RadiusX="1" RadiusY="1.4654" Center="0.5,0" GradientOrigin="0.5,0">
+                                <RadialGradientBrush.GradientStops>
+                                    <GradientStop Color="#28FFFFFF" Offset="0.265306"/>
+                                    <GradientStop Color="#4FCEEEFF" Offset="0.591837"/>
+                                    <GradientStop Color="#2D2D4957" Offset="0.599258"/>
+                                    <GradientStop Color="#FF26FFF9" Offset="0.951762"/>
+                                </RadialGradientBrush.GradientStops>
+                                <RadialGradientBrush.RelativeTransform>
+                                    <TransformGroup>
+                                        <RotateTransform CenterX="0.5" CenterY="0" Angle="90"/>
+                                    </TransformGroup>
+                                </RadialGradientBrush.RelativeTransform>
+                            </RadialGradientBrush>
+                        </GeometryDrawing.Brush>
+                    </GeometryDrawing>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+</ResourceDictionary>

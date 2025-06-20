@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceDictionary Source="SharedBrushes.xaml"/>
+	</ResourceDictionary.MergedDictionaries>
+
+	<LinearGradientBrush x:Key="TextBoxActivatedBrush" StartPoint="0.438,5.527" EndPoint="0.438,-4.527">
+		<GradientStop Color="#AF00C7FF" Offset="0.414"/>
+		<GradientStop Color="#00FFFFFF" Offset="0.495"/>
+		<GradientStop Color="#FF00ECFF" Offset="0.692"/>
+	</LinearGradientBrush>
+
+	<Style x:Key="ActivatedTextBoxStyle" TargetType="TextBox">
+		<Setter Property="Background" Value="{StaticResource TextBoxActivatedBrush}"/>
+		<Setter Property="Foreground" Value="{StaticResource PrimaryForeground}"/>
+		<Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+		<Setter Property="BorderThickness" Value="1"/>
+		<Setter Property="Padding" Value="6,4,6,4"/>
+		<Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+		<Setter Property="FontSize" Value="11"/>
+	</Style>
+</ResourceDictionary>

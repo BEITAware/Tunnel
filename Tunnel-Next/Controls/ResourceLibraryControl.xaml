@@ -119,18 +119,18 @@
                            FontSize="{DynamicResource AeroFontSize}"
                            VerticalAlignment="Center"/>
                 <Button x:Name="RefreshButton" Content="🔄" Margin="10,0,0,0"
-                        Style="{StaticResource RibbonButtonStyle}"
+                        Style="{DynamicResource RibbonButtonStyle}"
                         ToolTip="刷新资源库" Click="RefreshButton_Click"/>
                 <Button x:Name="ImportButton" Content="📁" Margin="5,0,0,0"
-                        Style="{StaticResource RibbonButtonStyle}"
+                        Style="{DynamicResource RibbonButtonStyle}"
                         ToolTip="导入图片" Click="ImportButton_Click"/>
             </StackPanel>
         </Border>
         
         <!-- 资源树 -->
         <TreeView Grid.Row="1" x:Name="ResourceTreeView"
-                  Style="{StaticResource ResourceTreeViewStyle}"
-                  ItemContainerStyle="{StaticResource ResourceTreeViewItemStyle}"
+                  Style="{DynamicResource ResourceTreeViewStyle}"
+                  ItemContainerStyle="{DynamicResource ResourceTreeViewItemStyle}"
                   SelectedItemChanged="ResourceTreeView_SelectedItemChanged"
                   MouseDoubleClick="ResourceTreeView_MouseDoubleClick">
             

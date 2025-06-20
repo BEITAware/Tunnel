@@ -9,7 +9,7 @@
         Title="Tunnel Preview" Height="720" Width="1280"
         MinHeight="576" MinWidth="1024"
         WindowState="Maximized"
-        Icon="pack://application:,,,/Resources/imgpp.png">
+        Icon="pack://application:,,,/Resources/imgpp.png" Background="#FF1A1F28">
 
     <DockPanel>
         <!-- Ribbon区域 -->
@@ -514,7 +514,7 @@
                         <TreeView Grid.Row="2" x:Name="VersionTreeView" Margin="5"
                                   Style="{DynamicResource AeroTreeViewStyle}"
                                   ItemContainerStyle="{DynamicResource AeroTreeViewItemStyle}"
-                                  BorderThickness="0">
+                                  BorderThickness="0" Background="{x:Null}">
                             <TreeViewItem Header="版本树" IsExpanded="True">
                                 <TreeViewItem Header="v1 - 初始版本"/>
                             </TreeViewItem>

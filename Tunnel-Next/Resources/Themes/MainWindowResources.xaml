@@ -23,16 +23,8 @@
     
     <!-- 工作区域样式 -->
     <Style x:Key="WorkAreaStyle" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <SolidColorBrush Color="#FF1A1F28"/>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush">
-            <Setter.Value>
-                <SolidColorBrush Color="#FF1A1F28"/>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{DynamicResource AeroBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AeroBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
     
@@ -47,4 +39,43 @@
         <Setter Property="Background" Value="Transparent"/>
     </Style>
     
+    <!-- 元数据查看器样式 -->
+    <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Margin" Value="0,10,0,5"/>
+        <Setter Property="Foreground" Value="#2C3E50"/>
+    </Style>
+
+    <Style x:Key="InfoLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="Foreground" Value="#34495E"/>
+    </Style>
+
+    <Style x:Key="InfoValueStyle" TargetType="TextBlock">
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="#7F8C8D"/>
+    </Style>
+
+    <Style x:Key="TreeViewStyle" TargetType="TreeView">
+        <Setter Property="Background" Value="#FAFAFA"/>
+        <Setter Property="BorderBrush" Value="#BDC3C7"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="ButtonStyle" TargetType="Button">
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Margin" Value="5,0"/>
+        <Setter Property="Background" Value="#3498DB"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#2980B9"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary> 
