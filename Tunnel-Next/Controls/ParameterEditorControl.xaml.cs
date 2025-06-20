@@ -5,6 +5,7 @@ using System.Windows.Data;
 using Tunnel_Next.Models;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 
 namespace Tunnel_Next.Controls
 {
@@ -93,13 +94,20 @@ namespace Tunnel_Next.Controls
             }
         }
 
+        // 防止递归调用导致栈溢出
+        private bool _isUpdating = false;
+
         private void UpdateParameterEditor()
         {
+            if (_isUpdating) return;
+            _isUpdating = true;
+
             ParameterContainer.Children.Clear();
 
             if (SelectedNode == null)
             {
                 ParameterContainer.Children.Add(NoSelectionText);
+                _isUpdating = false;
                 return;
             }
 
@@ -118,6 +126,32 @@ namespace Tunnel_Next.Controls
             if (TryCreateRevivalScriptControl(SelectedNode, out var revivalScriptControl))
             {
                 ParameterContainer.Children.Add(revivalScriptControl);
+
+                // ---------- 预览接管（参数窗口触发） ----------
+                try
+                {
+                    object? scriptObj = null;
+                    if (SelectedNode.Tag is Services.Scripting.IRevivalScript rs)
+                        scriptObj = rs;
+                    else if (SelectedNode.ViewModel is Services.Scripting.IScriptViewModel vm)
+                        scriptObj = vm.Script;
+
+                    if (scriptObj is Services.Scripting.IScriptPreviewProvider previewProvider)
+                    {
+                        if (previewProvider.WantsPreview(Tunnel_Next.Services.UI.PreviewTrigger.ParameterWindow))
+                        {
+                            var ctx = new Services.Scripting.ScriptContext("", "", "", () => new Tunnel_Next.Models.NodeGraph(), _ => { }, _ => new System.Collections.Generic.Dictionary<string, object>(), (a,b,c)=>{});
+                            var ctrl = previewProvider.CreatePreviewControl(Tunnel_Next.Services.UI.PreviewTrigger.ParameterWindow, ctx);
+                            if (ctrl != null)
+                            {
+                                Tunnel_Next.Services.UI.PreviewManager.Instance.RequestTakeover(previewProvider, ctrl, Tunnel_Next.Services.UI.PreviewTrigger.ParameterWindow);
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                _isUpdating = false;
                 return;
             }
 
@@ -146,6 +180,8 @@ namespace Tunnel_Next.Controls
             else
             {
             }
+
+            _isUpdating = false;
         }
 
         private StackPanel CreateNodeInfoPanel()
@@ -571,6 +607,9 @@ namespace Tunnel_Next.Controls
         {
             try
             {
+                // 避免多次重建导致递归
+                if (node.UserData.TryGetValue("ParametersRebuilt", out var rebuilt) && rebuilt is bool b && b)
+                    return;
 
                 // 清除现有参数
                 node.Parameters.Clear();
@@ -590,6 +629,7 @@ namespace Tunnel_Next.Controls
                     node.Parameters.Add(parameter);
                 }
 
+                node.UserData["ParametersRebuilt"] = true;
 
                 // 重新更新参数编辑器
                 UpdateParameterEditor();

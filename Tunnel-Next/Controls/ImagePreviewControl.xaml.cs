@@ -79,6 +79,19 @@ namespace Tunnel_Next.Controls
             ImageContainer.MouseRightButtonDown += OnMouseRightButtonDown;
             ImageContainer.MouseRightButtonUp += OnMouseRightButtonUp;
             ImageContainer.MouseWheel += OnMouseWheel;
+
+            // 注册事件以更新 PreviewState
+            ZoomChanged += z => Tunnel_Next.Services.UI.PreviewState.Zoom = z;
+
+            // 初始化时将默认值写入
+            Tunnel_Next.Services.UI.PreviewState.Zoom = _zoomFactor;
+
+            // 监听滚动
+            ImageScrollViewer.ScrollChanged += (s, e) =>
+            {
+                Tunnel_Next.Services.UI.PreviewState.ScrollOffsetX = e.HorizontalOffset;
+                Tunnel_Next.Services.UI.PreviewState.ScrollOffsetY = e.VerticalOffset;
+            };
         }
 
         private static void OnImageSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

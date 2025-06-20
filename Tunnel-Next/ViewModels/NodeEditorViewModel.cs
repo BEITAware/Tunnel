@@ -11,6 +11,7 @@ using Tunnel_Next.Services.Scripting;
 using System.Reflection;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Tunnel_Next.ViewModels
 {
@@ -131,6 +132,9 @@ namespace Tunnel_Next.ViewModels
 
                 if (_selectedNode != null)
                     _selectedNode.IsSelected = true;
+
+                // ---------- 预览接管逻辑 ----------
+                HandlePreviewTakeoverBySelection(_selectedNode);
             }
         }
 
@@ -1359,5 +1363,49 @@ namespace Tunnel_Next.ViewModels
         }
 
         #endregion
+
+        /// <summary>
+        /// 根据当前选中节点决定是否让脚本接管预览。
+        /// </summary>
+        /// <param name="node">当前选中节点。</param>
+        private void HandlePreviewTakeoverBySelection(Node? node)
+        {
+            // 如果没有节点选中，释放预览
+            if (node == null)
+            {
+                Tunnel_Next.Services.UI.PreviewManager.Instance.ForceReleaseAll();
+                return;
+            }
+
+            // 尝试获得脚本实例
+            object? scriptObj = null;
+
+            if (node.Tag is Services.Scripting.IRevivalScript script)
+            {
+                scriptObj = script;
+            }
+            else if (node.ViewModel is Services.Scripting.IScriptViewModel vm)
+            {
+                scriptObj = vm.Script;
+            }
+
+            if (scriptObj is Services.Scripting.IScriptPreviewProvider previewProvider)
+            {
+                // 检查脚本意愿
+                if (previewProvider.WantsPreview(Tunnel_Next.Services.UI.PreviewTrigger.NodeSelected))
+                {
+                    var ctx = new Services.Scripting.ScriptContext("", "", "", () => CreateNodeGraph(), _ => { }, _ => new System.Collections.Generic.Dictionary<string, object>(), (a,b,c)=>{});
+                    var control = previewProvider.CreatePreviewControl(Tunnel_Next.Services.UI.PreviewTrigger.NodeSelected, ctx);
+                    if (control != null)
+                    {
+                        Tunnel_Next.Services.UI.PreviewManager.Instance.RequestTakeover(previewProvider, control, Tunnel_Next.Services.UI.PreviewTrigger.NodeSelected);
+                        return;
+                    }
+                }
+            }
+
+            // 默认恢复
+            Tunnel_Next.Services.UI.PreviewManager.Instance.ForceReleaseAll();
+        }
     }
 }

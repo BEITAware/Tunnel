@@ -301,6 +301,16 @@ namespace Tunnel_Next.Services.Scripting
         double ZoomLevel { get; }
 
         /// <summary>
+        /// 预览窗口水平滚动偏移（像素）。
+        /// </summary>
+        double PreviewScrollX { get; }
+
+        /// <summary>
+        /// 预览窗口垂直滚动偏移（像素）。
+        /// </summary>
+        double PreviewScrollY { get; }
+
+        /// <summary>
         /// 获取节点输入数据
         /// </summary>
         /// <param name="nodeId">节点ID</param>
@@ -357,6 +367,16 @@ namespace Tunnel_Next.Services.Scripting
         /// <param name="title">对话框标题</param>
         /// <returns>保存的文件路径，取消则返回null</returns>
         string? ShowSaveDialog(string filter = "所有文件 (*.*)|*.*", string title = "保存文件");
+
+        /// <summary>
+        /// 请求释放当前脚本对预览窗口的占用。
+        /// </summary>
+        void RequestPreviewRelease();
+
+        /// <summary>
+        /// （预留）请求重新接管预览窗口。
+        /// </summary>
+        void RequestPreviewReattach();
     }
 
     // 移除了过时的ScriptInfo类，现在只使用RevivalScriptInfo

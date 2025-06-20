@@ -20,6 +20,8 @@ namespace Tunnel_Next.Models
         private readonly NodeEditorViewModel _nodeEditor;
         private readonly FileService _fileService;
         private Grid? _contentGrid;
+        // 预览宿主容器
+        private System.Windows.Controls.ContentControl? _previewHost;
         private ImagePreviewControl? _imagePreview;
         private bool _disposed = false;
         private string _id = Guid.NewGuid().ToString(); // 文档ID使用GUID
@@ -483,12 +485,25 @@ namespace Tunnel_Next.Models
         {
             _contentGrid = new Grid();
 
-            // 创建图像预览控件
+            // 创建预览宿主
+            _previewHost = new System.Windows.Controls.ContentControl();
+
+            // 创建默认图像预览控件
             _imagePreview = new ImagePreviewControl();
 
-            // 添加到网格
-            _contentGrid.Children.Add(_imagePreview);
+            // 默认显示图像预览
+            _previewHost.Content = _imagePreview;
+            _contentGrid.Children.Add(_previewHost);
 
+            // 初始化全局 PreviewManager（如果尚未初始化）
+            try
+            {
+                Tunnel_Next.Services.UI.PreviewManager.Instance.Initialize(_previewHost, _imagePreview);
+            }
+            catch
+            {
+                // 已初始化或发生异常时忽略
+            }
         }
 
         private void OnNodeGraphModified()

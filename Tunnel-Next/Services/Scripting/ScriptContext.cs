@@ -22,6 +22,9 @@ namespace Tunnel_Next.Services.Scripting
         public string? CurrentImagePath { get; set; }
         public double ZoomLevel { get; set; } = 1.0;
 
+        public double PreviewScrollX => Tunnel_Next.Services.UI.PreviewState.ScrollOffsetX;
+        public double PreviewScrollY => Tunnel_Next.Services.UI.PreviewState.ScrollOffsetY;
+
         public ScriptContext(
             string workFolder,
             string tempFolder,
@@ -141,6 +144,25 @@ namespace Tunnel_Next.Services.Scripting
             {
                 return null;
             }
+        }
+
+        // ---------- 预览接管接口实现 ----------
+        public void RequestPreviewRelease()
+        {
+            // 目前先调用 PreviewManager，全局恢复默认。
+            try
+            {
+                Tunnel_Next.Services.UI.PreviewManager.Instance.ForceReleaseAll();
+            }
+            catch
+            {
+                // 忽略错误，基础定义阶段无需处理
+            }
+        }
+
+        public void RequestPreviewReattach()
+        {
+            // 预留接口，暂不实现
         }
     }
 }
