@@ -1,0 +1,80 @@
+<Window x:Class="Tunnel_Next.Windows.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Tunnel_Next.Windows"
+        mc:Ignorable="d"
+        Title="SplashWindow" 
+        Height="450" 
+        Width="800" 
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
+    <Grid>
+        <Image x:Name="SplashImage" Source="/Resources/bootup2.png" Stretch="Uniform"/>
+        <Image HorizontalAlignment="Left" Height="110" Margin="130,52,0,0" VerticalAlignment="Top" Width="110" Source="/Resources/TunnelAppLogo.png"/>
+
+        <!-- 软件名称 -->
+        <TextBlock x:Name="SoftwareNameText"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Top"
+                   Margin="237,74,0,0"
+                   FontSize="36"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Text="Tunnel Preview"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center" FontFamily="Segoe UI">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="2" Direction="330" Color="Black" Opacity="0.7" BlurRadius="3"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <!-- 版权信息 -->
+        <TextBlock x:Name="CopyrightText"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Bottom"
+                   Margin="237,0,0,310"
+                   FontSize="12"
+                   Foreground="White"
+                   Text="© 2025 BEITAware.  按原样提供，不附带任何保证。"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Direction="330" Color="Black" Opacity="0.6" BlurRadius="2"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <!-- 状态信息文本 -->
+        <TextBlock x:Name="StatusText"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Bottom"
+                   Margin="392,0,0,38"
+                   FontSize="14"
+                   Foreground="White"
+                   Text="正在加载脚本..."
+                   TextWrapping="Wrap"
+                   TextAlignment="Center" Height="25" Width="265">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Direction="330" Color="Black" Opacity="0.6" BlurRadius="2"/>
+            </TextBlock.Effect>
+        </TextBlock>
+        <TextBlock x:Name="SoftwareNameText复制__C_"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="237,62,0,0"
+            FontSize="16"
+            FontWeight="Bold"
+            Foreground="White"
+            Text="BEITAware"
+            TextWrapping="Wrap"
+            TextAlignment="Center" FontFamily="Segoe UI Light">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="2" Direction="330" Color="Black" Opacity="0.7" BlurRadius="3"/>
+            </TextBlock.Effect>
+        </TextBlock>
+    </Grid>
+</Window> 
