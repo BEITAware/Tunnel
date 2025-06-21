@@ -1,0 +1,39 @@
+name: .NET Desktop CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    runs-on: windows-latest
+
+    env:
+      Solution_Name: Tunnel-Next\Tunnel-Next.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore $env:Solution_Name
+
+    - name: Build
+      run: dotnet build $env:Solution_Name --configuration ${{ matrix.configuration }}
+
+    - name: Run tests
+      run: dotnet test $env:Solution_Name --configuration ${{ matrix.configuration }}
+      
+    - name: Publish
+      run: dotnet publish $env:Solution_Name --configuration ${{ matrix.configuration }} --output ./publish --runtime win-x64 --self-contained true -p:PublishSingleFile=true
