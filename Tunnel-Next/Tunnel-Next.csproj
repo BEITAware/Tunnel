@@ -39,12 +39,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="YetAnotherAurora.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="YetAnotherAurora.png" />
-  </ItemGroup>
-
 </Project>

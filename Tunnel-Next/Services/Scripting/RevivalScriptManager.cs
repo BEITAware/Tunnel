@@ -442,7 +442,20 @@ namespace Tunnel_Next.Services.Scripting
             _isInitialized = true;
             
             // 触发脚本编译完成事件
-            ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
+            Console.WriteLine("[RevivalScriptManager] 脚本编译完成");
+            Trace.WriteLine("[RevivalScriptManager] 脚本编译完成");
+            Debug.WriteLine("[RevivalScriptManager] 脚本编译完成");
+            
+            var handler = ScriptsCompilationCompleted;
+            if (handler != null)
+            {
+                Console.WriteLine("[RevivalScriptManager] 触发脚本编译完成事件");
+                handler(this, EventArgs.Empty);
+            }
+            else
+            {
+                Console.WriteLine("[RevivalScriptManager] 脚本编译完成事件没有订阅者");
+            }
         }
 
         /// <summary>
@@ -458,6 +471,15 @@ namespace Tunnel_Next.Services.Scripting
             {
                 progress?.Report("所有脚本都是最新的，无需编译");
                 _isInitialized = true;
+                
+                // 即使没有脚本需要编译，也触发编译完成事件
+                Console.WriteLine("[RevivalScriptManager] 所有脚本都是最新的，无需编译");
+                var noCompileHandler = ScriptsCompilationCompleted;
+                if (noCompileHandler != null)
+                {
+                    Console.WriteLine("[RevivalScriptManager] 触发脚本编译完成事件（无需编译情况）");
+                    noCompileHandler(this, EventArgs.Empty);
+                }
                 return;
             }
 
@@ -529,7 +551,20 @@ namespace Tunnel_Next.Services.Scripting
             progress?.Report($"编译完成：成功 {compiledCount} 个，失败 {failedCount} 个");
             
             // 触发脚本编译完成事件
-            ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
+            Console.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
+            Trace.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
+            Debug.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
+            
+            var handler = ScriptsCompilationCompleted;
+            if (handler != null)
+            {
+                Console.WriteLine("[RevivalScriptManager] 触发异步脚本编译完成事件");
+                handler(this, EventArgs.Empty);
+            }
+            else
+            {
+                Console.WriteLine("[RevivalScriptManager] 异步脚本编译完成事件没有订阅者");
+            }
         }
 
         // 移除了LoadCompiledRevivalScript方法，不再缓存实例

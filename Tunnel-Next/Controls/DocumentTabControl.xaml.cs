@@ -454,7 +454,7 @@ namespace Tunnel_Next.Controls
                 "软件图形界面顶部的标签栏为你提供了丰富的软件功能。在\"文件\"标签页点选\"新建按钮\"来创建一张新的节点图。更多内容请查询随附文档。"));
 
             mainPanel.Children.Add(CreateAeroGroupBox("关于", "pack://application:,,,/Resources/imgpp.png",
-                "本软件以MPL 2.0协议授权。\n开放源代码软件，按原样提供，不附带任何保证。\n\nCopyright © BEITAware 与本项目所有贡献者共同持有"));
+                "本软件以MPL 2.0协议授权。\n开放源代码软件，按原样提供，不附带任何保证。\n\nCopyright © BEITAware\n\n欢迎参与本项目，感谢所有贡献者为Tunnel付出的努力。\n诚邀天下贤士，共襄千秋盛举。"));
 
             scrollViewer.Content = mainPanel;
             welcomeGrid.Children.Add(scrollViewer);
@@ -622,7 +622,7 @@ namespace Tunnel_Next.Controls
             // 副标题
             var subtitleText = new TextBlock
             {
-                Text = "\"我看见了过去和未来\"",
+                Text = "\"预览版本\"",
                 FontSize = 14,
                 FontStyle = FontStyles.Italic,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E8E8E8")),
