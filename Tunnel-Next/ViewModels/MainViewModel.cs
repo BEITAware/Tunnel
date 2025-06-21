@@ -367,33 +367,24 @@ namespace Tunnel_Next.ViewModels
                     var filePath = dialog.FileName;
                     var fileName = Path.GetFileNameWithoutExtension(filePath);
 
-
-                    // 创建新节点图
+                    // 创建新节点图对象并设置基本信息
                     CurrentNodeGraph = _fileService.CreateNewNodeGraph(fileName);
                     CurrentNodeGraph.FilePath = filePath;
                     CurrentNodeGraph.IsModified = true; // 标记为已修改，需要保存
 
+                    // 先保存到磁盘，确保文件存在
+                    var saveSuccess = await _fileService.SaveNodeGraphAsync(CurrentNodeGraph, filePath);
 
-                    // 加载到编辑器
-                    await _nodeEditor.LoadNodeGraphAsync(CurrentNodeGraph);
-
-                    // 使用FileService保存新节点图
-                    var success = await _fileService.SaveNodeGraphAsync(CurrentNodeGraph, filePath);
-
-                    if (success)
+                    if (saveSuccess)
                     {
-
-                        // 生成缩略图
-                        await GenerateThumbnailForCurrentNodeGraph();
-
-                        // 更新胶片预览
+                        // 刷新胶片预览（内部会在需要时生成缩略图）
                         await UpdateFilmPreviewAsync();
 
-                        // 使用文档管理器打开新创建的节点图
+                        // 通过 DocumentManager 打开该节点图，自动创建对应的 NodeEditor
                         if (DocumentManager != null)
                         {
                             TaskStatus = $"正在打开新创建的节点图: {fileName}";
-                            var document = await DocumentManager.LoadNodeGraphDocumentAsync(CurrentNodeGraph.FilePath);
+                            await DocumentManager.LoadNodeGraphDocumentAsync(CurrentNodeGraph.FilePath);
                             TaskStatus = $"已创建并打开新节点图: {fileName}";
                         }
                         else
@@ -493,10 +484,7 @@ namespace Tunnel_Next.ViewModels
                 {
                     CurrentNodeGraph = nodeGraph;
 
-                    // 生成缩略图
-                    await GenerateThumbnailForCurrentNodeGraph();
-
-                    // 更新胶片预览
+                    // 让 FilmPreview 稍后刷新并生成缩略图
                     await UpdateFilmPreviewAsync();
 
                     TaskStatus = $"已保存节点图: {nodeGraph.Name}";

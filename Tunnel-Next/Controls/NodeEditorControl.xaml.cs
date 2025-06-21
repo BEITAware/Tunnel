@@ -12,6 +12,7 @@ using Tunnel_Next.Models;
 using Tunnel_Next.ViewModels;
 using Tunnel_Next.Services.ImageProcessing;
 using Tunnel_Next.Services;
+using System.Threading.Tasks;
 
 namespace Tunnel_Next.Controls
 {
@@ -355,8 +356,10 @@ namespace Tunnel_Next.Controls
                     var delay = TimeSpan.FromMilliseconds(i * 15);
                     
                     // 使用Dispatcher延迟执行动画
-                    Dispatcher.BeginInvoke(new Action(() => 
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, async () =>
                     {
+                        // 等待延迟，确保节点不会同时消失
+                        await Task.Delay(delay);
                         try
                         {
                             // 播放删除动画
@@ -417,7 +420,7 @@ namespace Tunnel_Next.Controls
                                 tcs.TrySetResult(true);
                             }
                         }
-                    }), System.Windows.Threading.DispatcherPriority.ApplicationIdle, delay);
+                    });
                 }
                 else
                 {
