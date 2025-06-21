@@ -18,8 +18,10 @@ namespace Tunnel_Next
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 分配控制台窗口用于调试输出
+#if DEBUG
+            // 仅在调试模式下分配控制台窗口用于调试输出
             AllocConsole();
+#endif
 
             base.OnStartup(e);
         }
