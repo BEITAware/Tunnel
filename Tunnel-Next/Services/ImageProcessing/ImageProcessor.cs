@@ -124,6 +124,14 @@ namespace Tunnel_Next.Services.ImageProcessing
                     // 按顺序处理每个Revival Script节点
                     foreach (var node in sortedNodes)
                     {
+                        // 跳过不需要处理且已存在缓存的节点，避免冗余计算
+                        if (!node.ToBeProcessed && _nodeOutputs.ContainsKey(node.Id))
+                        {
+                            // 标记为已处理（上一轮已经成功执行）
+                            node.IsProcessed = true;
+                            continue;
+                        }
+
                         var nodeStartTime = DateTime.Now;
 
                         try
@@ -208,6 +216,12 @@ namespace Tunnel_Next.Services.ImageProcessing
                 if (outputs != null)
                 {
                     // 脚本执行成功（可能返回空字典，表示无输出，但不是错误）
+                    // 如果缓存中已有旧输出，先安全释放其中的 Mat 等资源，防止泄漏
+                    if (_nodeOutputs.TryGetValue(node.Id, out var oldOutputs))
+                    {
+                        DisposeOutputResources(oldOutputs);
+                    }
+
                     _nodeOutputs[node.Id] = outputs; // Cache the output
 
                     // 更新节点的ProcessedOutputs
@@ -251,7 +265,11 @@ namespace Tunnel_Next.Services.ImageProcessing
                     // Ensure ErrorMessage is set if ExecuteRevivalScript didn't set it on the node directly
                     if (string.IsNullOrEmpty(node.ErrorMessage)) node.ErrorMessage = "脚本执行失败";
 
-                    _nodeOutputs.TryRemove(node.Id, out _); // Remove from cache
+                    _nodeOutputs.TryRemove(node.Id, out var removedOutputs); // Remove from cache
+                    if (removedOutputs != null)
+                    {
+                        DisposeOutputResources(removedOutputs);
+                    }
                     node.ProcessedOutputs.Clear(); // CRITICAL: Clear stale outputs from the node object
                 }
             }
@@ -830,6 +848,20 @@ namespace Tunnel_Next.Services.ImageProcessing
             {
                 ClearOutputs();
                 _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// 安全释放输出资源
+        /// </summary>
+        private void DisposeOutputResources(Dictionary<string, object> outputs)
+        {
+            foreach (var output in outputs.Values)
+            {
+                if (output is Mat mat)
+                {
+                    mat?.Dispose();
+                }
             }
         }
     }
