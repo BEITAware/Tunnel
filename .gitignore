@@ -368,7 +368,7 @@ TestImages/
 ref/
 WORKFOLDER/
 old/
-*.md
+
 
 # Develop Symbolic link
 Scripts
