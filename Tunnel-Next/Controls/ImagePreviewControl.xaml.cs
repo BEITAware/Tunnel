@@ -141,12 +141,14 @@ namespace Tunnel_Next.Controls
 
                 var formatInfo = GetRevivalScriptImageFormat(_currentImage);
                 var alphaInfo = GetAlphaChannelInfo(_currentImage);
-
-                ImageInfoText.Text = $"尺寸: {_currentImage.Width} × {_currentImage.Height}, " +
-                                   $"通道: {_currentImage.Channels()}, " +
-                                   $"格式: {formatInfo}" +
-                                   (string.IsNullOrEmpty(alphaInfo) ? "" : $", {alphaInfo}");
-
+                try
+                {
+                    ImageInfoText.Text = $"尺寸: {_currentImage.Width} × {_currentImage.Height}, " +
+                                       $"通道: {_currentImage.Channels()}, " +
+                                       $"格式: {formatInfo}" +
+                                       (string.IsNullOrEmpty(alphaInfo) ? "" : $", {alphaInfo}");
+                }
+                catch { Console.WriteLine("错误：图像信息获取异常"); }
 
                 try
                 {
