@@ -34,6 +34,10 @@ namespace Tunnel_Next.ViewModels
         // 存储待添加节点的位置，用于区分Tab栏添加和右键添加
         private Point? _pendingNodePosition = null;
 
+        // Pending parameter change handling
+        private readonly HashSet<Node> _pendingParamChangeNodes = new();
+        private readonly object _pendingParamChangeLock = new();
+
         public NodeEditorViewModel(RevivalScriptManager? revivalScriptManager = null, FileService? fileService = null)
         {
             _revivalScriptManager = revivalScriptManager;
@@ -660,6 +664,42 @@ namespace Tunnel_Next.ViewModels
             {
                 // 静默处理异常
             }
+
+            // Check if any parameter changes were queued while processing.
+            Node[] nodesToReprocess;
+            lock (_pendingParamChangeLock)
+            {
+                if (_pendingParamChangeNodes.Count == 0) return;
+                nodesToReprocess = _pendingParamChangeNodes.ToArray();
+                _pendingParamChangeNodes.Clear();
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var nodeGraph = CreateNodeGraph();
+
+                    foreach (var n in nodesToReprocess)
+                    {
+                        nodeGraph.MarkNodeAndDownstreamForProcessing(n.Id);
+                    }
+
+                    var r = await _processingService.ProcessChangedNodesAsync(nodeGraph, nodesToReprocess);
+
+                    if (r.Success)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            PreviewUpdateRequested?.Invoke();
+                        });
+                    }
+                }
+                catch (Exception)
+                {
+                    // 静默处理异常
+                }
+            });
         }
 
         /// <summary>
@@ -737,6 +777,16 @@ namespace Tunnel_Next.ViewModels
 
                 if (associatedNode != null)
                 {
+                    // If the processing service is currently busy, queue this change and return.
+                    if (_processingService.IsProcessing)
+                    {
+                        lock (_pendingParamChangeLock)
+                        {
+                            _pendingParamChangeNodes.Add(associatedNode);
+                        }
+                        return;
+                    }
+
                     // The RevivalScriptBase.OnParameterChanged method already calls the script's OnParameterChangedAsync,
                     // so the script's internal state (like ImageInputScript.ImagePath) should be up-to-date.
 

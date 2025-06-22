@@ -4,4 +4,7 @@
     <SolidColorBrush x:Key="PrimaryForeground" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="SecondaryForeground" Color="#777777"/>
     <SolidColorBrush x:Key="BorderBrush" Color="#1A1F28"/>
+    <SolidColorBrush x:Key="Layer_2_M" Color="#FF2A3240"/>
+    <SolidColorBrush x:Key="Layer_1_M" Color="#FF141924"/>
+    <SolidColorBrush x:Key="AccentColor" Color="#FF4466FF"/>
 </ResourceDictionary> 

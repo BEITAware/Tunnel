@@ -1,5 +1,6 @@
 using OpenCvSharp;
 using System.Collections.Concurrent;
+using System.Threading;
 using Tunnel_Next.Models;
 using Tunnel_Next.Services.Scripting;
 using System;
@@ -17,7 +18,11 @@ namespace Tunnel_Next.Services.ImageProcessing
     public class ImageProcessor : IDisposable
     {
         private readonly ConcurrentDictionary<int, Dictionary<string, object>> _nodeOutputs = new();
-        private readonly object _processingLock = new();
+
+        // connection quick-lookup tables, rebuilt each processing round
+        private Dictionary<(int nodeId, string portName), NodeConnection> _inputConnectionMap = new();
+        private Dictionary<int, List<NodeConnection>> _outputConnectionMap = new();
+
         private bool _disposed = false;
         private volatile bool _isProcessing = false;
         private readonly RevivalScriptManager _revivalScriptManager;
@@ -106,62 +111,46 @@ namespace Tunnel_Next.Services.ImageProcessing
                         return true;
                     }
 
-                    // 移除UI耦合 - 不再直接操作UI控件
+                    // 为快速查找建立连接索引
+                    BuildConnectionMaps(nodeGraph);
 
-                    // 使用选择性拓扑排序算法
-                    var sortedNodes = SelectiveTopologicalSort(nodeGraph, nodesToProcess);
-                    if (sortedNodes == null || !sortedNodes.Any())
+                    // 记录每个节点的处理时间（线程安全）
+                    var nodeProcessingTimes = new ConcurrentDictionary<string, double>();
+                    int processedCount = 0;
+
+                    // 基于层级的并行处理
+                    var layers = BuildProcessingLayers(nodeGraph, nodesToProcess);
+
+                    foreach (var layer in layers)
                     {
-                        return false;
-                    }
-
-                    var processingTime = DateTime.Now;
-
-                    // 记录每个节点的处理时间
-                    var nodeProcessingTimes = new Dictionary<string, double>();
-                    var processedCount = 0;
-
-                    // 按顺序处理每个Revival Script节点
-                    foreach (var node in sortedNodes)
-                    {
-                        // 跳过不需要处理且已存在缓存的节点，避免冗余计算
-                        if (!node.ToBeProcessed && _nodeOutputs.ContainsKey(node.Id))
+                        Parallel.ForEach(layer, node =>
                         {
-                            // 标记为已处理（上一轮已经成功执行）
-                            node.IsProcessed = true;
-                            continue;
-                        }
-
-                        var nodeStartTime = DateTime.Now;
-
-                        try
-                        {
-                            await Task.Run(() =>
+                            // 跳过不需要处理且已存在缓存的节点，避免冗余计算
+                            if (!node.ToBeProcessed && _nodeOutputs.ContainsKey(node.Id))
                             {
-                                lock (_processingLock)
-                                {
-                                    ProcessRevivalScriptNode(node, nodeGraph);
-                                }
-                            });
+                                node.IsProcessed = true;
+                                return;
+                            }
 
-                            // 更新节点状态
-                            node.IsProcessed = true;
-                            node.ToBeProcessed = false; // 清除处理标记
-                            processedCount++;
+                            var nodeStartTime = DateTime.Now;
 
-                            var nodeEndTime = DateTime.Now;
-                            var nodeTime = (nodeEndTime - nodeStartTime).TotalMilliseconds;
-                            nodeProcessingTimes[node.Title] = nodeTime;
+                            try
+                            {
+                                ProcessRevivalScriptNode(node, nodeGraph);
 
-                        }
-                        catch (Exception nodeEx)
-                        {
-                            node.HasError = true;
-                            node.ErrorMessage = nodeEx.Message;
+                                node.IsProcessed = true;
+                                node.ToBeProcessed = false; // 清除处理标记
+                                Interlocked.Increment(ref processedCount);
 
-                            // 继续处理其他节点，不中断整个流程
-                            continue;
-                        }
+                                var nodeTime = (DateTime.Now - nodeStartTime).TotalMilliseconds;
+                                nodeProcessingTimes[node.Title] = nodeTime;
+                            }
+                            catch (Exception nodeEx)
+                            {
+                                node.HasError = true;
+                                node.ErrorMessage = nodeEx.Message;
+                            }
+                        });
                     }
 
                     var endTime = DateTime.Now;
@@ -429,11 +418,8 @@ namespace Tunnel_Next.Services.ImageProcessing
             // 遍历节点的输入端口，直接从上游节点的输出中获取元数据
             foreach (var inputPort in node.InputPorts)
             {
-                // 查找连接到此输入端口的输出端口
-                var connection = nodeGraph.Connections.FirstOrDefault(c =>
-                    c.InputNode?.Id == node.Id && c.InputPortName == inputPort.Name);
-
-                if (connection?.OutputNode != null)
+                // 使用快速索引查找连接
+                if (_inputConnectionMap.TryGetValue((node.Id, inputPort.Name), out var connection) && connection.OutputNode != null)
                 {
                     var outputNode = connection.OutputNode;
                     var outputPortName = connection.OutputPortName;
@@ -506,11 +492,8 @@ namespace Tunnel_Next.Services.ImageProcessing
             // 遍历节点的输入端口
             foreach (var inputPort in node.InputPorts)
             {
-                // 查找连接到此输入端口的输出端口
-                var connection = nodeGraph.Connections.FirstOrDefault(c =>
-                    c.InputNode?.Id == node.Id && c.InputPortName == inputPort.Name);
-
-                if (connection?.OutputNode != null)
+                // 使用快速索引查找连接
+                if (_inputConnectionMap.TryGetValue((node.Id, inputPort.Name), out var connection) && connection.OutputNode != null)
                 {
                     var outputNode = connection.OutputNode;
                     var outputPortName = connection.OutputPortName;
@@ -863,6 +846,89 @@ namespace Tunnel_Next.Services.ImageProcessing
                     mat?.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// 根据当前节点图构建速查索引，减少后续 First/Where 枚举成本
+        /// </summary>
+        private void BuildConnectionMaps(NodeGraph nodeGraph)
+        {
+            _inputConnectionMap = nodeGraph.Connections
+                .Where(c => c.InputNode != null)
+                .GroupBy(c => (c.InputNode!.Id, c.InputPortName))
+                .ToDictionary(g => g.Key, g => g.First());
+
+            _outputConnectionMap = nodeGraph.Connections
+                .Where(c => c.OutputNode != null)
+                .GroupBy(c => c.OutputNode!.Id)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        /// <summary>
+        /// 按拓扑层级分组待处理节点，每一层内部无依赖，可并行执行
+        /// </summary>
+        private static List<List<Node>> BuildProcessingLayers(NodeGraph nodeGraph, List<Node> nodesToProcess)
+        {
+            var layers = new List<List<Node>>();
+            if (nodesToProcess == null || nodesToProcess.Count == 0)
+                return layers;
+
+            // 收集所有需要处理的节点（含其上游依赖）
+            var allNodesSet = new HashSet<Node>(nodesToProcess);
+            foreach (var node in nodesToProcess)
+            {
+                CollectUpstreamNodes(node, nodeGraph, allNodesSet);
+            }
+
+            // 计算入度
+            var inDegree = new Dictionary<int, int>();
+            foreach (var node in allNodesSet)
+            {
+                inDegree[node.Id] = 0;
+            }
+
+            foreach (var conn in nodeGraph.Connections)
+            {
+                if (conn.InputNode != null && inDegree.ContainsKey(conn.InputNode.Id))
+                {
+                    inDegree[conn.InputNode.Id]++;
+                }
+            }
+
+            // 初始层：入度为 0
+            var currentLayer = allNodesSet.Where(n => inDegree[n.Id] == 0).ToList();
+            var processed = new HashSet<int>();
+
+            while (currentLayer.Any())
+            {
+                layers.Add(currentLayer);
+                foreach (var node in currentLayer)
+                {
+                    processed.Add(node.Id);
+                }
+
+                var nextLayer = new List<Node>();
+                foreach (var node in currentLayer)
+                {
+                    // 找到 node 的所有输出连接
+                    var outgoing = nodeGraph.Connections.Where(c => c.OutputNode?.Id == node.Id);
+                    foreach (var conn in outgoing)
+                    {
+                        if (conn.InputNode != null && inDegree.ContainsKey(conn.InputNode.Id))
+                        {
+                            inDegree[conn.InputNode.Id]--;
+                            if (inDegree[conn.InputNode.Id] == 0 && !processed.Contains(conn.InputNode.Id))
+                            {
+                                nextLayer.Add(conn.InputNode);
+                            }
+                        }
+                    }
+                }
+
+                currentLayer = nextLayer;
+            }
+
+            return layers;
         }
     }
 }
