@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 合并公共画刷与三态画刷 -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="SharedBrushes.xaml"/>
+        <ResourceDictionary Source="DropdownBase.xaml"/>
+        <ResourceDictionary Source="DropdownHoverMask.xaml"/>
+        <ResourceDictionary Source="DropdownClickMask.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- 内部ToggleButton的极简样式，确保它完全透明且无交互视觉 -->
+    <Style x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- DefaultComboBoxStyle：最终版 -->
+    <Style x:Key="DefaultComboBoxStyle" TargetType="ComboBox">
+        <!-- 基础外观设置 -->
+        <Setter Property="Background" Value="{StaticResource DropdownBaseBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryForeground}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+
+        <!-- 完整、正确的ControlTemplate -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid x:Name="templateRoot" SnapsToDevicePixels="true">
+                        <!-- ToggleButton作为背景和交互核心 -->
+                        <ToggleButton x:Name="ToggleButton" 
+                                      Style="{StaticResource ComboBoxToggleButton}"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"/>
+                        
+                        <!-- 内容和箭头置于顶层，且点击穿透 -->
+                        <Path x:Name="Arrow"
+                              IsHitTestVisible="False"
+                              Data="M 0 0 L 4 4 L 8 0"
+                              Fill="{TemplateBinding Foreground}"
+                              HorizontalAlignment="Right"
+                              Margin="0,0,8,0"
+                              VerticalAlignment="Center"/>
+
+                        <ContentPresenter x:Name="ContentSite"
+                                          IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"/>
+                        
+                        <!-- Popup，无动画，瞬间弹出 -->
+                        <Popup x:Name="PART_Popup"
+                               IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                               AllowsTransparency="true"
+                               Focusable="false"
+                               PopupAnimation="None"
+                               Placement="Bottom">
+                            <Border x:Name="DropDownBorder"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    MinWidth="{Binding ActualWidth, ElementName=templateRoot}"
+                                    Background="{StaticResource Layer_2}" 
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1">
+                                <ScrollViewer>
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        
+        <!-- 触发器，直接切换背景，无多余动画 -->
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DropdownHoverBrush}"/>
+            </Trigger>
+            <Trigger Property="IsDropDownOpen" Value="True">
+                <Setter Property="Background" Value="{StaticResource DropdownClickBrush}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.56"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 隐式下拉框样式：自动应用于所有 ComboBox -->
+    <Style TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}"/>
+</ResourceDictionary> 

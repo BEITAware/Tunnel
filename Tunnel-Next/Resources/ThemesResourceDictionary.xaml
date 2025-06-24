@@ -16,6 +16,7 @@
         <ResourceDictionary Source="Controls/ListBoxStyles.xaml"/>
         <ResourceDictionary Source="Controls/ScrollBarStyles.xaml"/>
         <ResourceDictionary Source="Controls/TreeViewStyles.xaml"/>
+        <ResourceDictionary Source="ScriptsControls/DropdownStyles.xaml"/>
         <!-- TabControl放在最后，因为它依赖ToolbarBackgroundBrush -->
         <ResourceDictionary Source="Controls/TabControlStyles.xaml"/>
         <!-- 胶片预览标题栏样式 -->

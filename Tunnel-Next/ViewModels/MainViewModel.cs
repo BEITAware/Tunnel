@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Media;
 
 namespace Tunnel_Next.ViewModels
@@ -227,6 +228,8 @@ namespace Tunnel_Next.ViewModels
         public ICommand? DeleteNodeCommand { get; private set; }
         public ICommand? ArrangeNodesCommand { get; private set; }
         public ICommand? ArrangeNodesDenseCommand { get; private set; }
+        public ICommand? ArrangeNodesVerticalCommand { get; private set; }
+        public ICommand? ArrangeNodesBalancedCommand { get; private set; }
         public ICommand? ShowNodeStatusCommand { get; private set; }
 
         #endregion
@@ -261,6 +264,8 @@ namespace Tunnel_Next.ViewModels
             DeleteNodeCommand = new RelayCommand(ExecuteDeleteNode, CanDeleteNode);
             ArrangeNodesCommand = new RelayCommand(ExecuteArrangeNodes);
             ArrangeNodesDenseCommand = new RelayCommand(ExecuteArrangeNodesDense);
+            ArrangeNodesVerticalCommand = new RelayCommand(ExecuteArrangeNodesVertical);
+            ArrangeNodesBalancedCommand = new RelayCommand(ExecuteArrangeNodesBalanced);
             ShowNodeStatusCommand = new RelayCommand(ExecuteShowNodeStatus);
         }
 
@@ -1200,6 +1205,270 @@ namespace Tunnel_Next.ViewModels
             {
                 // 静默处理异常
             }
+        }
+
+        /// <summary>
+        /// 执行垂直整理
+        /// </summary>
+        private void ExecuteArrangeNodesVertical()
+        {
+            try
+            {
+                if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any())
+                {
+                    TaskStatus = "没有节点需要整理";
+                    return;
+                }
+
+                TaskStatus = "正在执行垂直整理...";
+
+                // 执行垂直节点整理算法
+                ArrangeNodesVerticalAlgorithm();
+
+                TaskStatus = $"已垂直整理 {_nodeEditor.Nodes.Count} 个节点";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"垂直整理失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 垂直节点整理算法 - 基于拓扑排序的垂直布局
+        /// </summary>
+        private void ArrangeNodesVerticalAlgorithm()
+        {
+            if (_nodeEditor?.Nodes == null || _nodeEditor.Connections == null)
+                return;
+
+            var nodes = _nodeEditor.Nodes.ToList();
+            var connections = _nodeEditor.Connections.ToList();
+
+            // 1. 更新所有节点的高度以适应端口数量
+            foreach (var node in nodes)
+            {
+                node.UpdateNodeHeight();
+            }
+
+            // 2. 使用拓扑排序确定节点层级（列）
+            var layers = PerformTopologicalLayering(nodes, connections);
+
+            // 3. 布局参数（垂直方向为主）
+            const double rowSpacing = 200;   // 行间距（层间距）
+            const double nodeSpacing = 20;   // 节点间水平间距
+            const double startX = 50;        // 起始X位置
+            const double startY = 50;        // 起始Y位置
+
+            // 4. 为每一层布局节点（按行）
+            double currentY = startY;
+
+            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            {
+                var layer = layers[layerIndex];
+                if (!layer.Any()) continue;
+
+                // 按连接数量和宽度排序，优化水平空间利用
+                var sortedLayer = layer.OrderBy(n => GetNodeConnectionCount(n, connections))
+                                       .ThenBy(n => n.Width).ToList();
+
+                // 计算当前行的X位置
+                double currentX = startX;
+
+                // 布局当前层的节点
+                foreach (var node in sortedLayer)
+                {
+                    node.X = currentX;
+                    node.Y = currentY;
+
+                    currentX += node.Width + nodeSpacing;
+                }
+
+                // 移动到下一行，使用当前层中最高节点的高度
+                currentY += GetMaxNodeHeight(layer) + rowSpacing;
+            }
+
+            // 5. 通知节点图已修改
+            if (nodes.Any())
+            {
+                var firstNode = nodes.First();
+                var firstNodeX = firstNode.X;
+                firstNode.X = firstNodeX; // 触发PropertyChanged
+            }
+        }
+
+        /// <summary>
+        /// 获取节点列表中的最大高度
+        /// </summary>
+        private double GetMaxNodeHeight(List<Node> nodes)
+        {
+            return nodes.Any() ? nodes.Max(n => n.Height) : 80; // 默认高度80
+        }
+
+        /// <summary>
+        /// 执行近似正方形网格整理
+        /// </summary>
+        private void ExecuteArrangeNodesBalanced()
+        {
+            try
+            {
+                if (_nodeEditor?.Nodes == null || !_nodeEditor.Nodes.Any())
+                {
+                    TaskStatus = "没有节点需要整理";
+                    return;
+                }
+
+                TaskStatus = "正在执行网格整理...";
+
+                // 执行网格布局算法
+                ArrangeNodesBalancedAlgorithm();
+
+                TaskStatus = $"已网格整理 {_nodeEditor.Nodes.Count} 个节点";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"网格整理失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 近似正方形网格节点整理算法
+        /// 1. 使用拓扑排序获取节点顺序，保证依赖方向大致从左到右、从上到下
+        /// 2. 根据节点数量计算接近正方形的行列数（列 = ceil(sqrt(N)))
+        /// 3. 第一遍扫描确定各列最大宽度、各行最大高度
+        /// 4. 第二遍设置节点坐标，实现紧凑的网格布局
+        /// </summary>
+        private void ArrangeNodesBalancedAlgorithm()
+        {
+            if (_nodeEditor?.Nodes == null || _nodeEditor.Connections == null)
+                return;
+
+            var nodes = _nodeEditor.Nodes.ToList();
+            var connections = _nodeEditor.Connections.ToList();
+
+            // 1. 更新节点高度以适应端口数量
+            foreach (var n in nodes) n.UpdateNodeHeight();
+
+            // 2. 基于依赖关系生成层（列）
+            var layers = PerformTopologicalLayering(nodes, connections);
+
+            // 3. 对层进行交叉最小化排序
+            OptimizeLayerOrdering(layers, connections, 3);
+
+            // 4. 布局参数
+            const double layerSpacing = 180;  // 列间距
+            const double nodeSpacing = 40;    // 同列节点垂直间距
+            const double startX = 50;
+            const double startY = 50;
+
+            // 5. 为每一列布局节点
+            double currentX = startX;
+            foreach (var layer in layers)
+            {
+                if (!layer.Any()) { currentX += layerSpacing; continue; }
+
+                // 计算当前列中节点的起始Y
+                double currentY = startY;
+
+                foreach (var node in layer)
+                {
+                    node.X = currentX;
+                    node.Y = currentY;
+                    currentY += node.Height + nodeSpacing;
+                }
+
+                currentX += GetMaxNodeWidth(layer) + layerSpacing;
+            }
+
+            // 通知修改
+            if (nodes.Any())
+            {
+                var first = nodes.First();
+                first.X = first.X;
+            }
+        }
+
+        /// <summary>
+        /// 使用Barycenter启发式优化层节点顺序，减少连接交叉
+        /// </summary>
+        private void OptimizeLayerOrdering(List<List<Node>> layers, List<NodeConnection> connections, int iterations)
+        {
+            // 创建快捷索引字典
+            var nodeToLayer = new Dictionary<int, int>();
+            for (int i = 0; i < layers.Count; i++)
+            {
+                foreach (var n in layers[i]) nodeToLayer[n.Id] = i;
+            }
+
+            // 邻接字典
+            Dictionary<int, List<Node>> predecessors = new();
+            Dictionary<int, List<Node>> successors = new();
+
+            foreach (var c in connections)
+            {
+                if (c.OutputNode == null || c.InputNode == null) continue;
+
+                if (!successors.TryGetValue(c.OutputNode.Id, out var listS))
+                {
+                    listS = new List<Node>(); successors[c.OutputNode.Id] = listS;
+                }
+                listS.Add(c.InputNode);
+
+                if (!predecessors.TryGetValue(c.InputNode.Id, out var listP))
+                {
+                    listP = new List<Node>(); predecessors[c.InputNode.Id] = listP;
+                }
+                listP.Add(c.OutputNode);
+            }
+
+            for (int iter = 0; iter < iterations; iter++)
+            {
+                // Downward pass (top→bottom layers)
+                for (int i = 1; i < layers.Count; i++)
+                {
+                    SortLayerByBarycenter(layers[i], predecessors, layers[i - 1]);
+                }
+
+                // Upward pass (bottom→top layers)
+                for (int i = layers.Count - 2; i >= 0; i--)
+                {
+                    SortLayerByBarycenter(layers[i], successors, layers[i + 1]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 对单层节点按其与邻接层的连接重心排序
+        /// </summary>
+        private void SortLayerByBarycenter(List<Node> layer, Dictionary<int, List<Node>> neighborMap, List<Node> referenceLayer)
+        {
+            // 建立参考层中节点索引
+            var refIndex = new Dictionary<int, int>();
+            for (int i = 0; i < referenceLayer.Count; i++) refIndex[referenceLayer[i].Id] = i;
+
+            layer.Sort((a, b) =>
+            {
+                double aCenter = ComputeBarycenter(a, neighborMap, refIndex);
+                double bCenter = ComputeBarycenter(b, neighborMap, refIndex);
+                return aCenter.CompareTo(bCenter);
+            });
+        }
+
+        private double ComputeBarycenter(Node node, Dictionary<int, List<Node>> neighborMap, Dictionary<int, int> refIndex)
+        {
+            if (!neighborMap.TryGetValue(node.Id, out var neighbors) || neighbors.Count == 0)
+                return double.MaxValue; // keep at end if no neighbors
+
+            double sum = 0;
+            int count = 0;
+            foreach (var n in neighbors)
+            {
+                if (refIndex.TryGetValue(n.Id, out var idx))
+                {
+                    sum += idx;
+                    count++;
+                }
+            }
+            return count > 0 ? sum / count : double.MaxValue;
         }
 
         #endregion

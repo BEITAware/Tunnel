@@ -189,15 +189,15 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// </summary>
         private void ProcessRevivalScriptNode(Node node, NodeGraph nodeGraph)
         {
+            var clonedMats = new List<Mat>();
             try
             {
-
                 // 清除节点错误状态，预先假设本次会成功
                 node.HasError = false;
                 node.ErrorMessage = string.Empty;
 
                 // 准备输入数据
-                var inputs = PrepareNodeInputs(node, nodeGraph);
+                var inputs = PrepareNodeInputs(node, nodeGraph, clonedMats);
 
                 // 执行Revival Script
                 var outputs = ExecuteRevivalScript(node, inputs, nodeGraph); // This can return null if script fails
@@ -268,6 +268,14 @@ namespace Tunnel_Next.Services.ImageProcessing
                 node.ErrorMessage = $"节点处理失败: {ex.Message}";
                 _nodeOutputs.TryRemove(node.Id, out _);
                 node.ProcessedOutputs.Clear();
+            }
+            finally
+            {
+                // 释放为本节点克隆的所有输入Mat，防止内存泄漏
+                foreach (var m in clonedMats)
+                {
+                    try { m.Dispose(); } catch { }
+                }
             }
         }
 
@@ -485,14 +493,13 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 准备节点输入数据
         /// </summary>
-        private Dictionary<string, object> PrepareNodeInputs(Node node, NodeGraph nodeGraph)
+        private Dictionary<string, object> PrepareNodeInputs(Node node, NodeGraph nodeGraph, List<Mat> clonedMats)
         {
             var inputs = new Dictionary<string, object>();
 
             // 遍历节点的输入端口
             foreach (var inputPort in node.InputPorts)
             {
-                // 使用快速索引查找连接
                 if (_inputConnectionMap.TryGetValue((node.Id, inputPort.Name), out var connection) && connection.OutputNode != null)
                 {
                     var outputNode = connection.OutputNode;
@@ -502,19 +509,17 @@ namespace Tunnel_Next.Services.ImageProcessing
                     if (_nodeOutputs.TryGetValue(outputNode.Id, out var outputData) &&
                         outputData.TryGetValue(outputPortName, out var portData))
                     {
-                        inputs[inputPort.Name] = portData;
                         if (portData is Mat mat)
                         {
-                            // Mat输入调试信息
+                            // 为当前节点克隆一份，避免上游节点提前Dispose
+                            var matClone = mat.Clone();
+                            clonedMats.Add(matClone);
+                            inputs[inputPort.Name] = matClone;
                         }
                         else
                         {
-                            // 其他类型输入调试信息
+                            inputs[inputPort.Name] = portData;
                         }
-                    }
-                    else
-                    {
-                        // 输入数据不可用的调试信息
                     }
                 }
             }

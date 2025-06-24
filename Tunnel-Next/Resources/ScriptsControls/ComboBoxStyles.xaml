@@ -1,15 +1,16 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.MergedDictionaries>
+        <!-- 基础颜色及公共画刷 -->
         <ResourceDictionary Source="SharedBrushes.xaml"/>
+
+        <!-- 下拉框三态画刷（在 DropdownStyles 中已二次合并，此处保留以便单独使用） -->
+        <ResourceDictionary Source="DropdownBase.xaml"/>
+        <ResourceDictionary Source="DropdownHoverMask.xaml"/>
+        <ResourceDictionary Source="DropdownClickMask.xaml"/>
+        <!-- 新的下拉框样式文件 -->
+        <ResourceDictionary Source="DropdownStyles.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="DefaultComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="Background" Value="{StaticResource Layer_2}"/>
-        <Setter Property="Foreground" Value="{StaticResource PrimaryForeground}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
-        <Setter Property="FontSize" Value="11"/>
-    </Style>
-    
+    <!-- 此文件不再直接定义 DefaultComboBoxStyle，由 DropdownStyles.xaml 提供 -->
 </ResourceDictionary> 

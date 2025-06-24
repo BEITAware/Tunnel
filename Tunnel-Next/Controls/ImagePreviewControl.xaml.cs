@@ -109,7 +109,12 @@ namespace Tunnel_Next.Controls
 
             try
             {
-                _currentImage = ImageSource;
+                // 为了避免外部代码在我们使用期间释放 Mat，使用 Clone 保证本地持有一份副本
+                if (_currentImage != null && !_currentImage.IsDisposed)
+                {
+                    _currentImage.Dispose();
+                }
+                _currentImage = ImageSource?.Clone();
 
                 if (_currentImage == null || _currentImage.IsDisposed || _currentImage.Empty())
                 {
@@ -127,13 +132,29 @@ namespace Tunnel_Next.Controls
                     return;
                 }
 
-                var imageSize = _currentImage.Width * _currentImage.Height;
+                // 尝试安全地获取图像的基本信息，如果出现访问违规则中止更新，避免程序崩溃
+                int imgWidth = 0, imgHeight = 0, imgChannels = 0;
+                MatType imgDepth = MatType.CV_8U;
+                try
+                {
+                    imgWidth = _currentImage.Width;
+                    imgHeight = _currentImage.Height;
+                    imgChannels = _currentImage.Channels();
+                    imgDepth = _currentImage.Depth();
+                }
+                catch (AccessViolationException ave)
+                {
+                    Console.WriteLine($"AccessViolation 在获取图像信息时发生: {ave.Message}");
+                    return; // 放弃此次更新，避免崩溃
+                }
+
+                long imageSize = (long)imgWidth * imgHeight;
                 if (imageSize > 50_000_000) // 超过5000万像素
                 {
                     PreviewImage.Source = null;
                     NoImageText.Visibility = Visibility.Visible;
                     NoImageText.Text = "图像过大，无法预览";
-                    ImageInfoText.Text = $"图像过大: {_currentImage.Width}x{_currentImage.Height}";
+                    ImageInfoText.Text = $"图像过大: {imgWidth}x{imgHeight}";
                     _originalBitmap = null;
                     MousePositionText.Text = "位置: N/A";
                     return;
@@ -143,8 +164,8 @@ namespace Tunnel_Next.Controls
                 var alphaInfo = GetAlphaChannelInfo(_currentImage);
                 try
                 {
-                    ImageInfoText.Text = $"尺寸: {_currentImage.Width} × {_currentImage.Height}, " +
-                                       $"通道: {_currentImage.Channels()}, " +
+                    ImageInfoText.Text = $"尺寸: {imgWidth} × {imgHeight}, " +
+                                       $"通道: {imgChannels}, " +
                                        $"格式: {formatInfo}" +
                                        (string.IsNullOrEmpty(alphaInfo) ? "" : $", {alphaInfo}");
                 }
@@ -160,7 +181,7 @@ namespace Tunnel_Next.Controls
                     }
                     else
                     {
-                        var requiredBytes = _currentImage.Width * _currentImage.Height * _currentImage.Channels() * (_currentImage.Depth() == MatType.CV_8U ? 1 : 4);
+                        var requiredBytes = (long)imgWidth * imgHeight * imgChannels * (imgDepth == MatType.CV_8U ? 1 : 4);
 
                         if (requiredBytes > MAX_BUFFER_SIZE)
                         {

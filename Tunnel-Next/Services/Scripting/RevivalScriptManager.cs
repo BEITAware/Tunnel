@@ -17,7 +17,7 @@ namespace Tunnel_Next.Services.Scripting
     /// <summary>
     /// Revival Scripts管理器 - 管理用户脚本系统
     /// </summary>
-    public class RevivalScriptManager
+    public class RevivalScriptManager : IDisposable
     {
         private readonly string _userScriptsFolder;
         private readonly string _userResourcesFolder;
@@ -28,7 +28,11 @@ namespace Tunnel_Next.Services.Scripting
         private CompilationCache _compilationCache = new();
         // 移除了_compiledScripts字段，不再缓存实例
         private volatile bool _isInitialized = false;
-        private readonly object _compilationCacheLock = new object();
+        private readonly object _compilationCacheLock = new();
+        private FileSystemWatcher? _scriptsWatcher; // 监听脚本改动
+        private Timer? _debounceTimer;
+        private readonly object _watcherLock = new();
+        private const int DebounceDelayMs = 1000;
 
         /// <summary>
         /// 脚本系统是否已初始化
@@ -68,6 +72,8 @@ namespace Tunnel_Next.Services.Scripting
 
             // 清理无效的编译文件
             CleanupInvalidCompiledFiles();
+
+            InitializeScriptsWatcher();
         }
 
         /// <summary>
@@ -1004,6 +1010,63 @@ namespace Tunnel_Next.Services.Scripting
             catch (Exception ex)
             {
             }
+        }
+
+        private void InitializeScriptsWatcher()
+        {
+            try
+            {
+                _scriptsWatcher = new FileSystemWatcher(_userScriptsFolder, "*.cs")
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size
+                };
+                _scriptsWatcher.Changed += OnScriptFileChanged;
+                _scriptsWatcher.Created += OnScriptFileChanged;
+                _scriptsWatcher.Deleted += OnScriptFileChanged;
+                _scriptsWatcher.Renamed += OnScriptFileChanged;
+                _scriptsWatcher.EnableRaisingEvents = true;
+            }
+            catch { /* 忽略初始化失败 */ }
+        }
+
+        private void OnScriptFileChanged(object sender, FileSystemEventArgs e)
+        {
+            // 跳过编译输出与资源目录
+            var relative = Path.GetRelativePath(_userScriptsFolder, e.FullPath);
+            if (relative.StartsWith("compiled") || relative.StartsWith("RevivalResources")) return;
+
+            lock (_watcherLock)
+            {
+                if (_debounceTimer == null)
+                {
+                    _debounceTimer = new Timer(_ => HandleScriptsChanged(), null, DebounceDelayMs, Timeout.Infinite);
+                }
+                else
+                {
+                    _debounceTimer.Change(DebounceDelayMs, Timeout.Infinite);
+                }
+            }
+        }
+
+        private void HandleScriptsChanged()
+        {
+            try
+            {
+                ScanRevivalScripts();
+                CompileRevivalScripts();
+                ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RevivalScriptManager] 热加载失败: {ex.Message}");
+            }
+        }
+
+        public void Dispose()
+        {
+            _scriptsWatcher?.Dispose();
+            _debounceTimer?.Dispose();
         }
     }
 
