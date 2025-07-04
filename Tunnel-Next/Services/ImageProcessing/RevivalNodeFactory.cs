@@ -61,6 +61,11 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// </summary>
         public static Node CreateRevivalNode(RevivalScriptInfo scriptInfo, double x, double y)
         {
+            if (scriptInfo.IsSymbolNode)
+            {
+                return CreateSymbolNode(scriptInfo, x, y);
+            }
+
             return CreateRevivalNodeFromScript(scriptInfo, x, y);
         }
 
@@ -303,6 +308,70 @@ namespace Tunnel_Next.Services.ImageProcessing
             {
                 return NodePortDataType.Any;
             }
+        }
+
+        /// <summary>
+        /// 从符号节点信息创建占位节点
+        /// </summary>
+        private static Node CreateSymbolNode(RevivalScriptInfo scriptInfo, double x, double y)
+        {
+            var node = new Node
+            {
+                Id = NodeIdManager.Instance.GenerateNodeId(),
+                Title = scriptInfo.Name,
+                X = x,
+                Y = y,
+                ScriptPath = scriptInfo.FilePath,
+                Category = scriptInfo.Category,
+                Description = scriptInfo.Description,
+                Color = scriptInfo.Color,
+                ToBeProcessed = false, // 占位，无需处理
+                StyleType = "Symbol"
+            };
+
+            // 设置端口
+            foreach (var kvp in scriptInfo.InputPorts)
+            {
+                var port = new NodePort
+                {
+                    Name = kvp.Key,
+                    Type = NodePortType.Input,
+                    DataType = GetNodePortDataType(kvp.Value.DataType),
+                    Description = kvp.Value.Description,
+                    IsInput = true,
+                    IsFlexible = kvp.Value.IsFlexible
+                };
+                node.InputPorts.Add(port);
+
+                if (kvp.Value.IsFlexible && !node.FlexibleInputTypes.Contains(port.DataType))
+                {
+                    node.FlexibleInputTypes.Add(port.DataType);
+                }
+            }
+
+            foreach (var kvp in scriptInfo.OutputPorts)
+            {
+                var port = new NodePort
+                {
+                    Name = kvp.Key,
+                    Type = NodePortType.Output,
+                    DataType = GetNodePortDataType(kvp.Value.DataType),
+                    Description = kvp.Value.Description,
+                    IsInput = false,
+                    IsFlexible = kvp.Value.IsFlexible
+                };
+                node.OutputPorts.Add(port);
+
+                if (kvp.Value.IsFlexible && !node.FlexibleOutputTypes.Contains(port.DataType))
+                {
+                    node.FlexibleOutputTypes.Add(port.DataType);
+                }
+            }
+
+            // 更新节点尺寸
+            node.UpdateNodeHeight();
+
+            return node;
         }
 
         // 移除了CreateRevivalScriptInstance方法，现在完全使用ScriptInstanceManager

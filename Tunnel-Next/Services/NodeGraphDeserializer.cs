@@ -46,7 +46,7 @@ namespace Tunnel_Next.Services
                 {
                     Name = data["name"]?.ToString() ?? "未命名节点图",
                     FilePath = data["filePath"]?.ToString() ?? string.Empty,
-                    LastModified = data["lastModified"]?.ToObject<DateTime>() ?? DateTime.Now
+                    LastModified = ParseDateTimeSafe(data["lastModified"])
                 };
 
                 // 恢复视口信息
@@ -102,7 +102,7 @@ namespace Tunnel_Next.Services
                         Title = nodeData["title"]?.ToString() ?? "未知节点",
                         Category = nodeData["category"]?.ToString() ?? "通用",
                         Description = nodeData["description"]?.ToString() ?? "",
-                        Color = nodeData["color"]?.ToString() ?? "#4A90E2",
+                        Color = FixColorString(nodeData["color"]?.ToString()),
                         ScriptPath = nodeData["scriptPath"]?.ToString() ?? ""
                     };
 
@@ -362,6 +362,39 @@ namespace Tunnel_Next.Services
                 {
                     // 继续处理其他连接
                 }
+            }
+        }
+
+        /// <summary>
+        /// 安全解析日期，若格式无效则返回 DateTime.Now
+        /// </summary>
+        private static DateTime ParseDateTimeSafe(Newtonsoft.Json.Linq.JToken? token)
+        {
+            if (token == null) return DateTime.Now;
+
+            var str = token.ToString();
+            if (DateTime.TryParse(str, out var dt))
+            {
+                return dt;
+            }
+            return DateTime.Now;
+        }
+
+        /// <summary>
+        /// 如果颜色字符串无法被 ColorConverter 解析，则返回默认颜色 #4A90E2
+        /// </summary>
+        private static string FixColorString(string? colorStr)
+        {
+            if (string.IsNullOrWhiteSpace(colorStr)) return "#4A90E2";
+
+            try
+            {
+                var _ = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorStr!);
+                return colorStr!;
+            }
+            catch
+            {
+                return "#4A90E2";
             }
         }
     }

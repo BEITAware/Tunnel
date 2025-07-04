@@ -21,5 +21,7 @@
         <ResourceDictionary Source="Controls/TabControlStyles.xaml"/>
         <!-- 胶片预览标题栏样式 -->
         <ResourceDictionary Source="Controls/FilmPreviewTabStyles.xaml"/>
+        <!-- 新建节点图向导样式 -->
+        <ResourceDictionary Source="Controls/NewNodeGraphDialogStyles.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

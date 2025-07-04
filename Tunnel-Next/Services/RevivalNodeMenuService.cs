@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using Tunnel_Next.Services.Scripting;
 
 namespace Tunnel_Next.Services
@@ -174,6 +176,12 @@ namespace Tunnel_Next.Services
                 if (!string.IsNullOrEmpty(item.Description))
                 {
                     menuItem.ToolTip = item.Description;
+                }
+
+                // 符号节点以红色显示
+                if (item.ScriptInfo != null && item.ScriptInfo.IsSymbolNode)
+                {
+                    menuItem.Foreground = System.Windows.Media.Brushes.Red;
                 }
             }
 

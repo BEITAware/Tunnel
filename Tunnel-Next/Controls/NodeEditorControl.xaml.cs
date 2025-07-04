@@ -46,6 +46,18 @@ namespace Tunnel_Next.Controls
         /// </summary>
         public INodeMenuService? NodeMenuService { get; set; }
 
+        /// <summary>
+        /// 只读模式：用于模板预览等场景，禁止节点编辑操作，但保留平移/缩放浏览功能。
+        /// </summary>
+        public bool IsReadOnly
+        {
+            get => (bool)GetValue(IsReadOnlyProperty);
+            set => SetValue(IsReadOnlyProperty, value);
+        }
+
+        public static readonly DependencyProperty IsReadOnlyProperty =
+            DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(NodeEditorControl), new PropertyMetadata(false));
+
         public NodeEditorControl()
         {
             InitializeComponent();
@@ -197,7 +209,8 @@ namespace Tunnel_Next.Controls
         {
             var nodeControl = new NodeControl
             {
-                Node = node
+                Node = node,
+                IsHitTestVisible = !IsReadOnly // 只读时禁用节点交互
             };
 
             // 设置节点位置
@@ -616,6 +629,9 @@ namespace Tunnel_Next.Controls
 
         private void NodeCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // 只读模式下不弹出上下文菜单
+            if (IsReadOnly) return;
+
             // 右键点击空白区域显示上下文菜单
             if (e.OriginalSource == NodeCanvas)
             {

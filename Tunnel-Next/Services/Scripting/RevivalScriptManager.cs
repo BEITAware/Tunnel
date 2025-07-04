@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Tunnel_Next.Services.Scripting
 {
@@ -149,6 +150,12 @@ namespace Tunnel_Next.Services.Scripting
                     RegisterRevivalScript(file);
                 }
 
+                // 扫描符号节点文件
+                foreach (var file in Directory.GetFiles(directory, "*.sn"))
+                {
+                    RegisterRevivalScript(file);
+                }
+
                 // 递归扫描子目录
                 foreach (var subDir in Directory.GetDirectories(directory))
                 {
@@ -178,6 +185,7 @@ namespace Tunnel_Next.Services.Scripting
             {
                 // 收集C#脚本文件
                 scriptFiles.AddRange(Directory.GetFiles(directory, "*.cs"));
+                scriptFiles.AddRange(Directory.GetFiles(directory, "*.sn"));
 
                 // 递归收集子目录
                 foreach (var subDir in Directory.GetDirectories(directory))
@@ -206,7 +214,18 @@ namespace Tunnel_Next.Services.Scripting
         {
             try
             {
-                var scriptInfo = ParseRevivalScriptInfo(filePath);
+                RevivalScriptInfo? scriptInfo = null;
+
+                var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext == ".cs")
+                {
+                    scriptInfo = ParseRevivalScriptInfo(filePath);
+                }
+                else if (ext == ".sn")
+                {
+                    scriptInfo = ParseSymbolNodeInfo(filePath);
+                }
+
                 if (scriptInfo != null)
                 {
                     scriptInfo.FilePath = filePath;
@@ -215,12 +234,12 @@ namespace Tunnel_Next.Services.Scripting
                     var relativePath = Path.GetRelativePath(_userScriptsFolder, filePath);
                     _scriptRegistry[relativePath] = scriptInfo;
 
-                    // 自动为脚本创建资源文件夹
-                    EnsureScriptResourceFolder(filePath);
+                    // 自动为脚本创建资源文件夹（仅对脚本有效）
+                    if (!scriptInfo.IsSymbolNode)
+                    {
+                        EnsureScriptResourceFolder(filePath);
+                    }
 
-                }
-                else
-                {
                 }
             }
             catch (Exception ex)
@@ -353,6 +372,66 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 解析符号节点信息
+        /// </summary>
+        private RevivalScriptInfo? ParseSymbolNodeInfo(string filePath)
+        {
+            try
+            {
+                // 使用简单XML格式解析符号节点定义
+                var doc = XDocument.Load(filePath);
+                var root = doc.Root;
+                if (root == null || root.Name.LocalName != "SymbolNode")
+                {
+                    return null;
+                }
+
+                var info = new RevivalScriptInfo
+                {
+                    Name = root.Attribute("Name")?.Value ?? Path.GetFileNameWithoutExtension(filePath),
+                    Description = root.Attribute("Description")?.Value ?? string.Empty,
+                    Category = root.Attribute("Category")?.Value ?? "符号节点",
+                    Color = root.Attribute("Color")?.Value ?? "#FF0000",
+                    IsCompiled = true, // 不需要编译
+                    IsSymbolNode = true
+                };
+
+                // 解析输入端口
+                foreach (var portElem in root.Elements("InputPort"))
+                {
+                    var portName = portElem.Attribute("Name")?.Value;
+                    if (string.IsNullOrWhiteSpace(portName)) continue;
+                    var dataType = portElem.Attribute("DataType")?.Value ?? "Any";
+                    var desc = portElem.Attribute("Description")?.Value ?? string.Empty;
+                    var flexibleAttr = portElem.Attribute("IsFlexible")?.Value ?? "false";
+                    bool isFlexible = false;
+                    bool.TryParse(flexibleAttr, out isFlexible);
+                    info.InputPorts[portName] = new PortDefinition(dataType, isFlexible, desc);
+                }
+
+                // 解析输出端口
+                foreach (var portElem in root.Elements("OutputPort"))
+                {
+                    var portName = portElem.Attribute("Name")?.Value;
+                    if (string.IsNullOrWhiteSpace(portName)) continue;
+                    var dataType = portElem.Attribute("DataType")?.Value ?? "Any";
+                    var desc = portElem.Attribute("Description")?.Value ?? string.Empty;
+                    var flexibleAttr = portElem.Attribute("IsFlexible")?.Value ?? "false";
+                    bool isFlexible = false;
+                    bool.TryParse(flexibleAttr, out isFlexible);
+                    info.OutputPorts[portName] = new PortDefinition(dataType, isFlexible, desc);
+                }
+
+                return info;
+            }
+            catch (Exception)
+            {
+                // 解析失败则返回null
                 return null;
             }
         }
@@ -650,6 +729,13 @@ namespace Tunnel_Next.Services.Scripting
         /// </summary>
         private bool NeedsRecompilation(RevivalScriptInfo scriptInfo)
         {
+            // 符号节点不需要编译
+            if (scriptInfo.IsSymbolNode)
+            {
+                scriptInfo.IsCompiled = true;
+                return false;
+            }
+
             var relativePath = Path.GetRelativePath(_userScriptsFolder, scriptInfo.FilePath);
 
             // 检查编译缓存中是否有记录
@@ -1100,6 +1186,7 @@ namespace Tunnel_Next.Services.Scripting
         public Dictionary<string, PortDefinition> InputPorts { get; set; } = new();
         public Dictionary<string, PortDefinition> OutputPorts { get; set; } = new();
         public Dictionary<string, RevivalScriptParameterDefinition> Parameters { get; set; } = new();
+        public bool IsSymbolNode { get; set; } = false;
     }
 
     /// <summary>

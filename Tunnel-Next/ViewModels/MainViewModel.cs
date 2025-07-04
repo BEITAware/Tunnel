@@ -319,93 +319,71 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
-                TaskStatus = "正在创建新的节点图...";
+                TaskStatus = "准备打开模板向导...";
 
-                // 检查当前节点图是否需要自动保存
-                if (CurrentNodeGraph != null && CurrentNodeGraph.IsModified && !string.IsNullOrEmpty(CurrentNodeGraph.FilePath))
+                // 打开模板选择窗口
+                var templateDialog = new Tunnel_Next.Windows.NewNodeGraphWindow
                 {
-                    try
-                    {
-
-                        // 使用FileService保存当前节点图
-                        var saveSuccess = await _fileService.SaveNodeGraphAsync(CurrentNodeGraph);
-
-                        if (saveSuccess)
-                        {
-                        }
-                        else
-                        {
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // 询问用户是否继续
-                        var result = System.Windows.MessageBox.Show(
-                            $"自动保存当前节点图失败：{ex.Message}\n\n是否继续创建新节点图？",
-                            "自动保存失败",
-                            System.Windows.MessageBoxButton.YesNo,
-                            System.Windows.MessageBoxImage.Warning);
-
-                        if (result == System.Windows.MessageBoxResult.No)
-                        {
-                            TaskStatus = "取消创建新节点图";
-                            return;
-                        }
-                    }
-                }
-
-                // 弹出对话框询问节点图名称
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var defaultName = $"新节点图_{timestamp}";
-
-                var dialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Title = "创建新节点图",
-                    Filter = "节点图文件 (*.nodegraph)|*.nodegraph",
-                    DefaultExt = "nodegraph",
-                    FileName = defaultName,
-                    InitialDirectory = _workFolderService.NodeGraphsFolder
+                    Owner = System.Windows.Application.Current?.MainWindow
                 };
 
-                if (dialog.ShowDialog() == true)
-                {
-                    var filePath = dialog.FileName;
-                    var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                    // 创建新节点图对象并设置基本信息
-                    CurrentNodeGraph = _fileService.CreateNewNodeGraph(fileName);
-                    CurrentNodeGraph.FilePath = filePath;
-                    CurrentNodeGraph.IsModified = true; // 标记为已修改，需要保存
-
-                    // 先保存到磁盘，确保文件存在
-                    var saveSuccess = await _fileService.SaveNodeGraphAsync(CurrentNodeGraph, filePath);
-
-                    if (saveSuccess)
-                    {
-                        // 刷新胶片预览（内部会在需要时生成缩略图）
-                        await UpdateFilmPreviewAsync();
-
-                        // 通过 DocumentManager 打开该节点图，自动创建对应的 NodeEditor
-                        if (DocumentManager != null)
-                        {
-                            TaskStatus = $"正在打开新创建的节点图: {fileName}";
-                            await DocumentManager.LoadNodeGraphDocumentAsync(CurrentNodeGraph.FilePath);
-                            TaskStatus = $"已创建并打开新节点图: {fileName}";
-                        }
-                        else
-                        {
-                            TaskStatus = $"已创建新节点图: {fileName}";
-                        }
-                    }
-                    else
-                    {
-                        TaskStatus = "保存新节点图失败";
-                    }
-                }
-                else
+                var result = templateDialog.ShowDialog();
+                if (result != true)
                 {
                     TaskStatus = "取消创建新节点图";
+                    return;
                 }
+
+                // 解析模板路径与新名称
+                if (templateDialog.Tag is not Tuple<string, string> tpl)
+                {
+                    TaskStatus = "未选择有效模板";
+                    return;
+                }
+
+                var templatePath = tpl.Item1;
+                var newName = tpl.Item2;
+
+                if (string.IsNullOrEmpty(templatePath) || !File.Exists(templatePath))
+                {
+                    TaskStatus = "未选择有效模板";
+                    return;
+                }
+
+                // 步骤1: 反序列化模板
+                var revivalManager = _revivalScriptManager ?? new RevivalScriptManager(_workFolderService.UserScriptsFolder, _workFolderService.UserResourcesFolder);
+                var deserializer = new NodeGraphDeserializer(revivalManager);
+                var json = await File.ReadAllTextAsync(templatePath);
+                var nodeGraph = deserializer.DeserializeNodeGraph(json);
+
+                // 步骤2: 设置名称并保存到项目（FileService 会自动创建项目文件夹）
+                nodeGraph.Name = newName;
+
+                var projectsDir = _workFolderService.NodeGraphsFolder;
+                Directory.CreateDirectory(projectsDir);
+                var initialPath = Path.Combine(projectsDir, newName + ".nodegraph");
+
+                var saveSuccess = await _fileService.SaveNodeGraphAsync(nodeGraph, initialPath);
+                if (!saveSuccess)
+                {
+                    TaskStatus = "保存新节点图失败";
+                    return;
+                }
+
+                // 步骤3: 打开文档
+                if (DocumentManager == null)
+                {
+                    TaskStatus = "无法获取文档管理器";
+                    return;
+                }
+
+                TaskStatus = "正在打开节点图...";
+                var document = await DocumentManager.LoadNodeGraphDocumentAsync(nodeGraph.FilePath);
+
+                // 步骤4: 刷新胶片预览
+                await UpdateFilmPreviewAsync();
+
+                TaskStatus = $"已创建并打开节点图: {document.Title}";
             }
             catch (Exception ex)
             {
