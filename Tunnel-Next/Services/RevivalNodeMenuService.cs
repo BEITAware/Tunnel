@@ -178,10 +178,10 @@ namespace Tunnel_Next.Services
                     menuItem.ToolTip = item.Description;
                 }
 
-                // 符号节点以红色显示
+                // 符号节点应用专用样式
                 if (item.ScriptInfo != null && item.ScriptInfo.IsSymbolNode)
                 {
-                    menuItem.Foreground = System.Windows.Media.Brushes.Red;
+                    menuItem.Style = Application.Current.FindResource("SymbolNodeMenuItemStyle") as Style;
                 }
             }
 

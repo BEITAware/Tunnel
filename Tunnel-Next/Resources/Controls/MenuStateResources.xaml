@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 简化的菜单项背景 -->
+    <LinearGradientBrush x:Key="MenuItemIdleBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#12FFFFFF" Offset="0"/>
+        <GradientStop Color="#C30099FF" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="MenuItemHoverBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#7A00F3FF" Offset="0"/>
+        <GradientStop Color="#C30099FF" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="MenuItemClickedBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#BA00F3FF" Offset="0"/>
+        <GradientStop Color="#FF0099FF" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <!-- 子菜单箭头图标 -->
+    <BitmapImage x:Key="SubmenuArrowIcon" UriSource="/Tunnel-Next;component/Resources/ContextMenuSubMenu.png"/>
+</ResourceDictionary> 

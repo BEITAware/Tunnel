@@ -17,11 +17,15 @@
         <ResourceDictionary Source="Controls/ScrollBarStyles.xaml"/>
         <ResourceDictionary Source="Controls/TreeViewStyles.xaml"/>
         <ResourceDictionary Source="ScriptsControls/DropdownStyles.xaml"/>
+        <!-- 自定义菜单样式 -->
+        <ResourceDictionary Source="Controls/CustomContextMenuStyles.xaml"/>
         <!-- TabControl放在最后，因为它依赖ToolbarBackgroundBrush -->
         <ResourceDictionary Source="Controls/TabControlStyles.xaml"/>
         <!-- 胶片预览标题栏样式 -->
         <ResourceDictionary Source="Controls/FilmPreviewTabStyles.xaml"/>
         <!-- 新建节点图向导样式 -->
         <ResourceDictionary Source="Controls/NewNodeGraphDialogStyles.xaml"/>
+        <!-- 隐式应用资源字典 - 防止常用控件回退至系统样式 -->
+        <ResourceDictionary Source="ImplicitScriptsControlsStyles.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
