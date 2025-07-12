@@ -208,6 +208,9 @@ namespace Tunnel_Next.Services.ImageProcessing
                     // 如果缓存中已有旧输出，先安全释放其中的 Mat 等资源，防止泄漏
                     if (_nodeOutputs.TryGetValue(node.Id, out var oldOutputs))
                     {
+#if DEBUG
+                        Console.WriteLine($"[ImageProcessor] 节点 {node.Title} 释放旧输出资源");
+#endif
                         DisposeOutputResources(oldOutputs);
                     }
 
@@ -345,6 +348,11 @@ namespace Tunnel_Next.Services.ImageProcessing
                     System.Diagnostics.Debug.WriteLine($"  内部异常: {ex.InnerException.Message}");
                 }
                 System.Diagnostics.Debug.WriteLine($"  堆栈跟踪: {ex.StackTrace}");
+
+                // 额外的控制台输出
+#if DEBUG
+                Console.WriteLine($"[ImageProcessor] 脚本执行异常 - 节点: {node.Title}, 异常: {ex.Message}");
+#endif
 
                 return null;
             }
@@ -511,6 +519,17 @@ namespace Tunnel_Next.Services.ImageProcessing
                     {
                         if (portData is Mat mat)
                         {
+#if DEBUG
+                            Console.WriteLine($"[ImageProcessor] 为节点 {node.Title} 克隆Mat输入: {inputPort.Name}, 源Mat IsDisposed: {mat.IsDisposed}");
+#endif
+                            if (mat.IsDisposed)
+                            {
+#if DEBUG
+                                Console.WriteLine($"[ImageProcessor] 错误：尝试克隆已释放的Mat对象！源节点: {outputNode.Title}, 端口: {outputPortName}");
+#endif
+                                throw new InvalidOperationException($"Cannot access a disposed Mat object from node {outputNode.Title}, port {outputPortName}");
+                            }
+
                             // 为当前节点克隆一份，避免上游节点提前Dispose
                             var matClone = mat.Clone();
                             clonedMats.Add(matClone);
@@ -844,11 +863,17 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// </summary>
         private void DisposeOutputResources(Dictionary<string, object> outputs)
         {
-            foreach (var output in outputs.Values)
+            foreach (var output in outputs)
             {
-                if (output is Mat mat)
+                if (output.Value is Mat mat)
                 {
-                    mat?.Dispose();
+#if DEBUG
+                    Console.WriteLine($"[ImageProcessor] 释放Mat资源: {output.Key}, IsDisposed: {mat.IsDisposed}");
+#endif
+                    if (!mat.IsDisposed)
+                    {
+                        mat.Dispose();
+                    }
                 }
             }
         }
