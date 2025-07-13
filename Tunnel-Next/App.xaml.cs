@@ -31,9 +31,12 @@ namespace Tunnel_Next
                         // 显示启动窗口
             var splashWindow = new SplashWindow();
             splashWindow.Show();
-            
+
             // 加载主窗口（不自动显示）
             MainWindow mainWindow = new MainWindow();
+
+            // 重要：设置为应用程序的主窗口，这样Application.Current.MainWindow就不会为null
+            this.MainWindow = mainWindow;
             
             // 设置关闭启动窗口的标志和方法
             bool mainWindowShown = false;

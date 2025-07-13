@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -456,6 +457,9 @@ namespace Tunnel_Next.Controls
             mainPanel.Children.Add(CreateAeroGroupBox("关于", "pack://application:,,,/Resources/imgpp.png",
                 "本软件以MPL 2.0协议授权。\n开放源代码软件，按原样提供，不附带任何保证。\n\nCopyright © BEITAware\n\n欢迎参与本项目，感谢所有贡献者为Tunnel付出的努力。\n诚邀天下贤士，共襄千秋盛举。"));
 
+            // 添加开源程序集信息
+            mainPanel.Children.Add(CreateOpenSourceLibrariesGroupBox());
+
             scrollViewer.Content = mainPanel;
             welcomeGrid.Children.Add(scrollViewer);
 
@@ -699,6 +703,153 @@ namespace Tunnel_Next.Controls
         }
 
         /// <summary>
+        /// 创建开源程序集信息GroupBox
+        /// </summary>
+        private GroupBox CreateOpenSourceLibrariesGroupBox()
+        {
+            var groupBox = new GroupBox
+            {
+                Header = "Tunnel使用的开放原代码程序集",
+                Margin = new Thickness(0, 0, 0, 20),
+                Padding = new Thickness(15, 10, 15, 10),
+                Foreground = new SolidColorBrush(Colors.White),
+                FontSize = 14,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(1)
+            };
+
+            // 设置Aero风格背景
+            var backgroundBrush = new LinearGradientBrush();
+            backgroundBrush.StartPoint = new Point(0, 0);
+            backgroundBrush.EndPoint = new Point(0, 1);
+            backgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#30FFFFFF"), 0));
+            backgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#15FFFFFF"), 1));
+            groupBox.Background = backgroundBrush;
+
+            groupBox.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#50FFFFFF"));
+
+            var stackPanel = new StackPanel();
+
+            // 开源库信息数据
+            var libraries = new[]
+            {
+                new { Name = "MathNet.Numerics 5.0.0", License = "MIT License", Copyright = "Copyright (c) 2002-2022 Math.NET Project" },
+                new { Name = "Microsoft.CodeAnalysis 4.14.0", License = "Apache License 2.0", Copyright = "Copyright (c) Microsoft Corporation" },
+                new { Name = "Microsoft.ML 4.0.2", License = "MIT License", Copyright = "Copyright (c) Microsoft Corporation" },
+                new { Name = "Newtonsoft.Json 13.0.3", License = "MIT License", Copyright = "Copyright (c) James Newton-King" },
+                new { Name = "OpenCvSharp4 4.11.0", License = "Apache License 2.0", Copyright = "Copyright 2008 shimat" },
+                new { Name = "Sdcb.LibRaw 0.21.1.7", License = "MIT License (wrapper) / LGPL-2.1 OR CDDL-1.0 (runtime)", Copyright = "Copyright (c) Zhou Jie" },
+                new { Name = "System.Drawing.Common 8.0.11", License = "MIT License", Copyright = "Copyright (c) .NET Foundation and Contributors" },
+                new { Name = "System.Reactive 6.0.1", License = "MIT License", Copyright = "Copyright (c) .NET Foundation and Contributors" },
+                new { Name = "System.Windows.Forms 8.0.11", License = "MIT License", Copyright = "Copyright (c) .NET Foundation and Contributors" }
+            };
+
+            // 为每个库创建信息块
+            foreach (var lib in libraries)
+            {
+                var border = new Border
+                {
+                    Margin = new Thickness(0, 0, 0, 8),
+                    Padding = new Thickness(8),
+                    CornerRadius = new CornerRadius(2),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#20FFFFFF")),
+                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#40FFFFFF")),
+                    BorderThickness = new Thickness(1)
+                };
+
+                var libStackPanel = new StackPanel();
+
+                var nameText = new TextBlock
+                {
+                    Text = lib.Name,
+                    FontWeight = FontWeights.Bold,
+                    FontSize = 11,
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F5F5F5")),
+                    Margin = new Thickness(0, 0, 0, 2)
+                };
+
+                var licenseText = new TextBlock
+                {
+                    Text = lib.License,
+                    FontSize = 10,
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E0E0E0")),
+                    Margin = new Thickness(0, 0, 0, 2)
+                };
+
+                var copyrightText = new TextBlock
+                {
+                    Text = lib.Copyright,
+                    FontSize = 9,
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D0D0D0"))
+                };
+
+
+
+                libStackPanel.Children.Add(nameText);
+                libStackPanel.Children.Add(licenseText);
+                libStackPanel.Children.Add(copyrightText);
+
+                // 创建Grid来布局内容和按钮
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                // 创建查看许可证按钮
+                var licenseButton = new Button
+                {
+                    Content = "查看许可证",
+                    Width = 80,
+                    Height = 25,
+                    Margin = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                // 加载按钮样式
+                try
+                {
+                    var styleUri = new Uri("pack://application:,,,/Tunnel-Next;component/Resources/ScriptsControls/ScriptButtonStyles.xaml");
+                    var resourceDict = new ResourceDictionary { Source = styleUri };
+                    if (resourceDict["SelectFileScriptButtonStyle"] is Style buttonStyle)
+                    {
+                        licenseButton.Style = buttonStyle;
+                    }
+                }
+                catch
+                {
+                    // 如果样式加载失败，使用默认样式
+                }
+
+                // 绑定点击事件
+                licenseButton.Click += (sender, e) => ShowLicenseDialog(lib.Name);
+
+                // 设置Grid布局
+                Grid.SetColumn(libStackPanel, 0);
+                Grid.SetColumn(licenseButton, 1);
+                grid.Children.Add(libStackPanel);
+                grid.Children.Add(licenseButton);
+
+                border.Child = grid;
+                stackPanel.Children.Add(border);
+            }
+
+            // 添加法律声明
+            var legalText = new TextBlock
+            {
+                Text = "本软件使用的第三方开源库均遵循其各自的开源协议。\n完整的许可证文本和源代码可在各项目的官方仓库中找到。\n对于LGPL许可的组件，源代码可通过相应项目的官方渠道获取。",
+                FontSize = 9,
+                FontStyle = FontStyles.Italic,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C0C0C0")),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            stackPanel.Children.Add(legalText);
+            groupBox.Content = stackPanel;
+
+            return groupBox;
+        }
+
+        /// <summary>
         /// 播放欢迎页面动画效果
         /// </summary>
         private void PlayWelcomeAnimation(TabItem welcomeTab)
@@ -824,6 +975,322 @@ namespace Tunnel_Next.Controls
                 content.Opacity = 1.0;
             }
         }
+
+        /// <summary>
+        /// 显示许可证协议对话框
+        /// </summary>
+        private void ShowLicenseDialog(string libraryName)
+        {
+            try
+            {
+                var licenseFileName = GetLicenseFileName(libraryName);
+                if (string.IsNullOrEmpty(licenseFileName))
+                {
+                    MessageBox.Show($"未找到 {libraryName} 的许可证文件。", "许可证", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var licenseFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Licenses", licenseFileName);
+                if (!File.Exists(licenseFilePath))
+                {
+                    MessageBox.Show($"许可证文件不存在：{licenseFileName}\n完整路径：{licenseFilePath}", "许可证", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var licenseContent = File.ReadAllText(licenseFilePath);
+                ShowLicenseWindow(libraryName, licenseContent);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"读取许可证文件时发生错误：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 根据库名称获取对应的许可证文件名
+        /// </summary>
+        private string GetLicenseFileName(string libraryName)
+        {
+            // 提取库的基础名称（去掉版本号）
+            var baseName = libraryName.Split(' ')[0];
+
+            return baseName switch
+            {
+                "MathNet.Numerics" => "MathNet.Numerics-LICENSE.txt",
+                "Microsoft.CodeAnalysis" => "Microsoft.CodeAnalysis-LICENSE.txt",
+                "Microsoft.ML" => "Microsoft.ML-LICENSE.txt",
+                "Newtonsoft.Json" => "Newtonsoft.Json-LICENSE.txt",
+                "OpenCvSharp4" => "OpenCvSharp4-LICENSE.txt",
+                "Sdcb.LibRaw" => "Sdcb.LibRaw-LICENSE.txt",
+                "System.Drawing.Common" => "DotNet-Foundation-LICENSE.txt",
+                "System.Reactive" => "DotNet-Foundation-LICENSE.txt",
+                "System.Windows.Forms" => "DotNet-Foundation-LICENSE.txt",
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// 显示许可证窗口
+        /// </summary>
+        private void ShowLicenseWindow(string libraryName, string licenseContent)
+        {
+            try
+            {
+                var window = new Window
+                {
+                    Title = $"{libraryName} - 许可证协议",
+                    Width = 700,
+                    Height = 600,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Window.GetWindow(this),
+                    ResizeMode = ResizeMode.CanResize,
+                    MinWidth = 500,
+                    MinHeight = 400
+                };
+
+                // 设置窗口背景为Aero风格
+                var windowBackgroundBrush = new ImageBrush();
+                try
+                {
+                    var imageUri = new Uri("pack://application:,,,/Resources/Aurora.png");
+                    windowBackgroundBrush.ImageSource = new BitmapImage(imageUri);
+                    windowBackgroundBrush.Stretch = Stretch.Fill;
+                    window.Background = windowBackgroundBrush;
+                }
+                catch
+                {
+                    // 如果图片加载失败，使用渐变背景
+                    var gradientBrush = new LinearGradientBrush();
+                    gradientBrush.StartPoint = new Point(0, 0);
+                    gradientBrush.EndPoint = new Point(0, 1);
+                    gradientBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF1A1F28"), 0));
+                    gradientBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF2E4A6C"), 1));
+                    window.Background = gradientBrush;
+                }
+
+                // 创建主容器
+                var mainGrid = new Grid();
+
+                // 添加半透明背景层
+                var overlayBorder = new Border();
+                var overlayBrush = new LinearGradientBrush();
+                overlayBrush.StartPoint = new Point(0, 0);
+                overlayBrush.EndPoint = new Point(0, 1);
+                overlayBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#B0000000"), 0));
+                overlayBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#90000000"), 1));
+                overlayBorder.Background = overlayBrush;
+                mainGrid.Children.Add(overlayBorder);
+
+                // 内容容器
+                var contentBorder = new Border
+                {
+                    Margin = new Thickness(20),
+                    CornerRadius = new CornerRadius(5),
+                    Padding = new Thickness(0, 0, 0, 0)
+                };
+
+                // 设置内容边框的Aero风格背景
+                var contentBackgroundBrush = new LinearGradientBrush();
+                contentBackgroundBrush.StartPoint = new Point(0, 0);
+                contentBackgroundBrush.EndPoint = new Point(0, 1);
+                contentBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#40FFFFFF"), 0));
+                contentBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#20FFFFFF"), 1));
+                contentBorder.Background = contentBackgroundBrush;
+                contentBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#60FFFFFF"));
+                contentBorder.BorderThickness = new Thickness(1);
+
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                // 标题区域
+                var titleBorder = new Border
+                {
+                    Padding = new Thickness(20, 15, 20, 15),
+                    CornerRadius = new CornerRadius(5, 5, 0, 0)
+                };
+
+                var titleBackgroundBrush = new LinearGradientBrush();
+                titleBackgroundBrush.StartPoint = new Point(0, 0);
+                titleBackgroundBrush.EndPoint = new Point(0, 1);
+                titleBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#60FFFFFF"), 0));
+                titleBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#30FFFFFF"), 1));
+                titleBorder.Background = titleBackgroundBrush;
+                titleBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#80FFFFFF"));
+                titleBorder.BorderThickness = new Thickness(0, 0, 0, 1);
+
+                var titleText = new TextBlock
+                {
+                    Text = $"{libraryName} 许可证协议",
+                    FontSize = 18,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontFamily = new FontFamily("Segoe UI, Microsoft YaHei UI, Arial")
+                };
+                titleBorder.Child = titleText;
+                Grid.SetRow(titleBorder, 0);
+                grid.Children.Add(titleBorder);
+
+                // 内容区域
+                var contentScrollViewer = new ScrollViewer
+                {
+                    Margin = new Thickness(20, 15, 20, 15),
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+                };
+
+                var textBox = new TextBox
+                {
+                    Text = licenseContent,
+                    IsReadOnly = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontFamily = new FontFamily("Consolas, Courier New, monospace"),
+                    FontSize = 12,
+                    Padding = new Thickness(15),
+                    BorderThickness = new Thickness(0),
+                    Foreground = Brushes.White,
+                    Background = Brushes.Transparent,
+                    SelectionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#40FFFFFF"))
+                };
+
+                contentScrollViewer.Content = textBox;
+                Grid.SetRow(contentScrollViewer, 1);
+                grid.Children.Add(contentScrollViewer);
+
+                // 按钮区域
+                var buttonBorder = new Border
+                {
+                    Padding = new Thickness(20, 15, 20, 15),
+                    CornerRadius = new CornerRadius(0, 0, 5, 5)
+                };
+
+                var buttonBackgroundBrush = new LinearGradientBrush();
+                buttonBackgroundBrush.StartPoint = new Point(0, 0);
+                buttonBackgroundBrush.EndPoint = new Point(0, 1);
+                buttonBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#30FFFFFF"), 0));
+                buttonBackgroundBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#60FFFFFF"), 1));
+                buttonBorder.Background = buttonBackgroundBrush;
+                buttonBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#80FFFFFF"));
+                buttonBorder.BorderThickness = new Thickness(0, 1, 0, 0);
+
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right
+                };
+
+                // 关闭按钮 - 使用Aero风格
+                var closeButton = new Button
+                {
+                    Content = "关闭",
+                    Width = 100,
+                    Height = 35,
+                    Margin = new Thickness(0),
+                    IsDefault = true,
+                    IsCancel = true,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    FontFamily = new FontFamily("Segoe UI, Microsoft YaHei UI, Arial")
+                };
+
+                // 设置按钮的Aero风格
+                var buttonBackgroundBrush2 = new LinearGradientBrush();
+                buttonBackgroundBrush2.StartPoint = new Point(0, 0);
+                buttonBackgroundBrush2.EndPoint = new Point(0, 1);
+                buttonBackgroundBrush2.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF2E4A6C"), 0));
+                buttonBackgroundBrush2.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF1D2E54"), 0.4));
+                buttonBackgroundBrush2.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FE070714"), 0.6));
+                buttonBackgroundBrush2.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF162F67"), 1));
+                closeButton.Background = buttonBackgroundBrush2;
+                closeButton.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF1A1F28"));
+                closeButton.BorderThickness = new Thickness(1);
+
+                // 添加按钮悬停效果
+                closeButton.MouseEnter += (s, e) =>
+                {
+                    var hoverBrush = new LinearGradientBrush();
+                    hoverBrush.StartPoint = new Point(0, 0);
+                    hoverBrush.EndPoint = new Point(0, 1);
+                    hoverBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF3E5A7C"), 0));
+                    hoverBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF2D3E64"), 0.4));
+                    hoverBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FE171724"), 0.6));
+                    hoverBrush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FF263F77"), 1));
+                    closeButton.Background = hoverBrush;
+                };
+
+                closeButton.MouseLeave += (s, e) =>
+                {
+                    closeButton.Background = buttonBackgroundBrush2;
+                };
+
+                closeButton.Click += (s, e) => window.Close();
+                buttonPanel.Children.Add(closeButton);
+                buttonBorder.Child = buttonPanel;
+                Grid.SetRow(buttonBorder, 2);
+                grid.Children.Add(buttonBorder);
+
+                contentBorder.Child = grid;
+                mainGrid.Children.Add(contentBorder);
+                window.Content = mainGrid;
+                window.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"显示许可证窗口时发生错误：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #region 许可证按钮事件处理
+
+        private void MathNetLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("MathNet.Numerics 5.0.0");
+        }
+
+        private void MicrosoftCodeAnalysisLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("Microsoft.CodeAnalysis 4.14.0");
+        }
+
+        private void MicrosoftMLLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("Microsoft.ML 4.0.2");
+        }
+
+        private void NewtonsoftJsonLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("Newtonsoft.Json 13.0.3");
+        }
+
+        private void OpenCvSharp4LicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("OpenCvSharp4 4.11.0");
+        }
+
+        private void SdcbLibRawLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("Sdcb.LibRaw 0.21.1.7");
+        }
+
+        private void SystemDrawingCommonLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("System.Drawing.Common 8.0.11");
+        }
+
+        private void SystemReactiveLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("System.Reactive 6.0.1");
+        }
+
+        private void SystemWindowsFormsLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLicenseDialog("System.Windows.Forms 8.0.11");
+        }
+
+        #endregion
 
         #endregion
     }

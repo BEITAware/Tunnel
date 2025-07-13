@@ -35,6 +35,24 @@ namespace Tunnel_Next
             return _revivalScriptManager;
         }
 
+        /// <summary>
+        /// 获取回退的项目文件夹路径
+        /// </summary>
+        private string GetFallbackProjectsFolder()
+        {
+            try
+            {
+                var config = new WorkFolderConfig();
+                return Path.Combine(config.WorkFolder, "Projects");
+            }
+            catch
+            {
+                // 如果配置系统失败，使用硬编码的回退路径
+                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                return Path.Combine(documentsPath, "TNX", "Projects");
+            }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -291,10 +309,11 @@ namespace Tunnel_Next
                     Filter = "节点图文件 (*.json)|*.json|所有文件 (*.*)|*.*",
                     Title = "打开节点图",
                     CheckFileExists = true,
-                    InitialDirectory = _viewModel.FileService?.GetDefaultNodeGraphsFolder() ?? Environment.CurrentDirectory
+                    InitialDirectory = _viewModel.FileService?.GetDefaultNodeGraphsFolder() ??
+                                     GetFallbackProjectsFolder()
                 };
 
-                if (openDialog.ShowDialog() == true)
+                if (openDialog.ShowDialog(this) == true)
                 {
                     _viewModel.TaskStatus = $"正在打开文档: {openDialog.FileName}";
 
@@ -330,7 +349,7 @@ namespace Tunnel_Next
                         FileName = document.Title
                     };
 
-                    if (saveDialog.ShowDialog() == true)
+                    if (saveDialog.ShowDialog(this) == true)
                     {
                         filePath = saveDialog.FileName;
                     }

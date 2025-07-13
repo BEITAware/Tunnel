@@ -8,11 +8,17 @@
              d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <!-- 转换器 -->
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <!-- 合并资源字典 -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Tunnel-Next;component/Resources/ScriptsControls/ScriptButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- 文档Tab样式 -->
-        <Style x:Key="DocumentTabItemStyle" TargetType="TabItem">
+            <!-- 转换器 -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+            <!-- 文档Tab样式 -->
+            <Style x:Key="DocumentTabItemStyle" TargetType="TabItem">
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontFamily" Value="{DynamicResource AeroFontFamily}"/>
@@ -158,7 +164,8 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -358,6 +365,282 @@
                                                        Foreground="#D0D0D0" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Tunnel使用的开放原代码程序集 -->
+                            <GroupBox Header="Tunnel使用的开放原代码程序集" Margin="0,0,0,20" Padding="15,10">
+                                <GroupBox.Style>
+                                    <Style TargetType="GroupBox" BasedOn="{StaticResource AeroGroupBoxStyle}">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontSize" Value="14"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#30FFFFFF" Offset="0"/>
+                                                    <GradientStop Color="#15FFFFFF" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="BorderBrush" Value="#50FFFFFF"/>
+                                    </Style>
+                                </GroupBox.Style>
+
+                                <StackPanel>
+                                    <!-- MathNet.Numerics -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="MathNet.Numerics 5.0.0" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) 2002-2022 Math.NET Project" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="MathNetLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Microsoft.CodeAnalysis -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Microsoft.CodeAnalysis 4.14.0" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Apache License 2.0" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) Microsoft Corporation" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="MicrosoftCodeAnalysisLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Microsoft.ML -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Microsoft.ML 4.0.2" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) Microsoft Corporation" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="MicrosoftMLLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Newtonsoft.Json -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Newtonsoft.Json 13.0.3" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) James Newton-King" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="NewtonsoftJsonLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- OpenCvSharp4 -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="OpenCvSharp4 4.11.0" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Apache License 2.0" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright 2008 shimat" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="OpenCvSharp4LicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Sdcb.LibRaw -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Sdcb.LibRaw 0.21.1.7" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License (wrapper) / LGPL-2.1 OR CDDL-1.0 (runtime)" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) Zhou Jie" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="SdcbLibRawLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- System.Drawing.Common -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="System.Drawing.Common 8.0.11" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) .NET Foundation and Contributors" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="SystemDrawingCommonLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- System.Reactive -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="System.Reactive 6.0.1" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) .NET Foundation and Contributors" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="SystemReactiveLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- System.Windows.Forms -->
+                                    <Border Margin="0,0,0,8" Padding="8" CornerRadius="2" Background="#20FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="System.Windows.Forms 8.0.11" FontWeight="Bold" FontSize="11"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#F5F5F5" Margin="0,0,0,2"/>
+                                                <TextBlock Text="MIT License" FontSize="10"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#E0E0E0" Margin="0,0,0,2"/>
+                                                <TextBlock Text="Copyright (c) .NET Foundation and Contributors" FontSize="9"
+                                                           FontFamily="{DynamicResource AeroFontFamily}"
+                                                           Foreground="#D0D0D0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="查看许可证" Width="80" Height="25"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    Style="{StaticResource SelectFileScriptButtonStyle}"
+                                                    Click="SystemWindowsFormsLicenseButton_Click"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- 法律声明 -->
+                                    <TextBlock FontSize="9" FontStyle="Italic"
+                                               FontFamily="{DynamicResource AeroFontFamily}"
+                                               Foreground="#C0C0C0" TextWrapping="Wrap" Margin="0,8,0,0">
+                                        <Run Text="本软件使用的第三方开源库均遵循其各自的开源协议。"/>
+                                        <LineBreak/>
+                                        <Run Text="完整的许可证文本和源代码可在各项目的官方仓库中找到。"/>
+                                        <LineBreak/>
+                                        <Run Text="对于LGPL许可的组件，源代码可通过相应项目的官方渠道获取。"/>
+                                    </TextBlock>
                                 </StackPanel>
                             </GroupBox>
 

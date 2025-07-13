@@ -256,7 +256,10 @@ namespace Tunnel_Next.Services
                 FileName = defaultFileName
             };
 
-            return saveDialog.ShowDialog() == true ? saveDialog.FileName : null;
+            // 安全地设置Owner并显示对话框
+            var mainWindow = System.Windows.Application.Current?.MainWindow;
+            bool? result = mainWindow != null ? saveDialog.ShowDialog(mainWindow) : saveDialog.ShowDialog();
+            return result == true ? saveDialog.FileName : null;
         }
 
         /// <summary>
@@ -372,39 +375,83 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
-        /// 获取回退的节点图文件夹路径
+        /// 获取回退的节点图文件夹路径（使用配置系统）
         /// </summary>
         /// <returns>回退的节点图文件夹路径</returns>
         private string GetFallbackNodeGraphsFolder()
         {
             try
             {
-                // 优先使用用户文档文件夹
-                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
-                {
-                    return Path.Combine(documentsPath, "TNX", "Projects");
-                }
+                var config = new WorkFolderConfig();
+                return Path.Combine(config.WorkFolder, "Projects");
             }
-            catch (Exception ex)
+            catch
             {
+                // 如果配置系统失败，使用硬编码的回退路径
+                var documentsPath = GetSafeDocumentsPath();
+                return Path.Combine(documentsPath, "TNX", "Projects");
             }
+        }
 
+        /// <summary>
+        /// 获取安全的用户文档路径，包含回退机制
+        /// </summary>
+        /// <returns>安全的用户文档路径</returns>
+        private string GetSafeDocumentsPath()
+        {
             try
             {
-                // 回退到用户配置文件夹
-                var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (!string.IsNullOrEmpty(userProfilePath) && Directory.Exists(userProfilePath))
+                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                // 验证路径是否有效
+                if (!string.IsNullOrWhiteSpace(documentsPath) && Directory.Exists(documentsPath))
                 {
-                    return Path.Combine(userProfilePath, "Documents", "TNX", "Projects");
+                    return documentsPath;
                 }
             }
             catch (Exception ex)
             {
+                // 记录错误但继续使用回退方案
+                System.Diagnostics.Debug.WriteLine($"[FileService] 获取用户文档路径失败: {ex.Message}");
             }
 
-            // 最终回退到当前目录
-            return Environment.CurrentDirectory;
+            // 回退方案：使用用户配置文件路径
+            try
+            {
+                var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (!string.IsNullOrWhiteSpace(userProfilePath) && Directory.Exists(userProfilePath))
+                {
+                    var documentsInProfile = Path.Combine(userProfilePath, "Documents");
+                    if (Directory.Exists(documentsInProfile))
+                    {
+                        return documentsInProfile;
+                    }
+                    return userProfilePath;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[FileService] 获取用户配置文件路径失败: {ex.Message}");
+            }
+
+            // 最终回退方案：使用应用程序数据路径
+            try
+            {
+                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                if (!string.IsNullOrWhiteSpace(appDataPath))
+                {
+                    return appDataPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[FileService] 获取应用程序数据路径失败: {ex.Message}");
+            }
+
+            // 绝对最终回退：使用临时目录
+            var tempPath = Path.GetTempPath();
+            System.Diagnostics.Debug.WriteLine($"[FileService] 使用临时目录作为最终回退: {tempPath}");
+            return tempPath;
         }
 
         /// <summary>

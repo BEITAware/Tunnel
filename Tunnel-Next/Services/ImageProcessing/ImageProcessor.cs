@@ -808,13 +808,27 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 创建默认脚本上下文
+        /// 创建默认脚本上下文（使用配置系统）
         /// </summary>
         private static IScriptContext CreateDefaultContext()
         {
-            var workFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string workFolder;
+            string scriptsFolder;
+
+            try
+            {
+                var config = new WorkFolderConfig();
+                workFolder = config.WorkFolder;
+                scriptsFolder = config.ScriptsFolder;
+            }
+            catch
+            {
+                // 如果配置系统失败，使用硬编码的回退路径
+                workFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                scriptsFolder = System.IO.Path.Combine(workFolder, "TNX", "Scripts");
+            }
+
             var tempFolder = System.IO.Path.GetTempPath();
-            var scriptsFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts");
 
             return new ScriptContext(
                 workFolder,

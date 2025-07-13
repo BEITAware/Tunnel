@@ -59,6 +59,18 @@ namespace Tunnel_Next.Services.Scripting
         {
             _userScriptsFolder = userScriptsFolder ?? throw new ArgumentNullException(nameof(userScriptsFolder));
             _userResourcesFolder = userResourcesFolder ?? throw new ArgumentNullException(nameof(userResourcesFolder));
+
+            // 验证路径不能为空字符串
+            if (string.IsNullOrWhiteSpace(_userScriptsFolder))
+                throw new ArgumentException("用户脚本文件夹路径不能为空", nameof(userScriptsFolder));
+            if (string.IsNullOrWhiteSpace(_userResourcesFolder))
+                throw new ArgumentException("用户资源文件夹路径不能为空", nameof(userResourcesFolder));
+
+            // 添加调试输出
+            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 初始化脚本管理器");
+            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 脚本文件夹: {_userScriptsFolder}");
+            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 资源文件夹: {_userResourcesFolder}");
+            Console.WriteLine($"[RevivalScriptManager] 创建脚本管理器，脚本文件夹: {_userScriptsFolder}");
             _compiledFolder = Path.Combine(_userScriptsFolder, "compiled");
             _compilationCacheFile = Path.Combine(_compiledFolder, "compilation-cache.json");
             _assemblyReferenceManager = new AssemblyReferenceManager(_userScriptsFolder, _userResourcesFolder);

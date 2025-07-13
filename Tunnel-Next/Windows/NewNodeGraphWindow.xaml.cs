@@ -86,7 +86,7 @@ namespace Tunnel_Next.Windows
             var templateItem = _lastTemplate ?? SelectedTemplate;
             if (templateItem == null) return;
             var templateName = SanitizeFileName(templateItem.DisplayName);
-            var projectsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "TNX", "Projects");
+            var projectsDir = GetProjectsDirectory();
             if (!Directory.Exists(projectsDir))
             {
                 try { Directory.CreateDirectory(projectsDir); } catch { }
@@ -110,6 +110,24 @@ namespace Tunnel_Next.Windows
             var invalid = new string(Path.GetInvalidFileNameChars());
             var regex = new Regex("[" + Regex.Escape(invalid) + "]");
             return regex.Replace(name, "_");
+        }
+
+        /// <summary>
+        /// 获取项目目录路径
+        /// </summary>
+        private string GetProjectsDirectory()
+        {
+            try
+            {
+                var config = new WorkFolderConfig();
+                return Path.Combine(config.WorkFolder, "Projects");
+            }
+            catch
+            {
+                // 如果配置系统失败，使用硬编码的回退路径
+                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                return Path.Combine(documentsPath, "TNX", "Projects");
+            }
         }
 
         private async void TemplateListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

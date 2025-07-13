@@ -11,15 +11,12 @@ namespace Tunnel_Next.Services
     /// </summary>
     public class WorkFolderService
     {
-        private const string WorkFolderConfigFile = "WORKFOLDER";
-        private const string DefaultWorkFolderName = "Tunnel";
-        
+        private readonly WorkFolderConfig _config;
+
         private string _workFolder = string.Empty;
         private string _nodeGraphsFolder = string.Empty;
         private string _thumbnailsFolder = string.Empty;
         private string _tempFolder = string.Empty;
-        private string _scriptsFolder = string.Empty;
-        private string _tnxFolder = string.Empty;
         private string _userScriptsFolder = string.Empty;
         private string _userResourcesFolder = string.Empty;
 
@@ -43,23 +40,15 @@ namespace Tunnel_Next.Services
         /// </summary>
         public string TempFolder => _tempFolder;
 
-        /// <summary>
-        /// 脚本文件夹路径（应用程序内置脚本）
-        /// </summary>
-        public string ScriptsFolder => _scriptsFolder;
+
 
         /// <summary>
-        /// TNX文件夹路径（用户文档/TNX）
-        /// </summary>
-        public string TnxFolder => _tnxFolder;
-
-        /// <summary>
-        /// 用户脚本文件夹路径（用户文档/TNX/Scripts）
+        /// 用户脚本文件夹路径（从配置文件读取）
         /// </summary>
         public string UserScriptsFolder => _userScriptsFolder;
 
         /// <summary>
-        /// 用户脚本资源文件夹路径（用户文档/TNX/Scripts/RevivalResources）
+        /// 用户脚本资源文件夹路径（脚本文件夹下的RevivalResources）
         /// </summary>
         public string UserResourcesFolder => _userResourcesFolder;
 
@@ -76,135 +65,56 @@ namespace Tunnel_Next.Services
         /// </summary>
         public event Action<string>? WorkFolderChanged;
 
+        public WorkFolderService()
+        {
+            _config = new WorkFolderConfig();
+        }
+
         /// <summary>
         /// 初始化工作文件夹服务
         /// </summary>
         public async Task InitializeAsync()
         {
-            await LoadWorkFolderConfigAsync();
+            LoadFolderPaths();
             await EnsureDirectoryStructureAsync();
-            await EnsureTnxDirectoryStructureAsync();
+            await EnsureScriptsDirectoryStructureAsync();
         }
 
         /// <summary>
-        /// 加载工作文件夹配置
+        /// 从配置文件加载文件夹路径
         /// </summary>
-        private async Task LoadWorkFolderConfigAsync()
+        private void LoadFolderPaths()
         {
             try
             {
-                if (File.Exists(WorkFolderConfigFile))
-                {
-                    var content = await File.ReadAllTextAsync(WorkFolderConfigFile);
-                    _workFolder = content.Trim();
+                _workFolder = _config.WorkFolder;
+                _userScriptsFolder = _config.ScriptsFolder;
+                _userResourcesFolder = Path.Combine(_userScriptsFolder, "RevivalResources");
 
-                    // 验证配置的路径是否有效
-                    if (!IsValidWorkFolder(_workFolder))
-                    {
-                        _workFolder = GetDefaultWorkFolder();
-                        await File.WriteAllTextAsync(WorkFolderConfigFile, _workFolder);
-                    }
-                }
-                else
-                {
-                    // 使用默认工作文件夹（Windows最佳实践：用户文档文件夹）
-                    _workFolder = GetDefaultWorkFolder();
-                    await File.WriteAllTextAsync(WorkFolderConfigFile, _workFolder);
-                }
+                // 基于工作文件夹设置其他路径
+                _nodeGraphsFolder = Path.Combine(_workFolder, "Projects");
+                _thumbnailsFolder = _nodeGraphsFolder;
+                _tempFolder = Path.Combine(_nodeGraphsFolder, "temp");
 
-                UpdateFolderPaths();
+                // 添加调试输出
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 工作文件夹: {_workFolder}");
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 脚本文件夹: {_userScriptsFolder}");
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 资源文件夹: {_userResourcesFolder}");
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 项目文件夹: {_nodeGraphsFolder}");
+                Console.WriteLine($"[WorkFolderService] 脚本文件夹路径: {_userScriptsFolder}");
             }
             catch (Exception ex)
             {
-                // 如果配置加载失败，使用默认路径作为回退
-                _workFolder = GetDefaultWorkFolder();
-                UpdateFolderPaths();
-
-                // 尝试保存默认配置
-                try
-                {
-                    await File.WriteAllTextAsync(WorkFolderConfigFile, _workFolder);
-                }
-                catch (Exception saveEx)
-                {
-                }
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 加载文件夹路径失败: {ex.Message}");
+                throw;
             }
         }
 
-        /// <summary>
-        /// 更新文件夹路径
-        /// </summary>
-        private void UpdateFolderPaths()
-        {
-            // 节点图项目目录改为 TNX\Projects
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            _tnxFolder = Path.Combine(documentsPath, "TNX");
 
-            // 项目化后的节点图存放于 TNX\Projects
-            _nodeGraphsFolder = Path.Combine(_tnxFolder, "Projects");
 
-            // 由于缩略图直接保存在项目目录中，单独的缩略图目录不再需要，保持字段以兼容旧代码
-            _thumbnailsFolder = _nodeGraphsFolder;
 
-            // 临时目录仍放在项目根目录下
-            _tempFolder = Path.Combine(_nodeGraphsFolder, "temp");
 
-            // 脚本文件夹位于应用程序目录
-            _scriptsFolder = Path.Combine(Environment.CurrentDirectory, "Scripts");
 
-            // TNX 下的脚本与资源目录
-            _userScriptsFolder = Path.Combine(_tnxFolder, "Scripts");
-            _userResourcesFolder = Path.Combine(_userScriptsFolder, "RevivalResources");
-        }
-
-        /// <summary>
-        /// 获取默认工作文件夹路径（Windows最佳实践）
-        /// </summary>
-        /// <returns>默认工作文件夹路径</returns>
-        private string GetDefaultWorkFolder()
-        {
-            try
-            {
-                // 优先使用用户文档文件夹
-                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                if (!string.IsNullOrEmpty(documentsPath) && Directory.Exists(documentsPath))
-                {
-                    return Path.Combine(documentsPath, DefaultWorkFolderName);
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-
-            try
-            {
-                // 回退到用户配置文件夹
-                var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (!string.IsNullOrEmpty(userProfilePath) && Directory.Exists(userProfilePath))
-                {
-                    return Path.Combine(userProfilePath, "Documents", DefaultWorkFolderName);
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-
-            // 最后回退到应用程序数据文件夹
-            try
-            {
-                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                if (!string.IsNullOrEmpty(appDataPath))
-                {
-                    return Path.Combine(appDataPath, DefaultWorkFolderName);
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-
-            // 最终回退到当前目录
-            return Path.Combine(Environment.CurrentDirectory, DefaultWorkFolderName);
-        }
 
         /// <summary>
         /// 验证工作文件夹路径是否有效
@@ -268,8 +178,7 @@ namespace Tunnel_Next.Services
                 (_workFolder, "工作文件夹"),
                 (_nodeGraphsFolder, "节点图文件夹"),
                 (_thumbnailsFolder, "缩略图文件夹"),
-                (_tempFolder, "临时文件夹"),
-                (_scriptsFolder, "脚本文件夹")
+                (_tempFolder, "临时文件夹")
             };
 
             foreach (var (dirPath, dirName) in directoriesToCreate)
@@ -295,17 +204,15 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
-        /// 确保TNX目录结构存在
+        /// 确保脚本目录结构存在
         /// </summary>
-        private async Task EnsureTnxDirectoryStructureAsync()
+        private async Task EnsureScriptsDirectoryStructureAsync()
         {
             try
             {
-                // 创建TNX目录结构
-                Directory.CreateDirectory(_tnxFolder);
+                // 创建脚本目录结构
                 Directory.CreateDirectory(_userScriptsFolder);
                 Directory.CreateDirectory(_userResourcesFolder);
-
 
                 // 创建初始化标记文件
                 var initMarkerFile = Path.Combine(_userScriptsFolder, ".initialized");
@@ -317,43 +224,20 @@ namespace Tunnel_Next.Services
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 创建脚本目录结构失败: {ex.Message}");
                 // 不抛出异常，允许应用程序继续运行
             }
         }
 
         /// <summary>
-        /// 处理关键目录创建失败的情况
+        /// 处理关键目录创建失败的情况（仅使用用户文档文件夹）
         /// </summary>
         /// <param name="failedPath">失败的路径</param>
         /// <param name="dirName">目录名称</param>
         private async Task HandleCriticalDirectoryCreationFailure(string failedPath, string dirName)
         {
-            try
-            {
-
-                // 尝试使用临时文件夹作为备用
-                var tempBasePath = Path.GetTempPath();
-                var backupPath = Path.Combine(tempBasePath, DefaultWorkFolderName);
-
-                if (dirName == "工作文件夹")
-                {
-                    _workFolder = backupPath;
-                    UpdateFolderPaths();
-                }
-                else if (dirName == "节点图文件夹")
-                {
-                    _nodeGraphsFolder = Path.Combine(backupPath, "nodegraphs");
-                }
-
-                Directory.CreateDirectory(backupPath);
-
-                // 更新配置文件
-                await File.WriteAllTextAsync(WorkFolderConfigFile, _workFolder);
-            }
-            catch (Exception backupEx)
-            {
-                throw new InvalidOperationException($"无法创建{dirName}，所有路径都失败", backupEx);
-            }
+            // 不使用任何回退方案，直接抛出异常
+            throw new InvalidOperationException($"无法创建{dirName}：{failedPath}。请确保用户文档文件夹可写。");
         }
 
         /// <summary>
@@ -367,17 +251,39 @@ namespace Tunnel_Next.Services
 
             try
             {
-                _workFolder = Path.GetFullPath(newWorkFolder);
-                UpdateFolderPaths();
-                
+                _config.SetWorkFolder(newWorkFolder);
+                LoadFolderPaths();
+
                 await EnsureDirectoryStructureAsync();
-                await File.WriteAllTextAsync(WorkFolderConfigFile, _workFolder);
+                await EnsureScriptsDirectoryStructureAsync();
 
                 WorkFolderChanged?.Invoke(_workFolder);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"设置工作文件夹失败: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 设置新的脚本文件夹
+        /// </summary>
+        /// <param name="newScriptsFolder">新的脚本文件夹路径</param>
+        public async Task SetScriptsFolderAsync(string newScriptsFolder)
+        {
+            if (string.IsNullOrWhiteSpace(newScriptsFolder))
+                throw new ArgumentException("脚本文件夹路径不能为空", nameof(newScriptsFolder));
+
+            try
+            {
+                _config.SetScriptsFolder(newScriptsFolder);
+                LoadFolderPaths();
+
+                await EnsureScriptsDirectoryStructureAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"设置脚本文件夹失败: {ex.Message}", ex);
             }
         }
 

@@ -116,7 +116,10 @@ namespace Tunnel_Next.Services.Scripting
                         Title = title
                     };
 
-                    return dialog.ShowDialog() == true ? dialog.FileName : null;
+                    // 安全地设置Owner并显示对话框
+                    var mainWindow = Application.Current?.MainWindow;
+                    bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
+                    return result == true ? dialog.FileName : null;
                 });
             }
             catch (Exception ex)
@@ -137,7 +140,10 @@ namespace Tunnel_Next.Services.Scripting
                         Title = title
                     };
 
-                    return dialog.ShowDialog() == true ? dialog.FileName : null;
+                    // 安全地设置Owner并显示对话框
+                    var mainWindow = Application.Current?.MainWindow;
+                    bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
+                    return result == true ? dialog.FileName : null;
                 });
             }
             catch (Exception ex)

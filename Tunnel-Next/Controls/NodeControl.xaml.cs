@@ -952,10 +952,15 @@ namespace Tunnel_Next.Controls
                 }
 
                 // 显示元数据查看器窗口
-                var metadataWindow = new MetadataViewerWindow(_node, metadata)
+                var metadataWindow = new MetadataViewerWindow(_node, metadata);
+
+                // 安全地设置Owner属性
+                var parentWindow = Window.GetWindow(this);
+                if (parentWindow != null && parentWindow != metadataWindow)
                 {
-                    Owner = Window.GetWindow(this)
-                };
+                    metadataWindow.Owner = parentWindow;
+                }
+
                 metadataWindow.ShowDialog();
             }
             catch (Exception ex)

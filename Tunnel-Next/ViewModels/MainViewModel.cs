@@ -322,10 +322,14 @@ namespace Tunnel_Next.ViewModels
                 TaskStatus = "准备打开模板向导...";
 
                 // 打开模板选择窗口
-                var templateDialog = new Tunnel_Next.Windows.NewNodeGraphWindow
+                var templateDialog = new Tunnel_Next.Windows.NewNodeGraphWindow();
+
+                // 安全地设置Owner属性
+                var mainWindow = System.Windows.Application.Current?.MainWindow;
+                if (mainWindow != null && mainWindow != templateDialog)
                 {
-                    Owner = System.Windows.Application.Current?.MainWindow
-                };
+                    templateDialog.Owner = mainWindow;
+                }
 
                 var result = templateDialog.ShowDialog();
                 if (result != true)
@@ -351,7 +355,17 @@ namespace Tunnel_Next.ViewModels
                 }
 
                 // 步骤1: 反序列化模板
-                var revivalManager = _revivalScriptManager ?? new RevivalScriptManager(_workFolderService.UserScriptsFolder, _workFolderService.UserResourcesFolder);
+                RevivalScriptManager revivalManager;
+                if (_revivalScriptManager != null)
+                {
+                    revivalManager = _revivalScriptManager;
+                }
+                else
+                {
+                    // 确保WorkFolderService已初始化
+                    await _workFolderService.InitializeAsync();
+                    revivalManager = new RevivalScriptManager(_workFolderService.UserScriptsFolder, _workFolderService.UserResourcesFolder);
+                }
                 var deserializer = new NodeGraphDeserializer(revivalManager);
                 var json = await File.ReadAllTextAsync(templatePath);
                 var nodeGraph = deserializer.DeserializeNodeGraph(json);
