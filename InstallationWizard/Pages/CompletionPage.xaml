@@ -1,0 +1,124 @@
+<UserControl x:Class="InstallationWizard.Pages.CompletionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="580">
+    <Grid Background="{DynamicResource WindowBackgroundBrush}">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="500">
+            <!-- 成功图标 -->
+            <Ellipse Width="80" Height="80" 
+                     Fill="{DynamicResource AeroHighlightBrush}"
+                     Margin="0,0,0,20">
+                <Ellipse.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
+                </Ellipse.Effect>
+            </Ellipse>
+            
+            <!-- 在圆圈中添加对勾 -->
+            <Canvas Width="80" Height="80" Margin="0,-100,0,20">
+                <Path Data="M 20,40 L 35,55 L 60,25"
+                      Stroke="White"
+                      StrokeThickness="4"/>
+            </Canvas>
+            
+            <!-- 完成标题 -->
+            <TextBlock Text="安装完成！" 
+                       FontSize="24" 
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+            
+            <!-- 感谢文本 -->
+            <TextBlock TextWrapping="Wrap" 
+                       FontSize="14"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       LineHeight="22"
+                       Margin="0,0,0,30">
+                <Run Text="感谢您选择 Tunnel！"/>
+                <LineBreak/>
+                <LineBreak/>
+                <Run Text="Tunnel 已成功安装到您的计算机上。"/>
+                <Run Text="您现在可以开始使用这款强大的图像处理和色彩管理工具了。"/>
+                <LineBreak/>
+                <LineBreak/>
+                <Run Text="如果您在使用过程中遇到任何问题，"/>
+                <Run Text="请查阅帮助文档或联系技术支持。"/>
+            </TextBlock>
+            
+            <!-- 安装信息 -->
+            <Border Background="{DynamicResource AeroBackgroundBrush}" 
+                    BorderBrush="{DynamicResource AeroBorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="3" 
+                    Padding="15"
+                    Margin="0,0,0,30">
+                <StackPanel>
+                    <TextBlock Text="安装信息" 
+                               FontWeight="SemiBold" 
+                               FontSize="12"
+                               Foreground="{DynamicResource AeroForegroundBrush}"
+                               Margin="0,0,0,8"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="安装路径: " 
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   Margin="0,0,10,4"/>
+                        <TextBlock x:Name="InstallPathTextBlock"
+                                   Grid.Row="0" Grid.Column="1"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,4"/>
+                        
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="工作文件夹: " 
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   Margin="0,0,10,4"/>
+                        <TextBlock x:Name="WorkFolderTextBlock"
+                                   Grid.Row="1" Grid.Column="1"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,4"/>
+                        
+                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                   Text="脚本文件夹: " 
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   Margin="0,0,10,0"/>
+                        <TextBlock x:Name="ScriptsFolderTextBlock"
+                                   Grid.Row="2" Grid.Column="1"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AeroForegroundBrush}"
+                                   TextWrapping="Wrap"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- 启动选项 -->
+            <CheckBox x:Name="LaunchApplicationCheckBox" 
+                      Content="立即启动 Tunnel" 
+                      FontSize="12"
+                      Foreground="{DynamicResource WindowForegroundBrush}"
+                      IsChecked="True"
+                      HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

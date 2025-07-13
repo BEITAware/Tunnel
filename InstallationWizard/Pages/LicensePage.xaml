@@ -1,0 +1,58 @@
+<UserControl x:Class="InstallationWizard.Pages.LicensePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="580">
+    <Grid Background="{DynamicResource WindowBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题 -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="许可协议" 
+                       FontSize="20" 
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       Margin="0,0,0,10"/>
+            <TextBlock Text="请仔细阅读以下许可协议。您必须接受此协议的条款才能继续安装。" 
+                       FontSize="12"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+        
+        <!-- 许可协议文本 -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource AeroBackgroundBrush}" 
+                BorderBrush="{DynamicResource AeroBorderBrush}" 
+                BorderThickness="1" 
+                CornerRadius="3"
+                Margin="0,0,0,20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                          HorizontalScrollBarVisibility="Auto"
+                          Padding="15">
+                <TextBlock x:Name="LicenseTextBlock" 
+                           FontFamily="Consolas, Courier New, monospace"
+                           FontSize="10"
+                           Foreground="{DynamicResource AeroForegroundBrush}"
+                           TextWrapping="Wrap"
+                           LineHeight="14"/>
+            </ScrollViewer>
+        </Border>
+        
+        <!-- 接受协议选项 -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <CheckBox x:Name="AcceptLicenseCheckBox" 
+                      Content="我接受许可协议的条款" 
+                      FontSize="12"
+                      Foreground="{DynamicResource WindowForegroundBrush}"
+                      VerticalAlignment="Center"
+                      Checked="AcceptLicenseCheckBox_Checked"
+                      Unchecked="AcceptLicenseCheckBox_Unchecked"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

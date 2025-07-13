@@ -1,0 +1,70 @@
+<UserControl x:Class="InstallationWizard.Pages.WelcomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="580">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Background="{DynamicResource WindowBackgroundBrush}" MinHeight="500">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520" Margin="10">
+            <!-- 应用程序图标 -->
+            <Image Source="../Resources/TunnelAppLogo.png" 
+                   Width="128" Height="128" 
+                   Margin="0,0,0,30"/>
+            
+            <!-- 欢迎标题 -->
+            <TextBlock Text="欢迎使用 Tunnel 安装向导" 
+                       FontSize="24" 
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+            
+            <!-- 欢迎文本 -->
+            <TextBlock TextWrapping="Wrap" 
+                       FontSize="14"
+                       Foreground="{DynamicResource WindowForegroundBrush}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       LineHeight="22"
+                       Margin="0,0,0,30">
+                <Run Text="欢迎使用 Tunnel 安装向导！"/>
+                <LineBreak/>
+                <LineBreak/>
+                <Run Text="Tunnel 是一款专业的图像处理和色彩管理应用程序，"/>
+                <Run Text="采用先进的节点式工作流设计，为您提供强大而直观的图像编辑体验。"/>
+                <LineBreak/>
+                <LineBreak/>
+                <Run Text="本向导将引导您完成 Tunnel 的安装过程。"/>
+                <Run Text="安装过程只需几分钟时间，请按照提示进行操作。"/>
+                <LineBreak/>
+                <LineBreak/>
+                <Run Text="点击&quot;下一步&quot;继续安装，或点击&quot;取消&quot;退出安装向导。"/>
+            </TextBlock>
+            
+            <!-- 版本信息 -->
+            <Border Background="{DynamicResource AeroBackgroundBrush}" 
+                    BorderBrush="{DynamicResource AeroBorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="3" 
+                    Padding="15,10"
+                    Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="版本信息" 
+                               FontWeight="SemiBold" 
+                               FontSize="12"
+                               Foreground="{DynamicResource AeroForegroundBrush}"
+                               Margin="0,0,0,5"/>
+                    <TextBlock Text="版本: 1.0.0" 
+                               FontSize="11"
+                               Foreground="{DynamicResource AeroForegroundBrush}"/>
+                    <TextBlock Text="发布日期: 2024年" 
+                               FontSize="11"
+                               Foreground="{DynamicResource AeroForegroundBrush}"/>
+                </StackPanel>
+            </Border>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
