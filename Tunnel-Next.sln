@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35919.96 d17.13
+VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tunnel-Next", "Tunnel-Next\Tunnel-Next.csproj", "{50DD1561-D09F-48FE-8BF2-0151534D1AE7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallationWizard", "InstallationWizard\InstallationWizard.csproj", "{A2BDFD04-AFC1-54D1-79C4-4604612AF599}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{50DD1561-D09F-48FE-8BF2-0151534D1AE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50DD1561-D09F-48FE-8BF2-0151534D1AE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50DD1561-D09F-48FE-8BF2-0151534D1AE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2BDFD04-AFC1-54D1-79C4-4604612AF599}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2BDFD04-AFC1-54D1-79C4-4604612AF599}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2BDFD04-AFC1-54D1-79C4-4604612AF599}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2BDFD04-AFC1-54D1-79C4-4604612AF599}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
