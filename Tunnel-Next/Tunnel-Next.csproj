@@ -8,6 +8,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Resources\TunnelAppLogo.ico</ApplicationIcon>
+    <PackageIcon>TunnelAppLogo.png</PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Copyright>BEITAware © 2025，在MPL 2.0协议下授权。</Copyright>
+    <Company>BEITAware</Company>
+    <Product>Tunnel Application</Product>
+    <Authors>BEITAware</Authors>
+    <SignAssembly>False</SignAssembly>
     <!-- <ApplicationIcon>Resources\imgpp.ico</ApplicationIcon> -->
   </PropertyGroup>
 
@@ -21,6 +29,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="4.14.0" />
     <PackageReference Include="Microsoft.ML" Version="4.0.2" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="4.0.2" />
+    <PackageReference Include="Microsoft.ML.LightGbm" Version="4.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
     <PackageReference Include="OpenCvSharp4.Extensions" Version="4.6.0.20220608" />
@@ -35,6 +44,24 @@
   <ItemGroup>
     <Resource Include="Resources\*.png" />
     <Resource Include="designs\*.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\TunnelAppLogo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\TunnelAppLogo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

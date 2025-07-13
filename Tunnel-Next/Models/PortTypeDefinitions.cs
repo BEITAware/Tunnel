@@ -25,6 +25,11 @@ namespace Tunnel_Next.Models
         Array,      // 数组类型（Revival Scripts兼容）
         Object,     // 对象类型（Revival Scripts兼容）
 
+        // 色彩管理类型
+        Cube3DLut,          // 3D LUT立方体数据
+        OneDLut,            // 1D LUT曲线数据
+        ColorTransferModel, // 色彩转换模型
+
         // 通道类型
         ChannelR,   // 红色通道
         ChannelG,   // 绿色通道
@@ -203,6 +208,40 @@ namespace Tunnel_Next.Models
                 CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Object }
             };
 
+            // 色彩管理类型
+            definitions[NodePortDataType.Cube3DLut] = new PortTypeInfo
+            {
+                Type = NodePortDataType.Cube3DLut,
+                Name = "Cube3DLut",
+                Description = "3D查找表立方体数据",
+                HexColor = "#9932CC",
+                WpfColor = Color.FromRgb(0x99, 0x32, 0xCC),
+                Category = "色彩管理",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Cube3DLut }
+            };
+
+            definitions[NodePortDataType.OneDLut] = new PortTypeInfo
+            {
+                Type = NodePortDataType.OneDLut,
+                Name = "OneDLut",
+                Description = "1D查找表曲线数据",
+                HexColor = "#FF8C00",
+                WpfColor = Color.FromRgb(0xFF, 0x8C, 0x00),
+                Category = "色彩管理",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.OneDLut }
+            };
+
+            definitions[NodePortDataType.ColorTransferModel] = new PortTypeInfo
+            {
+                Type = NodePortDataType.ColorTransferModel,
+                Name = "ColorTransferModel",
+                Description = "TunnelUtils色彩转换模型数据",
+                HexColor = "#DC143C",
+                WpfColor = Color.FromRgb(0xDC, 0x14, 0x3C),
+                Category = "色彩管理",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.ColorTransferModel }
+            };
+
             // 通道类型
             definitions[NodePortDataType.ChannelR] = new PortTypeInfo
             {
@@ -341,6 +380,14 @@ namespace Tunnel_Next.Models
             map["channelg"] = NodePortDataType.ChannelG;
             map["channelb"] = NodePortDataType.ChannelB;
             map["channela"] = NodePortDataType.ChannelA;
+
+            // 色彩管理类型别名
+            map["3dlut"] = NodePortDataType.Cube3DLut;
+            map["cube3dlut"] = NodePortDataType.Cube3DLut;
+            map["1dlut"] = NodePortDataType.OneDLut;
+            map["onedlut"] = NodePortDataType.OneDLut;
+            map["ctm"] = NodePortDataType.ColorTransferModel;
+            map["colortransfermodel"] = NodePortDataType.ColorTransferModel;
 
             return map;
         }

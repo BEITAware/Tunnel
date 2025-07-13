@@ -300,6 +300,9 @@ namespace Tunnel_Next.Services.ImageProcessing
                     "channelg" => NodePortDataType.ChannelG,
                     "channelb" => NodePortDataType.ChannelB,
                     "channela" => NodePortDataType.ChannelA,
+                    "cube3dlut" or "3dlut" => NodePortDataType.Cube3DLut,
+                    "onedlut" or "1dlut" => NodePortDataType.OneDLut,
+                    "colortransfermodel" or "ctm" => NodePortDataType.ColorTransferModel,
                     "any" => NodePortDataType.Any,
                     _ => NodePortDataType.Any // 默认为Any类型
                 };
