@@ -1,39 +1,132 @@
-name: .NET Desktop CI
+name: Build and Release Tunnel
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        configuration: [Debug, Release]
-
+  build-and-release:
     runs-on: windows-latest
-
-    env:
-      Solution_Name: Tunnel-Next\Tunnel-Next.csproj
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore $env:Solution_Name
+    - name: Get version number
+      id: version
+      run: |
+        if ($env:GITHUB_REF -match "refs/tags/v(.+)") {
+          $version = $matches[1]
+        } else {
+          $version = "1.0.$env:GITHUB_RUN_NUMBER"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
 
-    - name: Build
-      run: dotnet build $env:Solution_Name --configuration ${{ matrix.configuration }}
+    - name: Restore main program dependencies
+      run: dotnet restore Tunnel-Next\Tunnel-Next.csproj
 
-    - name: Run tests
-      run: dotnet test $env:Solution_Name --configuration ${{ matrix.configuration }}
-      
-    - name: Publish
-      run: dotnet publish $env:Solution_Name --configuration ${{ matrix.configuration }} --output ./publish --runtime win-x64 --self-contained true -p:PublishSingleFile=true
+    - name: Build main program (non-single file, ReadyToRun)
+      run: |
+        dotnet publish Tunnel-Next\Tunnel-Next.csproj `
+          --configuration Release `
+          --output .\MainProgram `
+          --runtime win-x64 `
+          --self-contained true `
+          -p:PublishReadyToRun=true `
+          -p:PublishSingleFile=false `
+          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
+          -p:FileVersion=${{ steps.version.outputs.VERSION }}
+
+    - name: Prepare App folder for installation wizard
+      run: |
+        # Create App folder in InstallationWizard if it doesn't exist
+        if (!(Test-Path "InstallationWizard\App")) {
+          New-Item -ItemType Directory -Path "InstallationWizard\App" -Force
+        }
+
+        # Clear existing App folder contents
+        Remove-Item "InstallationWizard\App\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+        # Copy compiled main program to App folder
+        Copy-Item "MainProgram\*" -Destination "InstallationWizard\App\" -Recurse -Force
+
+        echo "App folder prepared with main program files"
+
+    - name: Update installation wizard version
+      run: |
+        $csprojPath = "InstallationWizard\InstallationWizard.csproj"
+        $content = Get-Content $csprojPath -Raw
+        $content = $content -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>${{ steps.version.outputs.VERSION }}</AssemblyVersion>"
+        $content = $content -replace '<FileVersion>.*</FileVersion>', "<FileVersion>${{ steps.version.outputs.VERSION }}</FileVersion>"
+        Set-Content $csprojPath $content
+
+    - name: Restore installation wizard dependencies
+      run: dotnet restore InstallationWizard\InstallationWizard.csproj
+
+    - name: Build installation wizard (single file, ReadyToRun)
+      run: |
+        dotnet publish InstallationWizard\InstallationWizard.csproj `
+          --configuration Release `
+          --output .\InstallationWizardOutput `
+          --runtime win-x64 `
+          --self-contained true `
+          -p:PublishReadyToRun=true `
+          -p:PublishSingleFile=true `
+          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
+          -p:FileVersion=${{ steps.version.outputs.VERSION }}
+
+    - name: Rename installation wizard executable
+      run: |
+        Move-Item "InstallationWizardOutput\InstallationWizard.exe" "InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tunnel-build-${{ steps.version.outputs.VERSION }}
+        path: |
+          InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
+          MainProgram\**
+
+    - name: Create Release (on tag push)
+      id: create_release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Tunnel v${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Tunnel v${{ steps.version.outputs.VERSION }}
+
+          ### Installation
+          Download and run `TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe`
+
+          ### Changes
+          - Automated build with ReadyToRun optimization
+          - Main program: Non-single file for better performance
+          - Installation wizard: Single file for easy distribution
+
+    - name: Upload Release Asset (on tag push)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
+        asset_name: TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
+        asset_content_type: application/octet-stream
