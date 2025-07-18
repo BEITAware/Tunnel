@@ -87,11 +87,19 @@ namespace Tunnel_Next
                         // 稍微延迟一下，让用户看到完成消息
                         var finalTimer = new System.Windows.Threading.DispatcherTimer();
                         finalTimer.Interval = TimeSpan.FromMilliseconds(500);
-                        finalTimer.Tick += (st, at) =>
+                        finalTimer.Tick += async (st, at) =>
                         {
                             Debug.WriteLine("延迟计时器触发 - 准备显示主窗口");
                             finalTimer.Stop();
                             showMainWindow(); // 使用统一的方法显示主窗口
+
+                            // 主窗口显示后，刷新资源库以确保脚本被加载
+                            var resourceLibraryControl = mainWindow.GetResourceLibraryControl();
+                            if (resourceLibraryControl != null)
+                            {
+                                Debug.WriteLine("主窗口显示后刷新资源库");
+                                await resourceLibraryControl.RefreshResourcesAsync();
+                            }
                         };
                         Debug.WriteLine("启动延迟计时器");
                         finalTimer.Start();

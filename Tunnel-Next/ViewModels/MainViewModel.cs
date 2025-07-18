@@ -29,7 +29,10 @@ namespace Tunnel_Next.ViewModels
         private readonly WorkFolderService _workFolderService = new();
         private readonly FileService _fileService;
         private readonly ThumbnailService _thumbnailService;
-        private readonly RevivalScriptManager? _revivalScriptManager;
+        private RevivalScriptManager? _revivalScriptManager;
+        private readonly ResourceCatalogService _resourceCatalogService;
+        private ResourceScanService _resourceScanService;
+        private ResourceWatcherService _resourceWatcherService;
         private DocumentManagerService? _documentManager;
 
         public MainViewModel(RevivalScriptManager? revivalScriptManager = null, bool initializeImmediately = true)
@@ -39,6 +42,9 @@ namespace Tunnel_Next.ViewModels
             // 初始化服务（传入RevivalScriptManager）
             _fileService = new FileService(_workFolderService, _revivalScriptManager);
             _thumbnailService = new ThumbnailService(_workFolderService);
+            _resourceCatalogService = new ResourceCatalogService(_workFolderService);
+            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
+            _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
             _nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
 
             InitializeCommands();
@@ -185,6 +191,21 @@ namespace Tunnel_Next.ViewModels
             get => _documentManager;
             set => SetProperty(ref _documentManager, value);
         }
+
+        /// <summary>
+        /// 资源目录服务
+        /// </summary>
+        public ResourceCatalogService ResourceCatalogService => _resourceCatalogService;
+
+        /// <summary>
+        /// 资源扫描服务
+        /// </summary>
+        public ResourceScanService ResourceScanService => _resourceScanService;
+
+        /// <summary>
+        /// 资源监控服务
+        /// </summary>
+        public ResourceWatcherService ResourceWatcherService => _resourceWatcherService;
 
         /// <summary>
         /// 节点状态是否可见
@@ -1465,6 +1486,30 @@ namespace Tunnel_Next.ViewModels
 
         #endregion
 
+        #region RevivalScriptManager Update
+
+        /// <summary>
+        /// 更新RevivalScriptManager并重新创建相关服务
+        /// </summary>
+        public void UpdateRevivalScriptManager(RevivalScriptManager revivalScriptManager)
+        {
+            _revivalScriptManager = revivalScriptManager;
+
+            // 重新创建ResourceScanService，传入正确的RevivalScriptManager
+            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
+
+            // 重新创建ResourceWatcherService
+            _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
+
+            // 更新NodeEditor的RevivalScriptManager
+            _nodeEditor.UpdateRevivalScriptManager(_revivalScriptManager);
+
+            System.Diagnostics.Debug.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
+            Console.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
+        }
+
+        #endregion
+
         #region Initialization
 
         /// <summary>
@@ -1482,6 +1527,9 @@ namespace Tunnel_Next.ViewModels
 
                 // 更新资源库
                 await UpdateResourceLibraryAsync();
+
+                // 启动资源文件监控
+                _resourceWatcherService.StartWatching();
 
                 TaskStatus = $"工作文件夹已初始化: {_workFolderService.WorkFolder}";
             }

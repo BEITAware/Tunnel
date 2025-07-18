@@ -36,6 +36,14 @@ namespace Tunnel_Next
         }
 
         /// <summary>
+        /// 获取资源库控件
+        /// </summary>
+        public Controls.ResourceLibraryControl? GetResourceLibraryControl()
+        {
+            return ResourceLibraryControl;
+        }
+
+        /// <summary>
         /// 获取回退的项目文件夹路径
         /// </summary>
         private string GetFallbackProjectsFolder()
@@ -165,9 +173,9 @@ namespace Tunnel_Next
                     NodeEditorControl.NodeMenuService = _nodeMenuService;
                 }
 
-                // 更新现有ViewModel的RevivalScriptManager
+                // 更新现有ViewModel的RevivalScriptManager和相关服务
                 _viewModel.FileService.UpdateScriptManager(_revivalScriptManager);
-                _viewModel.NodeEditor.UpdateRevivalScriptManager(_revivalScriptManager);
+                _viewModel.UpdateRevivalScriptManager(_revivalScriptManager);
 
                 // 更新DocumentFactory以使用RevivalScriptManager
                 _documentFactory = new DocumentFactory(_viewModel.FileService, _revivalScriptManager);
@@ -204,6 +212,12 @@ namespace Tunnel_Next
 
             // 初始化参数编辑器的DataContext（使用默认的NodeEditor）
             ParameterEditorControl.DataContext = _viewModel.NodeEditor;
+
+            // 初始化资源面板服务（此时RevivalScriptManager已经正确设置）
+            ResourceLibraryControl?.InitializeServices(_viewModel.ResourceCatalogService, _viewModel.ResourceScanService, _viewModel.ResourceWatcherService);
+
+            // 立即刷新资源库以加载脚本
+            await ResourceLibraryControl?.RefreshResourcesAsync();
 
             // 重新绑定事件（因为ViewModel已经重新创建）
             BindEvents();
@@ -691,11 +705,11 @@ namespace Tunnel_Next
 
         #region 资源库事件
 
-        private void ResourceLibraryControl_ResourceItemSelected(object sender, ResourceLibraryItem item)
+        private void ResourceLibraryControl_ResourceSelected(object sender, ResourceObject resource)
         {
             try
             {
-                _viewModel.TaskStatus = $"选择资源: {item.Name}";
+                _viewModel.TaskStatus = $"选择资源: {resource.Name}";
             }
             catch (Exception ex)
             {
@@ -703,102 +717,139 @@ namespace Tunnel_Next
             }
         }
 
-        private async void ResourceLibraryControl_ResourceItemDoubleClicked(object sender, ResourceLibraryItem item)
+        private async void ResourceLibraryControl_ResourceDoubleClicked(object sender, ResourceObject resource)
         {
             try
             {
-                if (item.ItemType == ResourceItemType.Image)
+                switch (resource.ResourceType)
                 {
-                    // 将图片资源添加到节点图
-                    _viewModel.CurrentImagePath = item.FilePath;
-                    _viewModel.TaskStatus = $"已选择图片: {item.Name}";
+                    case ResourceItemType.Image:
+                        // 将图片资源添加到节点图
+                        _viewModel.CurrentImagePath = resource.FilePath;
+                        _viewModel.TaskStatus = $"已选择图片: {resource.Name}";
 
-                    // 将图片资源添加到节点
-                    var position = new System.Windows.Point(50, 50);
-                    _viewModel.NodeEditor.SetPendingNodePosition(position);
-                    _viewModel.NodeEditor.AddSpecificNodeCommand?.Execute("图像输入");
+                        // 将图片资源添加到节点
+                        var position = new System.Windows.Point(50, 50);
+                        _viewModel.NodeEditor.SetPendingNodePosition(position);
+                        _viewModel.NodeEditor.AddSpecificNodeCommand?.Execute("图像输入");
 
-                    // 将文件路径参数添加到节点
-                    var lastNode = _viewModel.NodeEditor.Nodes.LastOrDefault();
-                    if (lastNode != null)
-                    {
-                        bool parameterSet = false;
-
-                        // 方法1：通过ViewModel设置参数（最佳方法）
-                        if (lastNode.ViewModel is Tunnel_Next.Services.Scripting.IScriptViewModel scriptViewModel)
+                        // 将文件路径参数添加到节点
+                        var lastNode = _viewModel.NodeEditor.Nodes.LastOrDefault();
+                        if (lastNode != null)
                         {
-                            try
-                            {
-                                // 使用反射设置ViewModel的ImagePath属性
-                                var viewModelType = scriptViewModel.GetType();
-                                var imagePathProperty = viewModelType.GetProperty("ImagePath");
-                                if (imagePathProperty != null && imagePathProperty.CanWrite)
-                                {
-                                    imagePathProperty.SetValue(scriptViewModel, item.FilePath);
-                                    parameterSet = true;
-                                    _viewModel.TaskStatus = $"已通过ViewModel设置 {lastNode.Title} 的ImagePath = {item.Name}";
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _viewModel.TaskStatus = $"通过ViewModel设置参数失败: {ex.Message}";
-                            }
-                        }
+                            bool parameterSet = false;
 
-                        // 方法2：直接通过脚本实例设置参数
-                        if (!parameterSet && lastNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript scriptInstance)
-                        {
-                            try
+                            // 方法1：通过ViewModel设置参数（最佳方法）
+                            if (lastNode.ViewModel is Tunnel_Next.Services.Scripting.IScriptViewModel scriptViewModel)
                             {
-                                // 使用反射直接设置脚本实例的ImagePath属性
-                                var scriptType = scriptInstance.GetType();
-                                var imagePathProperty = scriptType.GetProperty("ImagePath");
-                                if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                try
                                 {
-                                    imagePathProperty.SetValue(scriptInstance, item.FilePath);
-
-                                    // 触发参数变化事件，确保UI和处理流程同步
-                                    if (scriptInstance is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                    // 使用反射设置ViewModel的ImagePath属性
+                                    var viewModelType = scriptViewModel.GetType();
+                                    var imagePathProperty = viewModelType.GetProperty("ImagePath");
+                                    if (imagePathProperty != null && imagePathProperty.CanWrite)
                                     {
-                                        revivalScript.OnParameterChanged("ImagePath", item.FilePath);
+                                        imagePathProperty.SetValue(scriptViewModel, resource.FilePath);
+                                        parameterSet = true;
+                                        _viewModel.TaskStatus = $"已通过ViewModel设置 {lastNode.Title} 的ImagePath = {resource.Name}";
                                     }
-
-                                    parameterSet = true;
-                                    _viewModel.TaskStatus = $"已通过脚本实例设置 {lastNode.Title} 的ImagePath = {item.Name}";
+                                }
+                                catch (Exception ex)
+                                {
+                                    _viewModel.TaskStatus = $"通过ViewModel设置参数失败: {ex.Message}";
                                 }
                             }
-                            catch (Exception ex)
+
+                            // 方法2：直接通过脚本实例设置参数
+                            if (!parameterSet && lastNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript scriptInstance)
                             {
-                                _viewModel.TaskStatus = $"通过脚本实例设置参数失败: {ex.Message}";
+                                try
+                                {
+                                    // 使用反射直接设置脚本实例的ImagePath属性
+                                    var scriptType = scriptInstance.GetType();
+                                    var imagePathProperty = scriptType.GetProperty("ImagePath");
+                                    if (imagePathProperty != null && imagePathProperty.CanWrite)
+                                    {
+                                        imagePathProperty.SetValue(scriptInstance, resource.FilePath);
+
+                                        // 触发参数变化事件，确保UI和处理流程同步
+                                        if (scriptInstance is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                        {
+                                            revivalScript.OnParameterChanged("ImagePath", resource.FilePath);
+                                        }
+
+                                        parameterSet = true;
+                                        _viewModel.TaskStatus = $"已通过脚本实例设置 {lastNode.Title} 的ImagePath = {resource.Name}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _viewModel.TaskStatus = $"通过脚本实例设置参数失败: {ex.Message}";
+                                }
+                            }
+
+                            // 方法3：如果前面的方法都失败，尝试通过NodeParameter设置
+                            if (!parameterSet)
+                            {
+                                var filePathParam = lastNode.Parameters.FirstOrDefault(p =>
+                                    p.Name == "ImagePath" ||
+                                    p.Name == "FilePath" ||
+                                    p.Name == "Path" ||
+                                    p.Name == "文件路径" ||
+                                    p.Name.ToLower().Contains("path"));
+
+                                if (filePathParam != null)
+                                {
+                                    filePathParam.Value = resource.FilePath;
+                                    parameterSet = true;
+                                    _viewModel.TaskStatus = $"已通过NodeParameter设置 {lastNode.Title} 的参数 {filePathParam.Name} = {resource.Name}";
+                                }
+                            }
+
+                            // 如果都失败了，显示调试信息
+                            if (!parameterSet)
+                            {
+                                var paramNames = string.Join(", ", lastNode.Parameters.Select(p => p.Name));
+                                var scriptType = lastNode.Tag?.GetType().Name ?? "Unknown";
+                                _viewModel.TaskStatus = $"警告：节点 {lastNode.Title} (脚本类型: {scriptType}) 参数设置失败。可用参数: {paramNames}";
                             }
                         }
+                        break;
 
-                        // 方法3：如果前面的方法都失败，尝试通过NodeParameter设置
-                        if (!parameterSet)
+                    case ResourceItemType.NodeGraph:
+                        // 打开节点图文件
+                        if (_viewModel.DocumentManager != null)
                         {
-                            var filePathParam = lastNode.Parameters.FirstOrDefault(p =>
-                                p.Name == "ImagePath" ||
-                                p.Name == "FilePath" ||
-                                p.Name == "Path" ||
-                                p.Name == "文件路径" ||
-                                p.Name.ToLower().Contains("path"));
-
-                            if (filePathParam != null)
-                            {
-                                filePathParam.Value = item.FilePath;
-                                parameterSet = true;
-                                _viewModel.TaskStatus = $"已通过NodeParameter设置 {lastNode.Title} 的参数 {filePathParam.Name} = {item.Name}";
-                            }
+                            await _viewModel.DocumentManager.LoadNodeGraphDocumentAsync(resource.FilePath);
+                            _viewModel.TaskStatus = $"已打开节点图: {resource.Name}";
                         }
-
-                        // 如果都失败了，显示调试信息
-                        if (!parameterSet)
+                        else
                         {
-                            var paramNames = string.Join(", ", lastNode.Parameters.Select(p => p.Name));
-                            var scriptType = lastNode.Tag?.GetType().Name ?? "Unknown";
-                            _viewModel.TaskStatus = $"警告：节点 {lastNode.Title} (脚本类型: {scriptType}) 参数设置失败。可用参数: {paramNames}";
+                            _viewModel.TaskStatus = "无法打开节点图：文档管理器未初始化";
                         }
-                    }
+                        break;
+
+                    case ResourceItemType.Template:
+                        // 从模板创建新节点图
+                        if (_viewModel.DocumentManager != null)
+                        {
+                            await _viewModel.DocumentManager.LoadNodeGraphDocumentAsync(resource.FilePath);
+                            _viewModel.TaskStatus = $"已从模板创建节点图: {resource.Name}";
+                        }
+                        else
+                        {
+                            _viewModel.TaskStatus = "无法从模板创建节点图：文档管理器未初始化";
+                        }
+                        break;
+
+                    case ResourceItemType.Script:
+                        // 脚本资源暂时不处理双击事件
+                        _viewModel.TaskStatus = $"脚本资源: {resource.Name}";
+                        break;
+
+                    default:
+                        _viewModel.TaskStatus = $"不支持的资源类型: {resource.ResourceTypeDisplayName}";
+                        break;
                 }
             }
             catch (Exception ex)
@@ -811,13 +862,13 @@ namespace Tunnel_Next
         {
             try
             {
-                await _viewModel.UpdateResourceLibraryAsync();
-                ResourceLibraryControl?.UpdateResourceItems();
-                _viewModel.TaskStatus = "资源库刷新";
+                // 使用新的资源管理系统刷新
+                await ResourceLibraryControl?.RefreshResourcesAsync();
+                _viewModel.TaskStatus = "资源面板刷新完成";
             }
             catch (Exception ex)
             {
-                _viewModel.TaskStatus = $"刷新资源库失败: {ex.Message}";
+                _viewModel.TaskStatus = $"刷新资源面板失败: {ex.Message}";
             }
         }
 

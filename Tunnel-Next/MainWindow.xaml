@@ -530,8 +530,8 @@
                 <Border Grid.Row="2" Style="{DynamicResource WorkAreaStyle}">
                     <controls:ResourceLibraryControl x:Name="ResourceLibraryControl"
                                                      DataContext="{Binding}"
-                                                     ResourceItemSelected="ResourceLibraryControl_ResourceItemSelected"
-                                                     ResourceItemDoubleClicked="ResourceLibraryControl_ResourceItemDoubleClicked"
+                                                     ResourceSelected="ResourceLibraryControl_ResourceSelected"
+                                                     ResourceDoubleClicked="ResourceLibraryControl_ResourceDoubleClicked"
                                                      RefreshRequested="ResourceLibraryControl_RefreshRequested"
                                                      ImportRequested="ResourceLibraryControl_ImportRequested"/>
                 </Border>

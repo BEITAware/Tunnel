@@ -12,6 +12,7 @@ namespace Tunnel_Next.Models
     {
         // 图像类型
         F32bmp,     // 32位浮点RGBA格式（主要格式）
+        F32Page,    // 32位浮点统计页面图像类型（兼容F32bmp）
         Img,        // 标准图像格式（PNG、JPG等）
         Image,      // 通用图像类型（Revival Scripts兼容）
         Tif16,      // 16位TIFF格式
@@ -91,7 +92,18 @@ namespace Tunnel_Next.Models
                 HexColor = "#F08080",
                 WpfColor = Color.FromRgb(0x5B, 0xA0, 0xF2),
                 Category = "图像",
-                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+            };
+
+            definitions[NodePortDataType.F32Page] = new PortTypeInfo
+            {
+                Type = NodePortDataType.F32Page,
+                Name = "F32Page",
+                Description = "一种兼容F32bmp的统计页面图像类型",
+                HexColor = "#87CEEB",
+                WpfColor = Color.FromRgb(0x87, 0xCE, 0xEB),
+                Category = "图像",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             definitions[NodePortDataType.Img] = new PortTypeInfo
@@ -102,7 +114,7 @@ namespace Tunnel_Next.Models
                 HexColor = "#8A2BE2",
                 WpfColor = Color.FromRgb(0x4A, 0x90, 0xE2),
                 Category = "图像",
-                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             definitions[NodePortDataType.Tif16] = new PortTypeInfo
@@ -115,7 +127,7 @@ namespace Tunnel_Next.Models
                 Category = "图像",
                 IsDeprecated = true,
                 DeprecationMessage = "已废弃，请勿使用",
-                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             definitions[NodePortDataType.Tif8] = new PortTypeInfo
@@ -126,7 +138,7 @@ namespace Tunnel_Next.Models
                 HexColor = "#87CEFA",
                 WpfColor = Color.FromRgb(0x87, 0xCE, 0xFA),
                 Category = "图像",
-                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             // 数据类型
@@ -183,7 +195,7 @@ namespace Tunnel_Next.Models
                 HexColor = "#FF6464",
                 WpfColor = Color.FromRgb(0xFF, 0x64, 0x64),
                 Category = "图像",
-                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Image, NodePortDataType.F32bmp, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Image, NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             definitions[NodePortDataType.Array] = new PortTypeInfo
@@ -375,6 +387,8 @@ namespace Tunnel_Next.Models
             // 别名映射
             map["image"] = NodePortDataType.F32bmp; // 默认映射到F32bmp
             map["img"] = NodePortDataType.Img;
+            map["f32page"] = NodePortDataType.F32Page;
+            map["page"] = NodePortDataType.F32Page; // 简短别名
             map["text"] = NodePortDataType.String;
             map["channelr"] = NodePortDataType.ChannelR;
             map["channelg"] = NodePortDataType.ChannelG;

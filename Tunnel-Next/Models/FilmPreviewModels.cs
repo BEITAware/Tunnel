@@ -238,6 +238,16 @@ namespace Tunnel_Next.Models
         Template,
 
         /// <summary>
+        /// 节点图文件
+        /// </summary>
+        NodeGraph,
+
+        /// <summary>
+        /// 脚本文件
+        /// </summary>
+        Script,
+
+        /// <summary>
         /// 素材文件
         /// </summary>
         Material,
