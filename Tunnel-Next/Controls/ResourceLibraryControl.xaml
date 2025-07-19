@@ -367,6 +367,13 @@
                                    Foreground="{StaticResource PrimaryForeground}"/>
                     </StackPanel>
                 </Button>
+
+                <TextBlock Text="资源面板"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource PrimaryForeground}"
+                           FontWeight="Medium"
+                           FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                           Margin="8,0,0,0"/>
             </StackPanel>
         </Border>
 

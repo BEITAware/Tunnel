@@ -42,6 +42,7 @@ namespace Tunnel_Next.Services
 
         /// <summary>
         /// 加载资源目录
+        /// 注意：当前资源扫描模式下暂时不使用磁盘持久化，此方法保留以备将来使用
         /// </summary>
         public async Task<bool> LoadCatalogAsync()
         {
@@ -83,6 +84,7 @@ namespace Tunnel_Next.Services
 
         /// <summary>
         /// 保存资源目录
+        /// 注意：当前资源扫描模式下暂时不使用磁盘持久化，此方法保留以备将来使用
         /// </summary>
         public async Task<bool> SaveCatalogAsync()
         {
@@ -112,6 +114,7 @@ namespace Tunnel_Next.Services
 
         /// <summary>
         /// 添加资源对象
+        /// 注意：当前资源扫描模式下暂时不使用磁盘持久化，此方法保留以备将来使用
         /// </summary>
         public async Task<bool> AddResourceAsync(ResourceObject resource)
         {
@@ -146,6 +149,7 @@ namespace Tunnel_Next.Services
 
         /// <summary>
         /// 批量添加资源对象
+        /// 注意：当前资源扫描模式下暂时不使用磁盘持久化，此方法保留以备将来使用
         /// </summary>
         public async Task<bool> AddResourcesAsync(IEnumerable<ResourceObject> resources)
         {
@@ -204,6 +208,7 @@ namespace Tunnel_Next.Services
 
         /// <summary>
         /// 清理无效资源（文件不存在的资源）
+        /// 注意：当前资源扫描模式下暂时不使用磁盘持久化，此方法保留以备将来使用
         /// </summary>
         public async Task<int> CleanupInvalidResourcesAsync()
         {

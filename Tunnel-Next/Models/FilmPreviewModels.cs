@@ -212,49 +212,5 @@ namespace Tunnel_Next.Models
         }
     }
 
-    /// <summary>
-    /// 资源项目类型
-    /// </summary>
-    public enum ResourceItemType
-    {
-        /// <summary>
-        /// 文件夹
-        /// </summary>
-        Folder,
 
-        /// <summary>
-        /// 图像文件
-        /// </summary>
-        Image,
-
-        /// <summary>
-        /// 预设文件
-        /// </summary>
-        Preset,
-
-        /// <summary>
-        /// 模板文件
-        /// </summary>
-        Template,
-
-        /// <summary>
-        /// 节点图文件
-        /// </summary>
-        NodeGraph,
-
-        /// <summary>
-        /// 脚本文件
-        /// </summary>
-        Script,
-
-        /// <summary>
-        /// 素材文件
-        /// </summary>
-        Material,
-
-        /// <summary>
-        /// 其他文件
-        /// </summary>
-        Other
-    }
 }

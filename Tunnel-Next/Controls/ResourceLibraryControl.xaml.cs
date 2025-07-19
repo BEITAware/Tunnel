@@ -79,9 +79,10 @@ namespace Tunnel_Next.Controls
         /// </summary>
         private async void ResourceLibraryControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (_catalogService != null)
+            if (_catalogService != null && _scanService != null)
             {
-                await LoadResourcesAsync();
+                // 初始化时直接扫描资源，不从磁盘加载
+                await RefreshResourcesAsync();
             }
         }
 
@@ -96,10 +97,7 @@ namespace Tunnel_Next.Controls
             {
                 ShowLoadingState();
 
-                // 加载目录
-                await _catalogService.LoadCatalogAsync();
-
-                // 获取所有资源
+                // 直接从内存中获取资源，不从磁盘加载
                 _allResources = _catalogService.Catalog.Resources.ToList();
 
                 // 应用搜索过滤
@@ -129,13 +127,12 @@ namespace Tunnel_Next.Controls
                 // 扫描所有资源
                 var resources = await _scanService.ScanAllResourcesAsync();
 
-                // 批量添加到目录
-                await _catalogService.AddResourcesAsync(resources);
+                // 直接更新内存中的资源列表，不保存到磁盘
+                _catalogService.Catalog.Resources.Clear();
+                _catalogService.Catalog.Resources.AddRange(resources);
+                _catalogService.Catalog.UpdateStatistics();
 
-                // 清理无效资源
-                await _catalogService.CleanupInvalidResourcesAsync();
-
-                // 重新加载
+                // 重新加载UI显示
                 await LoadResourcesAsync();
             }
             catch (Exception ex)
@@ -304,17 +301,7 @@ namespace Tunnel_Next.Controls
         /// </summary>
         private string GetResourceTypeDisplayName(ResourceItemType resourceType)
         {
-            return resourceType switch
-            {
-                ResourceItemType.NodeGraph => "节点图",
-                ResourceItemType.Template => "模板",
-                ResourceItemType.Script => "脚本",
-                ResourceItemType.Image => "图像",
-                ResourceItemType.Preset => "预设",
-                ResourceItemType.Material => "素材",
-                ResourceItemType.Folder => "文件夹",
-                _ => "其他"
-            };
+            return ResourceTypeRegistry.GetDisplayName(resourceType);
         }
 
         /// <summary>
@@ -351,6 +338,7 @@ namespace Tunnel_Next.Controls
         {
             await Dispatcher.InvokeAsync(async () =>
             {
+                // 直接更新UI显示，不重新加载
                 await LoadResourcesAsync();
             });
         }
@@ -366,7 +354,7 @@ namespace Tunnel_Next.Controls
 
                 // 延迟刷新，避免频繁更新UI
                 await Task.Delay(1000);
-                await LoadResourcesAsync();
+                await RefreshResourcesAsync(); // 重新扫描而不是从磁盘加载
             });
         }
 

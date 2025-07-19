@@ -24,6 +24,8 @@ namespace Tunnel_Next.Models
         private string _description = string.Empty;
         private Dictionary<string, object> _metadata = new();
         private BitmapSource? _thumbnail;
+        private List<string> _associatedFiles = new();
+        private List<string> _associatedFolders = new();
 
         /// <summary>
         /// 资源唯一标识符
@@ -126,6 +128,24 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
+        /// 关联的文件路径列表（包含所有相关文件）
+        /// </summary>
+        public List<string> AssociatedFiles
+        {
+            get => _associatedFiles;
+            set => SetProperty(ref _associatedFiles, value);
+        }
+
+        /// <summary>
+        /// 关联的文件夹路径列表（如模板文件夹、脚本资源文件夹等）
+        /// </summary>
+        public List<string> AssociatedFolders
+        {
+            get => _associatedFolders;
+            set => SetProperty(ref _associatedFolders, value);
+        }
+
+        /// <summary>
         /// 获取格式化的文件大小
         /// </summary>
         [JsonIgnore]
@@ -144,45 +164,13 @@ namespace Tunnel_Next.Models
         /// 获取资源类型的显示名称
         /// </summary>
         [JsonIgnore]
-        public string ResourceTypeDisplayName
-        {
-            get
-            {
-                return ResourceType switch
-                {
-                    ResourceItemType.NodeGraph => "节点图",
-                    ResourceItemType.Template => "模板",
-                    ResourceItemType.Script => "脚本",
-                    ResourceItemType.Image => "图像",
-                    ResourceItemType.Preset => "预设",
-                    ResourceItemType.Material => "素材",
-                    ResourceItemType.Folder => "文件夹",
-                    _ => "其他"
-                };
-            }
-        }
+        public string ResourceTypeDisplayName => ResourceTypeRegistry.GetDisplayName(ResourceType);
 
         /// <summary>
         /// 获取资源类型的图标路径
         /// </summary>
         [JsonIgnore]
-        public string ResourceTypeIconPath
-        {
-            get
-            {
-                return ResourceType switch
-                {
-                    ResourceItemType.NodeGraph => "../Resources/Nodegraph.png",
-                    ResourceItemType.Template => "../Resources/Template.png",
-                    ResourceItemType.Script => "../Resources/Script.png",
-                    ResourceItemType.Image => "../Resources/RawImage.png",
-                    ResourceItemType.Preset => "../Resources/Script.png", // 使用脚本图标作为预设
-                    ResourceItemType.Material => "../Resources/RawImage.png", // 使用图像图标作为素材
-                    ResourceItemType.Folder => "../Resources/WorkFolder.png",
-                    _ => "../Resources/Script.png" // 默认使用脚本图标
-                };
-            }
-        }
+        public string ResourceTypeIconPath => ResourceTypeRegistry.GetDefaultIconPath(ResourceType);
 
         /// <summary>
         /// 获取实际显示的图标路径（优先使用缩略图）
@@ -192,8 +180,10 @@ namespace Tunnel_Next.Models
         {
             get
             {
-                // 对于模板，如果有缩略图则使用缩略图，否则使用默认图标
-                if (ResourceType == ResourceItemType.Template && !string.IsNullOrEmpty(ThumbnailPath) && File.Exists(ThumbnailPath))
+                // 如果资源类型支持缩略图且有缩略图文件，则使用缩略图
+                if (ResourceTypeRegistry.SupportsThumbnail(ResourceType) &&
+                    !string.IsNullOrEmpty(ThumbnailPath) &&
+                    File.Exists(ThumbnailPath))
                 {
                     return ThumbnailPath;
                 }
@@ -211,7 +201,7 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
-        /// 检查文件是否存在
+        /// 检查主文件是否存在
         /// </summary>
         [JsonIgnore]
         public bool FileExists => !string.IsNullOrEmpty(FilePath) && File.Exists(FilePath);
@@ -221,6 +211,37 @@ namespace Tunnel_Next.Models
         /// </summary>
         [JsonIgnore]
         public string FileExtension => Path.GetExtension(FilePath).ToLowerInvariant();
+
+        /// <summary>
+        /// 获取所有文件路径（主文件 + 关联文件）
+        /// </summary>
+        [JsonIgnore]
+        public IEnumerable<string> AllFiles
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(FilePath))
+                    yield return FilePath;
+
+                foreach (var file in AssociatedFiles)
+                {
+                    if (!string.IsNullOrEmpty(file))
+                        yield return file;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查所有关联文件是否存在
+        /// </summary>
+        [JsonIgnore]
+        public bool AllFilesExist => AllFiles.All(File.Exists);
+
+        /// <summary>
+        /// 检查所有关联文件夹是否存在
+        /// </summary>
+        [JsonIgnore]
+        public bool AllFoldersExist => AssociatedFolders.All(Directory.Exists);
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -263,6 +284,53 @@ namespace Tunnel_Next.Models
             var fileInfo = new FileInfo(FilePath);
             ModifiedTime = fileInfo.LastWriteTime;
             FileSize = fileInfo.Length;
+        }
+
+        /// <summary>
+        /// 添加关联文件
+        /// </summary>
+        public void AddAssociatedFile(string filePath)
+        {
+            if (!string.IsNullOrEmpty(filePath) && !AssociatedFiles.Contains(filePath))
+            {
+                AssociatedFiles.Add(filePath);
+            }
+        }
+
+        /// <summary>
+        /// 添加关联文件夹
+        /// </summary>
+        public void AddAssociatedFolder(string folderPath)
+        {
+            if (!string.IsNullOrEmpty(folderPath) && !AssociatedFolders.Contains(folderPath))
+            {
+                AssociatedFolders.Add(folderPath);
+            }
+        }
+
+        /// <summary>
+        /// 移除关联文件
+        /// </summary>
+        public bool RemoveAssociatedFile(string filePath)
+        {
+            return AssociatedFiles.Remove(filePath);
+        }
+
+        /// <summary>
+        /// 移除关联文件夹
+        /// </summary>
+        public bool RemoveAssociatedFolder(string folderPath)
+        {
+            return AssociatedFolders.Remove(folderPath);
+        }
+
+        /// <summary>
+        /// 清理不存在的关联文件和文件夹
+        /// </summary>
+        public void CleanupMissingAssociations()
+        {
+            AssociatedFiles.RemoveAll(file => !File.Exists(file));
+            AssociatedFolders.RemoveAll(folder => !Directory.Exists(folder));
         }
     }
 

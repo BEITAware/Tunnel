@@ -16,6 +16,7 @@ namespace Tunnel_Next.Services
     {
         private readonly WorkFolderService _workFolderService;
         private readonly ThumbnailService _thumbnailService;
+        private readonly UnifiedResourceScanner _unifiedScanner;
         private readonly RevivalScriptManager? _scriptManager;
 
         /// <summary>
@@ -28,11 +29,33 @@ namespace Tunnel_Next.Services
         /// </summary>
         private static readonly string[] ScriptExtensions = { ".cs", ".sn" };
 
-        public ResourceScanService(WorkFolderService workFolderService, ThumbnailService thumbnailService, RevivalScriptManager? scriptManager = null)
+        /// <summary>
+        /// 根据文件路径自动识别资源类型
+        /// </summary>
+        private ResourceItemType GetResourceTypeFromPath(string filePath)
+        {
+            var extension = Path.GetExtension(filePath);
+            var directory = Path.GetDirectoryName(filePath) ?? string.Empty;
+
+            // 首先尝试使用ResourceTypeRegistry的扩展名映射
+            var typeFromExtension = ResourceTypeRegistry.GetTypeByExtension(extension);
+
+            // 特殊处理：模板是在Templates文件夹中的.nodegraph文件
+            if (typeFromExtension == ResourceItemType.NodeGraph &&
+                directory.Contains("Templates", StringComparison.OrdinalIgnoreCase))
+            {
+                return ResourceItemType.Template;
+            }
+
+            return typeFromExtension;
+        }
+
+        public ResourceScanService(WorkFolderService workFolderService, ThumbnailService thumbnailService, RevivalScriptManager? scriptManager = null, IServiceProvider? serviceProvider = null)
         {
             _workFolderService = workFolderService ?? throw new ArgumentNullException(nameof(workFolderService));
             _thumbnailService = thumbnailService ?? throw new ArgumentNullException(nameof(thumbnailService));
             _scriptManager = scriptManager;
+            _unifiedScanner = new UnifiedResourceScanner(_workFolderService, serviceProvider);
         }
 
         /// <summary>
@@ -40,248 +63,152 @@ namespace Tunnel_Next.Services
         /// </summary>
         public async Task<List<ResourceObject>> ScanAllResourcesAsync()
         {
-            var resources = new List<ResourceObject>();
-
             try
             {
-                // 扫描节点图
-                var nodeGraphs = await ScanNodeGraphsAsync();
-                resources.AddRange(nodeGraphs);
+                // 使用统一扫描引擎扫描所有资源
+                var scanResult = await _unifiedScanner.ScanAllResourcesAsync();
 
-                // 扫描模板
-                var templates = await ScanTemplatesAsync();
-                resources.AddRange(templates);
-
-                // 扫描脚本
-                var scripts = await ScanScriptsAsync();
-                resources.AddRange(scripts);
-
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描完成，共找到 {resources.Count} 个资源");
+                if (scanResult.Success)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 统一扫描完成，共找到 {scanResult.Resources.Count} 个资源，耗时: {scanResult.ElapsedMilliseconds}ms");
+                    Console.WriteLine($"[ResourceScanService] 统一扫描完成，共找到 {scanResult.Resources.Count} 个资源，耗时: {scanResult.ElapsedMilliseconds}ms");
+                    return scanResult.Resources;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 统一扫描失败: {scanResult.ErrorMessage}");
+                    Console.WriteLine($"[ResourceScanService] 统一扫描失败: {scanResult.ErrorMessage}");
+                    return new List<ResourceObject>();
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描资源失败: {ex.Message}");
+                Console.WriteLine($"[ResourceScanService] 扫描资源失败: {ex.Message}");
+                return new List<ResourceObject>();
+            }
+        }
+
+        /// <summary>
+        /// 扫描图像文件（只从工作文件夹根目录）
+        /// </summary>
+        public async Task<List<ResourceObject>> ScanImagesAsync()
+        {
+            var resources = new List<ResourceObject>();
+
+            try
+            {
+                var workFolder = _workFolderService.WorkFolder;
+                if (!Directory.Exists(workFolder))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 工作文件夹不存在: {workFolder}");
+                    return resources;
+                }
+
+                // 获取图像类型定义
+                var imageTypeDefinition = ResourceTypeRegistry.GetTypeDefinition(ResourceItemType.Image);
+                if (imageTypeDefinition == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[ResourceScanService] 图像类型定义未找到");
+                    return resources;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 开始扫描图像文件，工作文件夹: {workFolder}");
+                Console.WriteLine($"[ResourceScanService] 开始扫描图像文件，工作文件夹: {workFolder}");
+
+                // 只扫描工作文件夹根目录，不递归扫描子目录
+                foreach (var extension in imageTypeDefinition.SupportedExtensions)
+                {
+                    var pattern = $"*{extension}";
+                    var imageFiles = Directory.GetFiles(workFolder, pattern, SearchOption.TopDirectoryOnly);
+
+                    foreach (var filePath in imageFiles)
+                    {
+                        try
+                        {
+                            var fileInfo = new FileInfo(filePath);
+                            var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.Image);
+
+                            // 设置缩略图路径
+                            resource.ThumbnailPath = imageTypeDefinition.DefaultIconPath;
+                            if (imageTypeDefinition.SupportsThumbnail)
+                            {
+                                // 尝试生成缩略图
+                                resource.Thumbnail = await _thumbnailService.GenerateImageThumbnailAsync(filePath);
+                            }
+
+                            // 设置描述
+                            resource.Description = imageTypeDefinition.Description;
+
+                            // 添加图像特定的元数据
+                            resource.Metadata["Category"] = "Image";
+                            resource.Metadata["FileExtension"] = Path.GetExtension(filePath).ToLowerInvariant();
+
+                            resources.Add(resource);
+
+                            System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描到图像: {resource.Name}");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 处理图像文件失败 {filePath}: {ex.Message}");
+                        }
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 图像扫描完成，共找到 {resources.Count} 个图像文件");
+                Console.WriteLine($"[ResourceScanService] 图像扫描完成，共找到 {resources.Count} 个图像文件");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描图像失败: {ex.Message}");
             }
 
             return resources;
+        }
+
+        /// <summary>
+        /// 扫描注册的资源类型（除了已经专门处理的类型）
+        /// 注意：此方法已被UnifiedResourceScanner替代，保留以备兼容性使用
+        /// </summary>
+        [Obsolete("使用UnifiedResourceScanner替代")]
+        private async Task<List<ResourceObject>> ScanRegisteredResourceTypesAsync()
+        {
+            // 使用统一扫描引擎扫描素材类型
+            var scanResult = await _unifiedScanner.ScanResourceTypeAsync(ResourceItemType.Material);
+            return scanResult.Success ? scanResult.Resources : new List<ResourceObject>();
         }
 
         /// <summary>
         /// 扫描节点图文件
+        /// 注意：此方法已被UnifiedResourceScanner替代，保留以备兼容性使用
         /// </summary>
+        [Obsolete("使用UnifiedResourceScanner替代")]
         public async Task<List<ResourceObject>> ScanNodeGraphsAsync()
         {
-            var resources = new List<ResourceObject>();
-
-            try
-            {
-                var projectsFolder = Path.Combine(_workFolderService.WorkFolder, "Projects");
-                if (!Directory.Exists(projectsFolder))
-                {
-                    Directory.CreateDirectory(projectsFolder);
-                    return resources;
-                }
-
-                var nodeGraphFiles = Directory.GetFiles(projectsFolder, "*.nodegraph", SearchOption.AllDirectories);
-                
-                foreach (var filePath in nodeGraphFiles)
-                {
-                    try
-                    {
-                        var fileInfo = new FileInfo(filePath);
-                        var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.NodeGraph);
-                        
-                        // 设置缩略图路径（使用通用的节点图图标）
-                        resource.ThumbnailPath = GetDefaultThumbnailPath(ResourceItemType.NodeGraph);
-                        
-                        // 尝试加载缩略图
-                        resource.Thumbnail = await LoadDefaultThumbnailAsync(ResourceItemType.NodeGraph);
-
-                        // 添加节点图特定的元数据
-                        resource.Metadata["Category"] = "NodeGraph";
-                        resource.Description = "节点图文件";
-
-                        resources.Add(resource);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 处理节点图文件失败 {filePath}: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描节点图失败: {ex.Message}");
-            }
-
-            return resources;
+            var scanResult = await _unifiedScanner.ScanResourceTypeAsync(ResourceItemType.NodeGraph);
+            return scanResult.Success ? scanResult.Resources : new List<ResourceObject>();
         }
 
         /// <summary>
         /// 扫描模板文件
+        /// 注意：此方法已被UnifiedResourceScanner替代，保留以备兼容性使用
         /// </summary>
+        [Obsolete("使用UnifiedResourceScanner替代")]
         public async Task<List<ResourceObject>> ScanTemplatesAsync()
         {
-            var resources = new List<ResourceObject>();
-
-            try
-            {
-                var templatesFolder = Path.Combine(_workFolderService.WorkFolder, "Resources", "Templates");
-                if (!Directory.Exists(templatesFolder))
-                {
-                    Directory.CreateDirectory(templatesFolder);
-                    return resources;
-                }
-
-                var templateDirs = Directory.GetDirectories(templatesFolder);
-                
-                foreach (var templateDir in templateDirs)
-                {
-                    try
-                    {
-                        var templateName = Path.GetFileName(templateDir);
-                        var nodeGraphFile = Directory.GetFiles(templateDir, "*.nodegraph").FirstOrDefault();
-                        
-                        if (nodeGraphFile == null) continue; // 必须包含节点图文件
-
-                        var fileInfo = new FileInfo(nodeGraphFile);
-                        var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.Template);
-                        resource.Name = templateName; // 使用文件夹名作为模板名
-
-                        // 查找缩略图
-                        var thumbnailPath = Path.Combine(templateDir, "thumbnail.png");
-                        if (File.Exists(thumbnailPath))
-                        {
-                            resource.ThumbnailPath = thumbnailPath;
-                            resource.Thumbnail = await LoadThumbnailAsync(thumbnailPath);
-                        }
-                        else
-                        {
-                            // 使用默认模板图标
-                            resource.ThumbnailPath = GetDefaultThumbnailPath(ResourceItemType.Template);
-                            resource.Thumbnail = await LoadDefaultThumbnailAsync(ResourceItemType.Template);
-                        }
-
-                        // 添加模板特定的元数据
-                        resource.Metadata["Category"] = "Template";
-                        resource.Metadata["TemplateFolder"] = templateDir;
-                        resource.Description = "节点图模板";
-
-                        resources.Add(resource);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 处理模板失败 {templateDir}: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描模板失败: {ex.Message}");
-            }
-
-            return resources;
+            var scanResult = await _unifiedScanner.ScanResourceTypeAsync(ResourceItemType.Template);
+            return scanResult.Success ? scanResult.Resources : new List<ResourceObject>();
         }
 
         /// <summary>
         /// 扫描脚本文件
+        /// 注意：此方法已被UnifiedResourceScanner替代，保留以备兼容性使用
         /// </summary>
+        [Obsolete("使用UnifiedResourceScanner替代")]
         public async Task<List<ResourceObject>> ScanScriptsAsync()
         {
-            var resources = new List<ResourceObject>();
-
-            try
-            {
-                if (_scriptManager == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("[ResourceScanService] 脚本管理器未初始化，跳过脚本扫描");
-                    Console.WriteLine("[ResourceScanService] 脚本管理器未初始化，跳过脚本扫描");
-                    return resources;
-                }
-
-                var scriptsFolder = _workFolderService.UserScriptsFolder;
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 脚本文件夹路径: {scriptsFolder}");
-                Console.WriteLine($"[ResourceScanService] 脚本文件夹路径: {scriptsFolder}");
-
-                if (!Directory.Exists(scriptsFolder))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 脚本文件夹不存在: {scriptsFolder}");
-                    Console.WriteLine($"[ResourceScanService] 脚本文件夹不存在: {scriptsFolder}");
-                    return resources;
-                }
-
-                // 获取所有脚本文件
-                var scriptFiles = new List<string>();
-                foreach (var extension in ScriptExtensions)
-                {
-                    var files = Directory.GetFiles(scriptsFolder, $"*{extension}", SearchOption.AllDirectories);
-                    System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 找到 {files.Length} 个 {extension} 文件");
-                    Console.WriteLine($"[ResourceScanService] 找到 {files.Length} 个 {extension} 文件");
-                    scriptFiles.AddRange(files);
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 总共找到 {scriptFiles.Count} 个脚本文件");
-                Console.WriteLine($"[ResourceScanService] 总共找到 {scriptFiles.Count} 个脚本文件");
-
-                foreach (var filePath in scriptFiles)
-                {
-                    try
-                    {
-                        var fileInfo = new FileInfo(filePath);
-                        var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.Script);
-                        
-                        // 设置缩略图路径（使用通用的脚本图标）
-                        resource.ThumbnailPath = GetDefaultThumbnailPath(ResourceItemType.Script);
-                        resource.Thumbnail = await LoadDefaultThumbnailAsync(ResourceItemType.Script);
-
-                        // 添加脚本特定的元数据
-                        resource.Metadata["Category"] = "Script";
-                        resource.Metadata["ScriptType"] = Path.GetExtension(filePath).ToLowerInvariant() == ".cs" ? "CSharp" : "SymbolNode";
-                        
-                        // 尝试从脚本管理器获取更多信息
-                        var relativePath = Path.GetRelativePath(scriptsFolder, filePath);
-                        var availableScripts = _scriptManager.GetAvailableRevivalScripts();
-                        if (availableScripts.TryGetValue(relativePath, out var scriptInfo))
-                        {
-                            resource.Description = scriptInfo.Description ?? "脚本文件";
-                            resource.Metadata["ScriptName"] = scriptInfo.Name;
-                            resource.Metadata["Category"] = scriptInfo.Category ?? "Script";
-                            resource.Metadata["IsCompiled"] = scriptInfo.IsCompiled;
-                            resource.Metadata["IsSymbolNode"] = scriptInfo.IsSymbolNode;
-
-                            // 如果脚本有分类，使用分类作为描述的一部分
-                            if (!string.IsNullOrEmpty(scriptInfo.Category))
-                            {
-                                resource.Description = $"{scriptInfo.Category} - {resource.Description}";
-                            }
-
-                            // 添加编译状态信息
-                            if (!scriptInfo.IsSymbolNode)
-                            {
-                                resource.Metadata["CompilationStatus"] = scriptInfo.IsCompiled ? "已编译" : "未编译";
-                            }
-                        }
-                        else
-                        {
-                            resource.Description = "脚本文件";
-                            // 尝试从文件内容中提取基本信息
-                            await ExtractScriptInfoFromFileAsync(resource, filePath);
-                        }
-
-                        resources.Add(resource);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 处理脚本文件失败 {filePath}: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ResourceScanService] 扫描脚本失败: {ex.Message}");
-            }
-
-            return resources;
+            var scanResult = await _unifiedScanner.ScanResourceTypeAsync(ResourceItemType.Script);
+            return scanResult.Success ? scanResult.Resources : new List<ResourceObject>();
         }
 
         /// <summary>
@@ -289,9 +216,7 @@ namespace Tunnel_Next.Services
         /// </summary>
         private string GetDefaultThumbnailPath(ResourceItemType resourceType)
         {
-            // 这里应该返回软件资源文件夹中的默认图标路径
-            // 暂时返回空字符串，后续可以添加默认图标
-            return string.Empty;
+            return ResourceTypeRegistry.GetDefaultIconPath(resourceType);
         }
 
         /// <summary>
