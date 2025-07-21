@@ -412,5 +412,145 @@ namespace Tunnel_Next.Models
             // 其他类型作为兜底，通常不主动扫描，返回空列表
             return new List<ResourceObject>();
         }
+
+        /// <summary>
+        /// 静态节点扫描委托
+        /// </summary>
+        public static async Task<List<ResourceObject>> ScanStaticNodesAsync(ResourceScanContext context)
+        {
+            var resources = new List<ResourceObject>();
+
+            try
+            {
+                var staticNodesFolder = Path.Combine(context.WorkFolder, "Resources", "StaticNodes");
+                if (!Directory.Exists(staticNodesFolder))
+                {
+                    Directory.CreateDirectory(staticNodesFolder);
+                    System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 创建静态节点文件夹: {staticNodesFolder}");
+                    return resources;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 开始扫描静态节点文件夹: {staticNodesFolder}");
+
+                // 获取所有.tsn文件
+                var staticNodeFiles = Directory.GetFiles(staticNodesFolder, "*.tsn", SearchOption.TopDirectoryOnly);
+
+                foreach (var filePath in staticNodeFiles)
+                {
+                    try
+                    {
+                        var fileInfo = new FileInfo(filePath);
+                        var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.StaticNode);
+
+                        // 读取元数据（如果可能）
+                        await ExtractStaticNodeMetadataAsync(resource, filePath);
+
+                        // 设置缩略图路径为FlexiblePort图标
+                        resource.ThumbnailPath = "../Resources/FlexiblePort.png";
+
+                        // 添加静态节点特定的元数据
+                        resource.Metadata["Category"] = "StaticNode";
+                        resource.Metadata["FileExtension"] = ".tsn";
+
+                        // 设置描述
+                        if (resource.Metadata.TryGetValue("OriginalNodeName", out var origNode) &&
+                            resource.Metadata.TryGetValue("OriginalPortName", out var origPort))
+                        {
+                            resource.Description = $"静态节点: {origNode} - {origPort}";
+                        }
+                        else
+                        {
+                            resource.Description = "静态节点文件";
+                        }
+
+                        resources.Add(resource);
+
+                        System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 扫描到静态节点: {resource.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 处理静态节点文件失败 {filePath}: {ex.Message}");
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 静态节点扫描完成，共找到 {resources.Count} 个静态节点文件");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 扫描静态节点失败: {ex.Message}");
+            }
+
+            return resources;
+        }
+
+        /// <summary>
+        /// 提取静态节点元数据
+        /// </summary>
+        private static async Task ExtractStaticNodeMetadataAsync(ResourceObject resource, string filePath)
+        {
+            try
+            {
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                using (var br = new BinaryReader(fs))
+                {
+                    // 尝试读取文件标识符
+                    int headerLength = br.ReadInt32();
+                    byte[] headerBytes = br.ReadBytes(headerLength);
+                    string header = System.Text.Encoding.ASCII.GetString(headerBytes);
+
+                    if (header == "TSN1")
+                    {
+                        // 新版本格式
+                        int nodeNameLength = br.ReadInt32();
+                        byte[] nodeNameBytes = br.ReadBytes(nodeNameLength);
+                        string nodeName = System.Text.Encoding.UTF8.GetString(nodeNameBytes);
+
+                        int portNameLength = br.ReadInt32();
+                        byte[] portNameBytes = br.ReadBytes(portNameLength);
+                        string portName = System.Text.Encoding.UTF8.GetString(portNameBytes);
+
+                        int dataTypeLength = br.ReadInt32();
+                        byte[] dataTypeBytes = br.ReadBytes(dataTypeLength);
+                        string dataType = System.Text.Encoding.UTF8.GetString(dataTypeBytes);
+
+                        resource.Metadata["OriginalNodeName"] = nodeName;
+                        resource.Metadata["OriginalPortName"] = portName;
+                        resource.Metadata["OriginalDataType"] = dataType;
+                        resource.Metadata["FileFormat"] = "TSN1";
+                    }
+                    else
+                    {
+                        // 旧版本格式
+                        fs.Seek(0, SeekOrigin.Begin);
+                        
+                        byte[] lengthBytes = new byte[4];
+                        fs.Read(lengthBytes, 0, 4);
+                        int metadataLength = BitConverter.ToInt32(lengthBytes, 0);
+
+                        byte[] metadataBytes = new byte[metadataLength];
+                        fs.Read(metadataBytes, 0, metadataLength);
+                        string metadata = System.Text.Encoding.UTF8.GetString(metadataBytes);
+
+                        string[] parts = metadata.Split('\n');
+                        if (parts.Length >= 3)
+                        {
+                            resource.Metadata["OriginalNodeName"] = parts[0];
+                            resource.Metadata["OriginalPortName"] = parts[1];
+                            resource.Metadata["OriginalDataType"] = parts[2];
+                            resource.Metadata["FileFormat"] = "Legacy";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StaticNodeScan] 读取静态节点元数据失败: {ex.Message}");
+                // 设置默认元数据
+                resource.Metadata["OriginalNodeName"] = "未知节点";
+                resource.Metadata["OriginalPortName"] = "未知端口";
+                resource.Metadata["OriginalDataType"] = "未知类型";
+                resource.Metadata["FileFormat"] = "未知";
+            }
+        }
     }
 }

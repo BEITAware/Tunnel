@@ -246,7 +246,20 @@ namespace Tunnel_Next.Models
                 ScanDelegate = BuiltinResourceScanners.ScanImagesAsync
             });
 
-
+            // 静态节点
+            RegisterType(new ResourceTypeDefinition
+            {
+                Type = ResourceItemType.StaticNode,
+                DisplayName = "静态节点",
+                Description = "静态节点文件",
+                DefaultIconPath = "../Resources/FlexiblePort.png",
+                SupportedExtensions = new List<string> { ".tsn" },
+                SupportsThumbnail = true,
+                SupportsMultipleFiles = false,
+                SupportsFolderAssociation = false,
+                ScanPriority = 25,
+                ScanDelegate = BuiltinResourceScanners.ScanStaticNodesAsync
+            });
 
             // 素材
             RegisterType(new ResourceTypeDefinition

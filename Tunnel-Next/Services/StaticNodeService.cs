@@ -26,8 +26,9 @@ namespace Tunnel_Next.Services
         /// <param name="node">源节点</param>
         /// <param name="portName">端口名称</param>
         /// <param name="value">端口输出值</param>
-        /// <returns>保存是否成功</returns>
-        public bool SaveAsStaticNode(Node node, string portName, object value)
+        /// <param name="customName">自定义名称（可选）</param>
+        /// <returns>保存是否成功，以及保存的文件名</returns>
+        public (bool success, string fileName) SaveAsStaticNode(Node node, string portName, object value, string customName = null)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
@@ -48,9 +49,21 @@ namespace Tunnel_Next.Services
                 // 获取静态节点保存目录
                 var staticNodesDir = GetStaticNodesDirectory();
 
-                // 生成文件名（节点名称_端口名称_时间戳.tsn）
+                // 生成文件名
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string fileName = $"{SanitizeFileName(node.Title)}_{SanitizeFileName(portName)}_{timestamp}.tsn";
+                string fileName;
+                
+                // 如果提供了自定义名称，使用自定义名称，否则使用自动生成的名称
+                if (!string.IsNullOrEmpty(customName))
+                {
+                    fileName = $"{SanitizeFileName(customName)}.tsn";
+                }
+                else
+                {
+                    // 使用默认命名规则（节点名称_端口名称_时间戳.tsn）
+                    fileName = $"{SanitizeFileName(node.Title)}_{SanitizeFileName(portName)}_{timestamp}.tsn";
+                }
+                
                 string filePath = Path.Combine(staticNodesDir, fileName);
 
                 // 将端口输出包装到静态节点数据中
@@ -151,12 +164,12 @@ namespace Tunnel_Next.Services
                     }
                 }
 
-                return true;
+                return (true, fileName);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"保存静态节点失败: {ex.Message}");
-                return false;
+                return (false, string.Empty);
             }
         }
 

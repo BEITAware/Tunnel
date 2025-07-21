@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
@@ -13,6 +14,7 @@ using Tunnel_Next.ViewModels;
 using Tunnel_Next.Services.ImageProcessing;
 using Tunnel_Next.Services;
 using System.Threading.Tasks;
+using Tunnel_Next.Windows;
 
 namespace Tunnel_Next.Controls
 {
@@ -1322,12 +1324,29 @@ namespace Tunnel_Next.Controls
                     return;
                 }
 
+                // 生成默认名称
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string defaultName = $"{node.Title}_{portName}_{timestamp}";
+
+                // 显示名称输入对话框
+                var nameWindow = new Windows.StaticNodeNameWindow(defaultName);
+                nameWindow.Owner = Window.GetWindow(this); // 设置父窗口
+                
+                // 如果用户取消了操作，直接返回
+                if (nameWindow.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                // 获取用户输入的名称
+                string customName = nameWindow.NodeName;
+                
                 // 保存静态节点
-                bool success = staticNodeService.SaveAsStaticNode(node, portName, portValue);
+                var (success, fileName) = staticNodeService.SaveAsStaticNode(node, portName, portValue, customName);
                 
                 if (success)
                 {
-                    MessageBox.Show($"已将 {node.Title} 的 {portName} 保存为静态节点。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"已将 {node.Title} 的 {portName} 保存为静态节点：\n{fileName}", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {

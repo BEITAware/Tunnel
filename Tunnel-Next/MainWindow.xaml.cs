@@ -847,6 +847,97 @@ namespace Tunnel_Next
                         _viewModel.TaskStatus = $"脚本资源: {resource.Name}";
                         break;
 
+                    case ResourceItemType.StaticNode:
+                        // 处理静态节点双击：添加静态节点到节点图中
+                        _viewModel.TaskStatus = $"正在添加静态节点: {resource.Name}";
+                        
+                        // 将静态节点添加到节点图
+                        var staticNodePosition = new System.Windows.Point(50, 50);
+                        _viewModel.NodeEditor.SetPendingNodePosition(staticNodePosition);
+                        _viewModel.NodeEditor.AddSpecificNodeCommand?.Execute("静态节点");
+                        
+                        // 设置静态节点的文件路径参数
+                        var staticNode = _viewModel.NodeEditor.Nodes.LastOrDefault();
+                        if (staticNode != null)
+                        {
+                            bool parameterSet = false;
+                            
+                            // 方法1：通过ViewModel设置参数
+                            if (staticNode.ViewModel is Tunnel_Next.Services.Scripting.IScriptViewModel staticViewModel)
+                            {
+                                try
+                                {
+                                    // 使用反射设置ViewModel的FilePath属性
+                                    var viewModelType = staticViewModel.GetType();
+                                    var filePathProperty = viewModelType.GetProperty("FilePath");
+                                    if (filePathProperty != null && filePathProperty.CanWrite)
+                                    {
+                                        filePathProperty.SetValue(staticViewModel, resource.FilePath);
+                                        parameterSet = true;
+                                        _viewModel.TaskStatus = $"已通过ViewModel设置 {staticNode.Title} 的FilePath = {resource.Name}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _viewModel.TaskStatus = $"通过ViewModel设置静态节点参数失败: {ex.Message}";
+                                }
+                            }
+                            
+                            // 方法2：直接通过脚本实例设置参数
+                            if (!parameterSet && staticNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript staticScript)
+                            {
+                                try
+                                {
+                                    // 使用反射直接设置脚本实例的FilePath属性
+                                    var scriptType = staticScript.GetType();
+                                    var filePathProperty = scriptType.GetProperty("FilePath");
+                                    if (filePathProperty != null && filePathProperty.CanWrite)
+                                    {
+                                        filePathProperty.SetValue(staticScript, resource.FilePath);
+                                        
+                                        // 触发参数变化事件，确保UI和处理流程同步
+                                        if (staticScript is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                        {
+                                            revivalScript.OnParameterChanged("FilePath", resource.FilePath);
+                                        }
+                                        
+                                        parameterSet = true;
+                                        _viewModel.TaskStatus = $"已通过脚本实例设置 {staticNode.Title} 的FilePath = {resource.Name}";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _viewModel.TaskStatus = $"通过脚本实例设置静态节点参数失败: {ex.Message}";
+                                }
+                            }
+                            
+                            // 方法3：如果前面的方法都失败，尝试通过NodeParameter设置
+                            if (!parameterSet)
+                            {
+                                var filePathParam = staticNode.Parameters.FirstOrDefault(p =>
+                                    p.Name == "FilePath" ||
+                                    p.Name == "Path" ||
+                                    p.Name == "文件路径" ||
+                                    p.Name.ToLower().Contains("path"));
+                                    
+                                if (filePathParam != null)
+                                {
+                                    filePathParam.Value = resource.FilePath;
+                                    parameterSet = true;
+                                    _viewModel.TaskStatus = $"已通过NodeParameter设置 {staticNode.Title} 的参数 {filePathParam.Name} = {resource.Name}";
+                                }
+                            }
+                            
+                            // 如果都失败了，显示调试信息
+                            if (!parameterSet)
+                            {
+                                var paramNames = string.Join(", ", staticNode.Parameters.Select(p => p.Name));
+                                var scriptType = staticNode.Tag?.GetType().Name ?? "Unknown";
+                                _viewModel.TaskStatus = $"警告：静态节点 {staticNode.Title} (脚本类型: {scriptType}) 参数设置失败。可用参数: {paramNames}";
+                            }
+                        }
+                        break;
+
                     default:
                         _viewModel.TaskStatus = $"不支持的资源类型: {resource.ResourceTypeDisplayName}";
                         break;

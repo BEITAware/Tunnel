@@ -37,6 +37,11 @@ namespace Tunnel_Next.Models
         Material,
 
         /// <summary>
+        /// 静态节点文件
+        /// </summary>
+        StaticNode,
+
+        /// <summary>
         /// 其他文件
         /// </summary>
         Other
