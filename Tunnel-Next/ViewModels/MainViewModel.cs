@@ -33,6 +33,7 @@ namespace Tunnel_Next.ViewModels
         private readonly ResourceCatalogService _resourceCatalogService;
         private ResourceScanService _resourceScanService;
         private ResourceWatcherService _resourceWatcherService;
+        private readonly StaticNodeService _staticNodeService;
         private DocumentManagerService? _documentManager;
 
         public MainViewModel(RevivalScriptManager? revivalScriptManager = null, bool initializeImmediately = true)
@@ -45,6 +46,7 @@ namespace Tunnel_Next.ViewModels
             _resourceCatalogService = new ResourceCatalogService(_workFolderService);
             _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
             _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
+            _staticNodeService = new StaticNodeService(_workFolderService);
             _nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
 
             InitializeCommands();
@@ -206,6 +208,11 @@ namespace Tunnel_Next.ViewModels
         /// 资源监控服务
         /// </summary>
         public ResourceWatcherService ResourceWatcherService => _resourceWatcherService;
+        
+        /// <summary>
+        /// 静态节点服务
+        /// </summary>
+        public StaticNodeService StaticNodeService => _staticNodeService;
 
         /// <summary>
         /// 节点状态是否可见

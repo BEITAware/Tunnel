@@ -461,4 +461,47 @@ namespace Tunnel_Next.Services.Scripting
             _cancellationTokenSource?.Dispose();
         }
     }
+
+    /// <summary>
+    /// 支持动态UI的Revival Script基类
+    /// </summary>
+    public abstract class DynamicUIRevivalScriptBase : RevivalScriptBase, IDynamicUIScript
+    {
+        public event EventHandler? UIUpdateRequested;
+
+        /// <summary>
+        /// 请求UI更新
+        /// </summary>
+        protected void RequestUIRefresh()
+        {
+            UIUpdateRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// 连接变化通知（子类可重写）
+        /// </summary>
+        public virtual void OnConnectionChanged(ScriptConnectionInfo connectionInfo)
+        {
+            // 默认实现：连接变化时请求UI更新
+            RequestUIRefresh();
+        }
+
+        /// <summary>
+        /// 获取UI更新标识符（子类可重写）
+        /// </summary>
+        public virtual string? GetUIUpdateToken()
+        {
+            // 默认返回null，表示总是重建UI
+            return null;
+        }
+
+        /// <summary>
+        /// 尝试增量更新UI（子类可重写）
+        /// </summary>
+        public virtual bool TryUpdateUI(FrameworkElement existingControl, ScriptConnectionInfo changeInfo)
+        {
+            // 默认返回false，表示需要重建UI
+            return false;
+        }
+    }
 }

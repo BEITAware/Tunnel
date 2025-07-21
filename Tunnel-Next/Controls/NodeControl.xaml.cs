@@ -556,6 +556,11 @@ namespace Tunnel_Next.Controls
 
         // 端口断开连接事件
         public event EventHandler<(Node node, string portName, bool isOutput)>? PortDisconnectRequested;
+        
+        /// <summary>
+        /// 保存为静态节点请求事件
+        /// </summary>
+        public event EventHandler<(Node node, string portName, bool isOutput)>? SaveAsStaticNodeRequested;
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -1121,18 +1126,51 @@ namespace Tunnel_Next.Controls
         {
             if (_node == null || port == null || portElement == null) return;
 
-            // 检查端口是否有连接
-            if (!port.IsConnected) return;
+            System.Diagnostics.Debug.WriteLine($"[NodeControl] 显示端口上下文菜单: 节点={_node.Title}, 端口名称={port.Name}, 是否为输出端口={isOutput}, 端口值={(port.Value != null ? "有值" : "无值")}");
 
             var contextMenu = new ContextMenu();
 
-            var disconnectItem = new MenuItem { Header = "断开此链接" };
-            disconnectItem.Click += (s, args) =>
+            // 输出端口添加"保存为静态节点"选项
+            if (isOutput && _node != null)
             {
-                // 触发端口断开连接请求事件
-                PortDisconnectRequested?.Invoke(this, (_node, port.Name, isOutput));
-            };
-            contextMenu.Items.Add(disconnectItem);
+                // 检查ProcessedOutputs中是否有此端口的数据
+                if (_node.ProcessedOutputs.TryGetValue(port.Name, out var portValue) && portValue != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[NodeControl] 添加保存静态节点菜单项: 端口值类型={portValue.GetType().Name}");
+                    var saveAsStaticNodeItem = new MenuItem { Header = "保存为静态节点" };
+                    saveAsStaticNodeItem.Click += (s, args) =>
+                    {
+                        // 触发保存静态节点事件
+                        SaveAsStaticNodeRequested?.Invoke(this, (_node, port.Name, isOutput));
+                    };
+                    contextMenu.Items.Add(saveAsStaticNodeItem);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[NodeControl] 未添加保存静态节点菜单项: ProcessedOutputs中找不到端口值");
+                }
+            }
+
+            // 检查端口是否有连接
+            if (port.IsConnected)
+            {
+                var disconnectItem = new MenuItem { Header = "断开此链接" };
+                disconnectItem.Click += (s, args) =>
+                {
+                    // 触发端口断开连接请求事件
+                    PortDisconnectRequested?.Invoke(this, (_node, port.Name, isOutput));
+                };
+                contextMenu.Items.Add(disconnectItem);
+            }
+
+            // 如果菜单没有项目，不显示
+            if (contextMenu.Items.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"[NodeControl] 上下文菜单没有项目，不显示");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[NodeControl] 显示上下文菜单: 项目数量={contextMenu.Items.Count}");
 
             // 设置菜单位置并显示 - 使用端口元素作为目标，在端口下方显示
             contextMenu.PlacementTarget = portElement;

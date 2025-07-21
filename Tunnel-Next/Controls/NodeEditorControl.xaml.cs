@@ -277,6 +277,11 @@ namespace Tunnel_Next.Controls
             nodeControl.PortDragEnded += (s, args) => {
                 HandlePortDragEnd(args.node, args.portName, args.isOutput, args.targetElement);
             };
+            
+            // 绑定保存静态节点事件
+            nodeControl.SaveAsStaticNodeRequested += (s, args) => {
+                HandleSaveAsStaticNode(args.node, args.portName);
+            };
         }
 
         private void RemoveNodeControl(Node node)
@@ -1284,9 +1289,57 @@ namespace Tunnel_Next.Controls
             NodeScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
         }
 
+        /// <summary>
+        /// 处理保存为静态节点的请求
+        /// </summary>
+        private void HandleSaveAsStaticNode(Node node, string portName)
+        {
+            if (node == null || string.IsNullOrEmpty(portName) || _viewModel == null)
+                return;
 
+            try
+            {
+                // 获取端口
+                var port = node.GetOutputPort(portName);
+                if (port == null)
+                {
+                    MessageBox.Show($"找不到端口 {portName}。", "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                
+                // 获取端口数据 - 从ProcessedOutputs获取，而不是从port.Value
+                if (!node.ProcessedOutputs.TryGetValue(portName, out var portValue) || portValue == null)
+                {
+                    MessageBox.Show($"端口 {portName} 没有可用的数据。", "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
+                // 获取服务
+                var staticNodeService = _viewModel?.GetService<StaticNodeService>();
+                if (staticNodeService == null)
+                {
+                    MessageBox.Show("静态节点服务不可用。", "保存失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
+                // 保存静态节点
+                bool success = staticNodeService.SaveAsStaticNode(node, portName, portValue);
+                
+                if (success)
+                {
+                    MessageBox.Show($"已将 {node.Title} 的 {portName} 保存为静态节点。", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("保存静态节点失败。", "保存失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存静态节点时发生错误: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"保存静态节点错误: {ex}");
+            }
+        }
 
         #endregion
     }

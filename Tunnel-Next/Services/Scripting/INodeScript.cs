@@ -169,6 +169,61 @@ namespace Tunnel_Next.Services.Scripting
         void Cleanup() { }
     }
 
+    /// <summary>
+    /// 支持动态UI更新的扩展接口
+    /// </summary>
+    public interface IDynamicUIScript : IRevivalScript
+    {
+        /// <summary>
+        /// UI更新请求事件
+        /// </summary>
+        event EventHandler? UIUpdateRequested;
+
+        /// <summary>
+        /// 连接变化通知
+        /// </summary>
+        /// <param name="connectionInfo">连接信息</param>
+        void OnConnectionChanged(ScriptConnectionInfo connectionInfo);
+
+        /// <summary>
+        /// 获取UI更新标识符，用于判断是否需要重建UI
+        /// </summary>
+        /// <returns>UI状态标识符，null表示总是重建</returns>
+        string? GetUIUpdateToken();
+
+        /// <summary>
+        /// 尝试增量更新UI（可选实现）
+        /// </summary>
+        /// <param name="existingControl">现有的UI控件</param>
+        /// <param name="changeInfo">变化信息</param>
+        /// <returns>是否成功更新，false表示需要重建UI</returns>
+        bool TryUpdateUI(FrameworkElement existingControl, ScriptConnectionInfo changeInfo);
+    }
+
+    /// <summary>
+    /// 脚本连接信息
+    /// </summary>
+    public class ScriptConnectionInfo
+    {
+        public ScriptConnectionChangeType ChangeType { get; set; }
+        public string? ChangedPortName { get; set; }
+        public bool ChangedPortIsOutput { get; set; }
+        public Dictionary<string, bool> InputConnections { get; set; } = new();
+        public Dictionary<string, bool> OutputConnections { get; set; } = new();
+        public int TotalInputConnections => InputConnections.Values.Count(c => c);
+        public int TotalOutputConnections => OutputConnections.Values.Count(c => c);
+    }
+
+    /// <summary>
+    /// 脚本连接变化类型
+    /// </summary>
+    public enum ScriptConnectionChangeType
+    {
+        Connected,    // 连接已创建
+        Disconnected, // 连接已断开
+        Initialized   // 初始化（节点刚创建或加载时）
+    }
+
     // 移除了过时的INodeScript接口，现在只使用IRevivalScript
 
     /// <summary>

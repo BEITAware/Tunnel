@@ -27,6 +27,11 @@ namespace Tunnel_Next.Controls
             }
         }
 
+        // 动态UI支持
+        private Services.Scripting.IDynamicUIScript? _currentDynamicScript;
+        private FrameworkElement? _currentScriptControl;
+        private string? _lastUIToken;
+
         public ParameterEditorControl()
         {
             InitializeComponent();
@@ -37,10 +42,14 @@ namespace Tunnel_Next.Controls
 
         private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            // 清除旧的事件订阅
+            if (e.OldValue is ViewModels.NodeEditorViewModel oldViewModel)
+            {
+                oldViewModel.ConnectionsChanged -= OnConnectionsChanged;
+            }
 
             if (DataContext is ViewModels.NodeEditorViewModel nodeEditor)
             {
-
                 // 绑定到NodeEditor的SelectedNode属性
                 var binding = new System.Windows.Data.Binding("SelectedNode")
                 {
@@ -49,13 +58,14 @@ namespace Tunnel_Next.Controls
                 };
                 SetBinding(SelectedNodeProperty, binding);
 
+                // 订阅连接变化事件
+                nodeEditor.ConnectionsChanged += OnConnectionsChanged;
 
                 // 延迟更新参数编辑器，确保节点重建完成
                 _ = DelayedUpdateParameterEditor();
             }
             else
             {
-
                 // 清除绑定
                 BindingOperations.ClearBinding(this, SelectedNodeProperty);
                 SelectedNode = null;
@@ -90,8 +100,104 @@ namespace Tunnel_Next.Controls
         {
             if (d is ParameterEditorControl control)
             {
-                control.UpdateParameterEditor();
+                control.OnSelectedNodeChangedInternal(e.OldValue as Node, e.NewValue as Node);
             }
+        }
+
+        private void OnSelectedNodeChangedInternal(Node? oldNode, Node? newNode)
+        {
+            // 清除旧节点的动态UI订阅
+            if (_currentDynamicScript != null)
+            {
+                _currentDynamicScript.UIUpdateRequested -= OnUIUpdateRequested;
+                _currentDynamicScript = null;
+            }
+
+            // 设置新节点的动态UI订阅
+            if (newNode?.Tag is Services.Scripting.IDynamicUIScript dynamicScript)
+            {
+                _currentDynamicScript = dynamicScript;
+                _currentDynamicScript.UIUpdateRequested += OnUIUpdateRequested;
+            }
+
+            _currentScriptControl = null;
+            _lastUIToken = null;
+            UpdateParameterEditor();
+        }
+
+        private void OnConnectionsChanged()
+        {
+            // 连接变化时，通知动态脚本并尝试更新UI
+            if (_currentDynamicScript != null && SelectedNode != null)
+            {
+                var connectionInfo = BuildConnectionInfo(SelectedNode);
+                _currentDynamicScript.OnConnectionChanged(connectionInfo);
+
+                // 检查是否需要更新UI
+                TryUpdateDynamicUI(connectionInfo);
+            }
+        }
+
+        private void OnUIUpdateRequested(object? sender, EventArgs e)
+        {
+            // 脚本请求UI更新
+            if (_currentDynamicScript != null && SelectedNode != null)
+            {
+                var connectionInfo = BuildConnectionInfo(SelectedNode);
+                TryUpdateDynamicUI(connectionInfo);
+            }
+        }
+
+        private Services.Scripting.ScriptConnectionInfo BuildConnectionInfo(Node node)
+        {
+            var connectionInfo = new Services.Scripting.ScriptConnectionInfo
+            {
+                ChangeType = Services.Scripting.ScriptConnectionChangeType.Initialized
+            };
+
+            // 获取节点编辑器ViewModel来访问连接信息
+            if (DataContext is ViewModels.NodeEditorViewModel nodeEditor)
+            {
+                // 检查输入端口连接状态
+                foreach (var inputPort in node.InputPorts)
+                {
+                    var hasConnection = nodeEditor.Connections.Any(c =>
+                        c.InputNode?.Id == node.Id && c.InputPortName == inputPort.Name);
+                    connectionInfo.InputConnections[inputPort.Name] = hasConnection;
+                }
+
+                // 检查输出端口连接状态
+                foreach (var outputPort in node.OutputPorts)
+                {
+                    var hasConnection = nodeEditor.Connections.Any(c =>
+                        c.OutputNode?.Id == node.Id && c.OutputPortName == outputPort.Name);
+                    connectionInfo.OutputConnections[outputPort.Name] = hasConnection;
+                }
+            }
+
+            return connectionInfo;
+        }
+
+        private void TryUpdateDynamicUI(Services.Scripting.ScriptConnectionInfo connectionInfo)
+        {
+            if (_currentDynamicScript == null) return;
+
+            // 获取当前UI标识符
+            var currentToken = _currentDynamicScript.GetUIUpdateToken();
+
+            // 如果UI标识符没有变化，尝试增量更新
+            if (currentToken != null && currentToken == _lastUIToken && _currentScriptControl != null)
+            {
+                if (_currentDynamicScript.TryUpdateUI(_currentScriptControl, connectionInfo))
+                {
+                    // 增量更新成功，无需重建
+                    return;
+                }
+            }
+
+            // 需要重建UI
+            _lastUIToken = currentToken;
+            UpdateParameterEditor();
         }
 
         // 防止递归调用导致栈溢出
@@ -125,6 +231,8 @@ namespace Tunnel_Next.Controls
 
             if (TryCreateRevivalScriptControl(SelectedNode, out var revivalScriptControl))
             {
+                // 保存当前脚本控件引用，用于动态更新
+                _currentScriptControl = revivalScriptControl;
                 ParameterContainer.Children.Add(revivalScriptControl);
 
                 // ---------- 预览接管（参数窗口触发） ----------

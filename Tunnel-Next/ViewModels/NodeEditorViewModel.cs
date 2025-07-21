@@ -101,6 +101,41 @@ namespace Tunnel_Next.ViewModels
         }
 
         /// <summary>
+        /// 获取服务实例
+        /// </summary>
+        /// <typeparam name="T">服务类型</typeparam>
+        /// <returns>服务实例或null</returns>
+        public T? GetService<T>() where T : class
+        {
+            // 获取主窗口
+            var mainWindow = Application.Current.MainWindow;
+            
+            if (mainWindow?.DataContext is MainViewModel mainViewModel)
+            {
+                // 根据请求的服务类型返回相应的服务
+                if (typeof(T) == typeof(StaticNodeService))
+                    return mainViewModel.StaticNodeService as T;
+                
+                if (typeof(T) == typeof(FileService))
+                    return mainViewModel.FileService as T;
+                
+                if (typeof(T) == typeof(ResourceScanService))
+                    return mainViewModel.ResourceScanService as T;
+                
+                if (typeof(T) == typeof(ResourceCatalogService))
+                    return mainViewModel.ResourceCatalogService as T;
+                
+                if (typeof(T) == typeof(ResourceWatcherService))
+                    return mainViewModel.ResourceWatcherService as T;
+                
+                if (typeof(T) == typeof(DocumentManagerService))
+                    return mainViewModel.DocumentManager as T;
+            }
+            
+            return null;
+        }
+
+        /// <summary>
         /// 是否正在处理
         /// </summary>
         public bool IsProcessing
