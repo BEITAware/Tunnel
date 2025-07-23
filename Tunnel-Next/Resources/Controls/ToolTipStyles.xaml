@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 工具提示背景样式 - 从ToolTipBackground.xaml导入 -->
+    <RadialGradientBrush x:Key="ToolTipBackgroundBrush" RadiusX="1.725" RadiusY="2.64241" Center="-0.035454,-0.106748" GradientOrigin="-0.035454,-0.106748">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#4561FFFF" Offset="0"/>
+            <GradientStop Color="#53000000" Offset="0.160796"/>
+            <GradientStop Color="#5A000A11" Offset="0.341501"/>
+            <GradientStop Color="#EC001A2C" Offset="0.562021"/>
+            <GradientStop Color="#3F0086DF" Offset="1"/>
+        </RadialGradientBrush.GradientStops>
+        <RadialGradientBrush.RelativeTransform>
+            <TransformGroup/>
+        </RadialGradientBrush.RelativeTransform>
+    </RadialGradientBrush>
+
+    <!-- 工具提示边框颜色 -->
+    <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#990099FF"/>
+
+    <!-- 工具提示文本颜色 -->
+    <SolidColorBrush x:Key="ToolTipForegroundBrush" Color="#FFFFFFFF"/>
+
+    <!-- 工具提示默认样式 -->
+    <Style x:Key="CustomToolTipStyle" TargetType="ToolTip">
+        <Setter Property="Background" Value="{StaticResource ToolTipBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ToolTipBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{StaticResource ToolTipForegroundBrush}"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Padding" Value="6,3"/>
+        <Setter Property="HasDropShadow" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3">
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <ContentPresenter.Effect>
+                                <DropShadowEffect ShadowDepth="0.5" Color="#333333" Opacity="0.8" BlurRadius="2" />
+                            </ContentPresenter.Effect>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 隐式样式 - 应用到所有ToolTip控件 -->
+    <Style TargetType="ToolTip" BasedOn="{StaticResource CustomToolTipStyle}"/>
+    
+</ResourceDictionary> 

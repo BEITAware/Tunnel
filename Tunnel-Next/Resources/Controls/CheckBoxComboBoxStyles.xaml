@@ -1,0 +1,200 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- 复选框和下拉框背景样式 - 从CheckboxBackground.xaml导入 -->
+    <RadialGradientBrush x:Key="CheckboxComboBoxBackgroundBrush" RadiusX="1.725" RadiusY="2.64242" Center="0.525668,1.45506" GradientOrigin="0.525668,1.45506">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#FF61FFFF" Offset="0"/>
+            <GradientStop Color="#C7000000" Offset="0.173047"/>
+            <GradientStop Color="#00000A11" Offset="0.378254"/>
+            <GradientStop Color="#99001A2C" Offset="0.51608"/>
+            <GradientStop Color="#FF0086DF" Offset="0.825421"/>
+        </RadialGradientBrush.GradientStops>
+        <RadialGradientBrush.RelativeTransform>
+            <TransformGroup/>
+        </RadialGradientBrush.RelativeTransform>
+    </RadialGradientBrush>
+    
+    <!-- 边框颜色 - 改为低饱和度青色 -->
+    <SolidColorBrush x:Key="CheckboxComboBoxBorderBrush" Color="#4400CCCC"/>
+    
+    <!-- 文本颜色 -->
+    <SolidColorBrush x:Key="CheckboxComboBoxForegroundBrush" Color="#FFFFFFFF"/>
+    
+    <!-- 复选框样式 -->
+    <Style x:Key="CustomCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource CheckboxComboBoxForegroundBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- 复选框框 - 添加1px低饱和度青色边框 -->
+                        <Border x:Name="checkBoxBorder"
+                                Background="{StaticResource CheckboxComboBoxBackgroundBrush}"
+                                BorderBrush="{StaticResource CheckboxComboBoxBorderBrush}"
+                                BorderThickness="1"
+                                Width="16" 
+                                Height="16"
+                                CornerRadius="0">
+                            <Path x:Name="checkMark"
+                                  Data="M1,5 L4,9 L9,1"
+                                  Stroke="{StaticResource CheckboxComboBoxForegroundBrush}"
+                                  StrokeThickness="2"
+                                  Stretch="Uniform"
+                                  Margin="2"
+                                  Visibility="Collapsed"/>
+                        </Border>
+                        
+                        <!-- 内容 -->
+                        <ContentPresenter Grid.Column="1" 
+                                          Margin="6,0,0,0"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          RecognizesAccessKey="True"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Visibility" TargetName="checkMark" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" TargetName="checkBoxBorder" Value="0.9"/>
+                            <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="#8800FFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 下拉框样式 -->
+    <Style x:Key="CustomComboBoxStyle" TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource CheckboxComboBoxBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource CheckboxComboBoxForegroundBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource CheckboxComboBoxBorderBrush}"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Padding" Value="6,3"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <Grid.Resources>
+                            <!-- 弹出框样式 -->
+                            <Style x:Key="{x:Type ComboBoxItem}" TargetType="ComboBoxItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{StaticResource CheckboxComboBoxForegroundBrush}"/>
+                                <Setter Property="Padding" Value="6,3"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ComboBoxItem">
+                                            <Border x:Name="border" 
+                                                    Background="{TemplateBinding Background}" 
+                                                    BorderThickness="0" 
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#3F0086DF"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="#7F0086DF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Grid.Resources>
+                        
+                        <!-- 主边框 - 添加1px低饱和度青色边框 -->
+                        <Border x:Name="mainBorder"
+                                Background="{StaticResource CheckboxComboBoxBackgroundBrush}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 内容区域 -->
+                                <ContentPresenter Grid.Column="0" 
+                                                 Content="{TemplateBinding SelectionBoxItem}"
+                                                 ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                 ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                 Margin="{TemplateBinding Padding}"
+                                                 VerticalAlignment="Center"/>
+
+                                <!-- 下拉按钮 -->
+                                <Path Grid.Column="1" 
+                                      x:Name="arrow"
+                                      Data="M0,0 L6,0 L3,4 z"
+                                      Fill="{StaticResource CheckboxComboBoxForegroundBrush}"
+                                      Width="8"
+                                      Height="5"
+                                      Margin="0,0,8,0"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 下拉弹出框 - 添加1px低饱和度青色边框 -->
+                        <Popup x:Name="PART_Popup" 
+                               AllowsTransparency="True"
+                               IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                               Placement="Bottom" 
+                               PopupAnimation="Slide">
+                            <Border x:Name="dropDownBorder"
+                                    Background="#FF001A2C"
+                                    BorderBrush="{StaticResource CheckboxComboBoxBorderBrush}"
+                                    BorderThickness="1" 
+                                    CornerRadius="0"
+                                    MinWidth="{TemplateBinding ActualWidth}">
+                                <ScrollViewer x:Name="DropDownScrollViewer" 
+                                             VerticalScrollBarVisibility="Auto"
+                                             HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsPresenter x:Name="ItemsPresenter"
+                                                   KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" TargetName="mainBorder" Value="0.9"/>
+                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter Property="Opacity" TargetName="mainBorder" Value="1.0"/>
+                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 直接定义隐式样式，覆盖其他所有样式 -->
+    <Style TargetType="CheckBox" BasedOn="{StaticResource CustomCheckBoxStyle}"/>
+    <Style TargetType="ComboBox" BasedOn="{StaticResource CustomComboBoxStyle}"/>
+    
+</ResourceDictionary> 

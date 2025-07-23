@@ -379,8 +379,8 @@
                         </Grid>
                     </TabItem>
 
-                    <!-- 版本控制标签页 -->
-                    <TabItem Header="版本控制">
+                    <!-- 实用工具标签页 -->
+                    <TabItem Header="实用工具">
                         <Grid>
                             <!-- 背景层 -->
                             <Border Style="{DynamicResource TabContentBorderStyle}"/>
@@ -390,37 +390,18 @@
 
                             <!-- 内容层 -->
                             <StackPanel Orientation="Horizontal" Margin="8,4">
-                                <!-- 版本操作组 -->
-                                <GroupBox Header="版本操作" Style="{DynamicResource RibbonGroupStyle}">
+                                <!-- 批量处理组 -->
+                                <GroupBox Header="批量处理" Style="{DynamicResource RibbonGroupStyle}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{DynamicResource RibbonLargeButtonStyle}"
-                                                ToolTip="创建版本树">
+                                                ToolTip="批量处理多个图像文件"
+                                                Command="{Binding BatchProcessCommand}">
                                             <StackPanel>
-                                                <Image Source="pack://application:,,,/Resources/NewNodeGraphAlt.png" Width="32" Height="32" Margin="0,2,0,2"
+                                                <Image Source="pack://application:,,,/Resources/BatchProcess.png" Width="32" Height="32" Margin="0,2,0,2"
                                                        RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
-                                                <TextBlock Text="新建树" HorizontalAlignment="Center" FontSize="10"/>
+                                                <TextBlock Text="批量处理" HorizontalAlignment="Center" FontSize="10"/>
                                             </StackPanel>
                                         </Button>
-                                        <StackPanel>
-                                            <Button Style="{DynamicResource RibbonButtonStyle}"
-                                                    ToolTip="水平对齐"
-                                                    Margin="0,0,0,2">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
-                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
-                                                    <TextBlock Text="水平" FontSize="10"/>
-                                                </StackPanel>
-                                            </Button>
-                                            <Button Style="{DynamicResource RibbonButtonStyle}"
-                                                    ToolTip="垂直对齐"
-                                                    Margin="0,0,0,2">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Image Source="pack://application:,,,/Resources/arrange_nodes_dense.png" Width="16" Height="16" Margin="0,0,4,0"
-                                                           RenderOptions.BitmapScalingMode="HighQuality" UseLayoutRounding="True"/>
-                                                    <TextBlock Text="垂直" FontSize="10"/>
-                                                </StackPanel>
-                                            </Button>
-                                        </StackPanel>
                                     </StackPanel>
                                 </GroupBox>
                             </StackPanel>
@@ -466,11 +447,10 @@
                     <RowDefinition Height="1*" MinHeight="150"/>
                 </Grid.RowDefinitions>
 
-                <!-- 版本管理区域 -->
+                <!-- 项目资源区域 -->
                 <Border Grid.Row="0" Style="{DynamicResource WorkAreaStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
@@ -478,47 +458,21 @@
                         <!-- 标题栏 -->
                         <Border Grid.Row="0" Background="{DynamicResource ToolbarBackgroundBrush}"
                                 BorderBrush="{DynamicResource TransparentBrush}" BorderThickness="0" Padding="8,5">
-                            <TextBlock Text="版本管理" FontWeight="Bold"
+                            <TextBlock Text="项目资源" FontWeight="Bold"
                                        Foreground="{DynamicResource LightTextBrush}"
                                        FontFamily="{DynamicResource AeroFontFamily}"
                                        FontSize="{DynamicResource AeroFontSize}"/>
                         </Border>
 
-                        <!-- 版本控制按钮 -->
-                        <Grid Grid.Row="1">
-                            <!-- 背景层 -->
-                            <Border Style="{DynamicResource TabContentBorderStyle}"/>
-
-                            <!-- 遮罩层 -->
-                            <Border Background="{DynamicResource RibbonContentCoverMaskBrush}" Padding="0"/>
-
-                            <!-- 内容层 -->
-                            <StackPanel Orientation="Horizontal" Margin="8,4">
-                                <Button Content="后退" Margin="0,0,5,0" Style="{DynamicResource AeroButtonStyle}">
-                                    <Button.Background>
-                                        <ImageBrush/>
-                                    </Button.Background>
-                                </Button>
-                                <Button Content="前进" Margin="0,0,5,0" Style="{DynamicResource AeroButtonStyle}">
-                                    <Button.Background>
-                                        <ImageBrush/>
-                                    </Button.Background>
-                                </Button>
-                                <Button Content="新建树" Style="{DynamicResource AeroButtonStyle}">
-                                    <Button.Background>
-                                        <ImageBrush/>
-                                    </Button.Background>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- 版本树视图 -->
-                        <TreeView Grid.Row="2" x:Name="VersionTreeView" Margin="5"
+                        <!-- 项目资源视图 -->
+                        <TreeView Grid.Row="1" x:Name="ProjectResourcesView" Margin="5"
                                   Style="{DynamicResource AeroTreeViewStyle}"
                                   ItemContainerStyle="{DynamicResource AeroTreeViewItemStyle}"
                                   BorderThickness="0" Background="{x:Null}">
-                            <TreeViewItem Header="版本树" IsExpanded="True">
-                                <TreeViewItem Header="v1 - 初始版本"/>
+                            <TreeViewItem Header="项目资源" IsExpanded="True">
+                                <TreeViewItem Header="节点图"/>
+                                <TreeViewItem Header="图像"/>
+                                <TreeViewItem Header="脚本"/>
                             </TreeViewItem>
                         </TreeView>
                     </Grid>

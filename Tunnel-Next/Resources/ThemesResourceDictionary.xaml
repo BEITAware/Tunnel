@@ -21,6 +21,7 @@
         <ResourceDictionary Source="Controls/ListBoxStyles.xaml"/>
         <ResourceDictionary Source="Controls/ScrollBarStyles.xaml"/>
         <ResourceDictionary Source="Controls/TreeViewStyles.xaml"/>
+        <ResourceDictionary Source="Controls/ToolTipStyles.xaml"/>
         <ResourceDictionary Source="ScriptsControls/DropdownStyles.xaml"/>
         <!-- 自定义菜单样式 -->
         <ResourceDictionary Source="Controls/CustomContextMenuStyles.xaml"/>
@@ -32,5 +33,7 @@
         <ResourceDictionary Source="Controls/NewNodeGraphDialogStyles.xaml"/>
         <!-- 隐式应用资源字典 - 防止常用控件回退至系统样式 -->
         <ResourceDictionary Source="ImplicitScriptsControlsStyles.xaml"/>
+        <!-- 自定义CheckBox和ComboBox样式 - 放在最后以覆盖前面的样式 -->
+        <ResourceDictionary Source="Controls/CheckBoxComboBoxStyles.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

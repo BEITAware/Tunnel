@@ -31,6 +31,9 @@ namespace Tunnel_Next.ViewModels
         private readonly FileService? _fileService;
         private bool _isProcessing = false;
 
+        // 当前节点图名称，供CreateNodeGraph使用
+        private string _nodeGraphName = "新节点图";
+
         // 存储待添加节点的位置，用于区分Tab栏添加和右键添加
         private Point? _pendingNodePosition = null;
 
@@ -74,6 +77,18 @@ namespace Tunnel_Next.ViewModels
             _processingService.ProcessingStateChanged += OnProcessingStateChanged;
             _processingService.ProcessingCompleted += OnProcessingCompleted;
             _processingService.StatusChanged += OnStatusChanged;
+        }
+
+        /// <summary>
+        /// 提供给外部（如NodeGraphDocument）同步节点图名称
+        /// </summary>
+        /// <param name="name">新的节点图名称</param>
+        public void UpdateNodeGraphName(string name)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                _nodeGraphName = name;
+            }
         }
 
         /// <summary>
@@ -228,6 +243,18 @@ namespace Tunnel_Next.ViewModels
         }
 
         /// <summary>
+        /// 构建用于图像处理的节点图副本及其处理环境。避免多次 new，统一封装。
+        /// </summary>
+        private (NodeGraph Graph, ProcessorEnvironment Env) BuildProcessingPackage()
+        {
+            // CreateNodeGraph 已拷贝节点/连接，因此单次调用即可
+            var g = CreateNodeGraph();
+            // Name 已在 CreateNodeGraph 中设置为 _nodeGraphName
+            var env = new ProcessorEnvironment(_nodeGraphName);
+            return (g, env);
+        }
+
+        /// <summary>
         /// 同步参数到脚本 ViewModel
         /// </summary>
         private void SyncParameterToScriptViewModel(Node node, NodeParameter parameter)
@@ -379,12 +406,12 @@ namespace Tunnel_Next.ViewModels
                     {
                         try
                         {
-                            var nodeGraph = CreateNodeGraph();
+                            var (graph, env) = BuildProcessingPackage();
 
                             // 标记该节点及其下游节点需要处理
-                            nodeGraph.MarkNodeAndDownstreamForProcessing(changedNode.Id);
+                            graph.MarkNodeAndDownstreamForProcessing(changedNode.Id);
 
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { changedNode });
+                            var result = await _processingService.ProcessChangedNodesAsync(graph, new[] { changedNode }, env);
 
                             if (result.Success)
                             {
@@ -413,11 +440,8 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
-                // 创建当前节点图
-                var nodeGraph = CreateNodeGraph();
-
-                // 使用ProcessingCoordinator处理节点图
-                var result = await _processingService.ProcessNodeGraphAsync(nodeGraph);
+                var (graph, env) = BuildProcessingPackage();
+                var result = await _processingService.ProcessNodeGraphAsync(graph, env);
             }
             catch (Exception)
             {
@@ -432,11 +456,8 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
-                // 创建当前节点图
-                var nodeGraph = CreateNodeGraph();
-
-                // 使用ProcessingCoordinator处理节点图
-                var result = await _processingService.ProcessNodeGraphAsync(nodeGraph);
+                var (graph, env) = BuildProcessingPackage();
+                var result = await _processingService.ProcessNodeGraphAsync(graph, env);
 
                 if (result.Success)
                 {
@@ -509,7 +530,7 @@ namespace Tunnel_Next.ViewModels
                 }
 
                 // 在删除节点前，处理选择性处理逻辑
-                var nodeGraph = CreateNodeGraph();
+                var (nodeGraph, env) = BuildProcessingPackage();
                 nodeGraph.HandleNodeDeletion(nodeToDelete.Id);
 
                 // 删除节点
@@ -523,12 +544,12 @@ namespace Tunnel_Next.ViewModels
                 {
                     try
                     {
-                        var updatedNodeGraph = CreateNodeGraph();
+                        var (updatedNodeGraph, envProcess) = BuildProcessingPackage();
                         var nodesToProcess = updatedNodeGraph.GetNodesToProcess();
 
                         if (nodesToProcess.Any())
                         {
-                            var result = await _processingService.ProcessChangedNodesAsync(updatedNodeGraph, nodesToProcess.ToArray());
+                            var result = await _processingService.ProcessChangedNodesAsync(updatedNodeGraph, nodesToProcess.ToArray(), envProcess);
 
                             if (result.Success)
                             {
@@ -645,12 +666,12 @@ namespace Tunnel_Next.ViewModels
                     {
                         try
                         {
-                            var nodeGraph = CreateNodeGraph();
+                            var (nodeGraph, env2) = BuildProcessingPackage();
 
                             // 标记输出节点及其下游节点需要处理
                             outputNode.MarkDownstreamForProcessing(nodeGraph);
 
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode });
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode }, env2);
 
                             if (result.Success)
                             {
@@ -713,14 +734,14 @@ namespace Tunnel_Next.ViewModels
             {
                 try
                 {
-                    var nodeGraph = CreateNodeGraph();
+                    var (nodeGraph, env3) = BuildProcessingPackage();
 
                     foreach (var n in nodesToReprocess)
                     {
                         nodeGraph.MarkNodeAndDownstreamForProcessing(n.Id);
                     }
 
-                    var r = await _processingService.ProcessChangedNodesAsync(nodeGraph, nodesToReprocess);
+                    var r = await _processingService.ProcessChangedNodesAsync(nodeGraph, nodesToReprocess, env3);
 
                     if (r.Success)
                     {
@@ -830,12 +851,12 @@ namespace Tunnel_Next.ViewModels
                     {
                         try
                         {
-                            var nodeGraph = CreateNodeGraph();
+                            var (nodeGraph, env) = BuildProcessingPackage();
 
                             // 标记该节点及其下游节点需要处理
                             nodeGraph.MarkNodeAndDownstreamForProcessing(associatedNode.Id);
 
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, [associatedNode]);
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, [associatedNode], env);
 
                             if (result.Success)
                             {
@@ -946,7 +967,7 @@ namespace Tunnel_Next.ViewModels
                         {
                             try
                             {
-                                var nodeGraph = CreateNodeGraph();
+                                var (nodeGraph, env4) = BuildProcessingPackage();
 
                                 // 处理连接变化，标记连接发出方的下游节点
                                 nodeGraph.HandleConnectionChange(connection);
@@ -955,7 +976,7 @@ namespace Tunnel_Next.ViewModels
                                 var outputNode = connection.OutputNode;
                                 if (outputNode != null)
                                 {
-                                    var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode });
+                                    var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode }, env4);
 
                                     if (result.Success)
                                     {
@@ -1052,7 +1073,7 @@ namespace Tunnel_Next.ViewModels
                 {
                     try
                     {
-                        var nodeGraph = CreateNodeGraph();
+                        var (nodeGraph, env5) = BuildProcessingPackage();
 
                         // 收集所有受影响的输出节点
                         var affectedOutputNodes = new HashSet<Node>();
@@ -1069,7 +1090,7 @@ namespace Tunnel_Next.ViewModels
 
                         if (affectedOutputNodes.Count > 0)
                         {
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, affectedOutputNodes.ToArray());
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, affectedOutputNodes.ToArray(), env5);
 
                             if (result.Success)
                             {
@@ -1162,7 +1183,7 @@ namespace Tunnel_Next.ViewModels
                 {
                     try
                     {
-                        var nodeGraph = CreateNodeGraph();
+                        var (nodeGraph, env6) = BuildProcessingPackage();
 
                         // 处理连接变化，标记连接发出方的下游节点
                         nodeGraph.HandleConnectionChange(connection);
@@ -1171,7 +1192,7 @@ namespace Tunnel_Next.ViewModels
                         var outputNode = connection.OutputNode;
                         if (outputNode != null)
                         {
-                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, [outputNode]);
+                            var result = await _processingService.ProcessChangedNodesAsync(nodeGraph, new[] { outputNode }, env6);
 
                             if (result.Success)
                             {
@@ -1203,7 +1224,7 @@ namespace Tunnel_Next.ViewModels
 
             var nodeGraph = new NodeGraph
             {
-                Name = "当前节点图",
+                Name = _nodeGraphName,
                 FilePath = string.Empty,
                 IsModified = true,
                 LastModified = DateTime.Now,
@@ -1211,6 +1232,9 @@ namespace Tunnel_Next.ViewModels
                 ViewportY = 0,
                 ZoomLevel = 1.0
             };
+
+            // 注入全局元数据：节点图名称
+            nodeGraph.Metadata["节点图名称"] = _nodeGraphName;
 
 
             // 复制节点
@@ -1276,6 +1300,9 @@ namespace Tunnel_Next.ViewModels
                 {
                     ClearNodeGraph();
                 }
+
+                // 同步当前节点图名称
+                _nodeGraphName = nodeGraph.Name;
 
                 // 加载节点
                 foreach (var node in nodeGraph.Nodes)

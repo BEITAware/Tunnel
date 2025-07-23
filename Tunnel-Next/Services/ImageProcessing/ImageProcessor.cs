@@ -18,21 +18,21 @@ namespace Tunnel_Next.Services.ImageProcessing
     public class ImageProcessor : IDisposable
     {
         private readonly ConcurrentDictionary<int, Dictionary<string, object>> _nodeOutputs = new();
-
+        private readonly object _lock = new object();
         // connection quick-lookup tables, rebuilt each processing round
         private Dictionary<(int nodeId, string portName), NodeConnection> _inputConnectionMap = new();
         private Dictionary<int, List<NodeConnection>> _outputConnectionMap = new();
 
         private bool _disposed = false;
-        private volatile bool _isProcessing = false;
+        private int _isProcessing = 0;
         private readonly RevivalScriptManager _revivalScriptManager;
         private readonly IScriptContext _scriptContext;
 
-        public ImageProcessor(RevivalScriptManager revivalScriptManager, IScriptContext? scriptContext = null)
+        public ImageProcessor(RevivalScriptManager revivalScriptManager, 
+                              IScriptContext? scriptContext = null)
         {
             _revivalScriptManager = revivalScriptManager ?? throw new ArgumentNullException(nameof(revivalScriptManager));
             _scriptContext = scriptContext ?? CreateDefaultContext();
-
         }
 
         /// <summary>
@@ -41,41 +41,16 @@ namespace Tunnel_Next.Services.ImageProcessing
         public event Action<NodeGraph>? OnNodeGraphProcessed;
 
         /// <summary>
-        /// 处理Revival Scripts节点图
+        /// 【同步】处理节点图 - 新增 ProcessorEnvironment 参数
         /// </summary>
-        public async Task<bool> ProcessNodeGraphAsync(NodeGraph nodeGraph)
+        public async Task<bool> ProcessNodeGraphAsync(NodeGraph nodeGraph, ProcessorEnvironment environment, HashSet<int>? changedNodeIds = null)
         {
-            return await ProcessNodeGraphAsync(nodeGraph, null);
-        }
-
-        /// <summary>
-        /// 增量处理指定的节点及其下游节点
-        /// </summary>
-        /// <param name="nodeGraph">节点图</param>
-        /// <param name="changedNodes">发生变化的节点列表</param>
-        public async Task<bool> ProcessChangedNodesAsync(NodeGraph nodeGraph, IEnumerable<Node> changedNodes)
-        {
-            if (changedNodes == null || !changedNodes.Any())
-                return true;
-
-            var changedNodeIds = new HashSet<int>(changedNodes.Select(n => n.Id));
-            return await ProcessNodeGraphAsync(nodeGraph, changedNodeIds);
-        }
-
-        /// <summary>
-        /// 处理Revival Scripts节点图（支持选择性处理）
-        /// </summary>
-        /// <param name="nodeGraph">要处理的节点图</param>
-        /// <param name="changedNodeIds">发生变化的节点ID集合，如果为null则处理所有标记为ToBeProcessed的节点</param>
-        public async Task<bool> ProcessNodeGraphAsync(NodeGraph nodeGraph, HashSet<int>? changedNodeIds)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ImageProcessor));
-
             if (nodeGraph == null || !nodeGraph.Nodes.Any())
-                return false;
-
-            if (_isProcessing)
+            {
+                return true;
+            }
+            
+            if (Interlocked.CompareExchange(ref _isProcessing, 1, 0) != 0)
             {
                 return false;
             }
@@ -84,7 +59,6 @@ namespace Tunnel_Next.Services.ImageProcessing
             {
                 try
                 {
-                    _isProcessing = true;
                     var startTime = DateTime.Now;
 
                     // 如果是首次处理（changedNodeIds为null），标记所有节点需要处理
@@ -136,7 +110,7 @@ namespace Tunnel_Next.Services.ImageProcessing
 
                             try
                             {
-                                ProcessRevivalScriptNode(node, nodeGraph);
+                                ProcessRevivalScriptNode(node, nodeGraph, environment);
 
                                 node.IsProcessed = true;
                                 node.ToBeProcessed = false; // 清除处理标记
@@ -179,17 +153,27 @@ namespace Tunnel_Next.Services.ImageProcessing
                 }
                 finally
                 {
-                    _isProcessing = false;
+                    _isProcessing = 0;
                 }
             });
         }
 
         /// <summary>
+        /// 【同步】处理变化的节点 - 新增 ProcessorEnvironment 参数
+        /// </summary>
+        public async Task<bool> ProcessChangedNodesAsync(NodeGraph nodeGraph, IEnumerable<Node> changedNodes, ProcessorEnvironment environment)
+        {
+            var result = await ProcessNodeGraphAsync(nodeGraph, environment, new HashSet<int>(changedNodes.Select(n => n.Id)));
+            OnNodeGraphProcessed?.Invoke(nodeGraph);
+            return result;
+        }
+
+        /// <summary>
         /// 处理单个Revival Script节点
         /// </summary>
-        private void ProcessRevivalScriptNode(Node node, NodeGraph nodeGraph)
+        private void ProcessRevivalScriptNode(Node node, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
-            var clonedMats = new List<Mat>();
+            var clonedMatsForThisNode = new List<Mat>();
             try
             {
                 // 清除节点错误状态，预先假设本次会成功
@@ -197,10 +181,10 @@ namespace Tunnel_Next.Services.ImageProcessing
                 node.ErrorMessage = string.Empty;
 
                 // 准备输入数据
-                var inputs = PrepareNodeInputs(node, nodeGraph, clonedMats);
+                var inputs = PrepareNodeInputs(node, nodeGraph, clonedMatsForThisNode);
 
-                // 执行Revival Script
-                var outputs = ExecuteRevivalScript(node, inputs, nodeGraph); // This can return null if script fails
+                // 执行脚本
+                var outputs = ExecuteRevivalScript(node, inputs, nodeGraph, environment); // This can return null if script fails
 
                 if (outputs != null)
                 {
@@ -275,7 +259,7 @@ namespace Tunnel_Next.Services.ImageProcessing
             finally
             {
                 // 释放为本节点克隆的所有输入Mat，防止内存泄漏
-                foreach (var m in clonedMats)
+                foreach (var m in clonedMatsForThisNode)
                 {
                     try { m.Dispose(); } catch { }
                 }
@@ -285,7 +269,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 执行Revival Script
         /// </summary>
-        private Dictionary<string, object>? ExecuteRevivalScript(Node node, Dictionary<string, object> inputs, NodeGraph nodeGraph)
+        private Dictionary<string, object>? ExecuteRevivalScript(Node node, Dictionary<string, object> inputs, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
             try
             {
@@ -300,7 +284,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 ScriptInstanceManager.Instance.EnsureParameterSynchronization(scriptInstance, node);
 
                 // 1. 收集和合并上游元数据
-                var upstreamMetadata = CollectUpstreamMetadata(node, nodeGraph);
+                var upstreamMetadata = CollectUpstreamMetadata(node, nodeGraph, environment);
 
                 // 2. 让脚本提取所需的元数据
                 scriptInstance.ExtractMetadata(upstreamMetadata);
@@ -311,7 +295,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 if (outputs != null)
                 {
                     // 4. 处理元数据注入和传递
-                    outputs = ProcessMetadataForOutputs(scriptInstance, node, outputs, upstreamMetadata);
+                    outputs = ProcessMetadataForOutputs(scriptInstance, node, nodeGraph, environment, outputs, upstreamMetadata);
 
                     // 5. 调试输出
                     foreach (var output in outputs)
@@ -331,7 +315,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 {
                     // 即使没有输出，也要处理元数据
                     var emptyOutputs = new Dictionary<string, object>();
-                    return ProcessMetadataForOutputs(scriptInstance, node, emptyOutputs, upstreamMetadata);
+                    return ProcessMetadataForOutputs(scriptInstance, node, nodeGraph, environment, emptyOutputs, upstreamMetadata);
                 }
             }
             catch (Exception ex)
@@ -426,7 +410,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 收集上游元数据
         /// </summary>
-        private Dictionary<string, object> CollectUpstreamMetadata(Node node, NodeGraph nodeGraph)
+        private Dictionary<string, object> CollectUpstreamMetadata(Node node, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
             var metadataManager = new MetadataManager();
             var allMetadata = new List<Dictionary<string, object>>();
@@ -463,6 +447,8 @@ namespace Tunnel_Next.Services.ImageProcessing
         private Dictionary<string, object> ProcessMetadataForOutputs(
             IRevivalScript scriptInstance,
             Node node,
+            NodeGraph nodeGraph,
+            ProcessorEnvironment environment,
             Dictionary<string, object> outputs,
             Dictionary<string, object> upstreamMetadata)
         {
@@ -488,10 +474,17 @@ namespace Tunnel_Next.Services.ImageProcessing
             // 4. 让脚本生成/覆盖特定元数据
             currentMetadata = scriptInstance.GenerateMetadata(currentMetadata);
 
-            // 5. 最终清洗元数据
+            // 5. 最终强制注入全局元数据，覆盖任何脚本的修改
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[ImageProcessor] 注入节点图名称: '{environment.NodeGraphName}' for Node {node.Title}({node.Id})");
+#endif
+            currentMetadata["节点图名称"] = environment.NodeGraphName;
+            currentMetadata["序号"] = environment.Index;
+
+            // 6. 最终清洗元数据
             currentMetadata = metadataManager.CleanMetadata(currentMetadata, cleanOptions);
 
-            // 6. 将元数据附加到所有输出
+            // 7. 将元数据附加到所有输出
             var processedOutputs = new Dictionary<string, object>(outputs);
             processedOutputs["_metadata"] = currentMetadata;
 

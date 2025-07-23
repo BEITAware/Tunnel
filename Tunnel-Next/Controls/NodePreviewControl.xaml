@@ -1,0 +1,175 @@
+<UserControl x:Class="Tunnel_Next.Controls.NodePreviewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Tunnel_Next.Controls"
+             xmlns:models="clr-namespace:Tunnel_Next.Models"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <!-- 节点的Aero风格 -->
+        <Style x:Key="NodePreviewStyle" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#FF2A3247" Offset="0"/>
+                        <GradientStop Color="#FF1F2738" Offset="0.5"/>
+                        <GradientStop Color="#FF181E2D" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#FF4D6183" Offset="0"/>
+                        <GradientStop Color="#FF3A4A68" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="3" BlurRadius="6" Opacity="0.6" Color="#FF000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 节点标题样式 -->
+        <Style x:Key="NodeTitleStyle" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#FF375888" Offset="0"/>
+                        <GradientStop Color="#FF2A4570" Offset="0.5"/>
+                        <GradientStop Color="#FF203758" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="CornerRadius" Value="5,5,0,0"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+        
+        <!-- 节点内容样式 -->
+        <Style x:Key="NodeContentStyle" TargetType="Border">
+            <Setter Property="Background" Value="#10FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0,1,0,0"/>
+            <Setter Property="Margin" Value="4,0,4,4"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <!-- 端口面板样式 -->
+        <Style x:Key="PortPanelStyle" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#25FFFFFF" Offset="0"/>
+                        <GradientStop Color="#15FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#15FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0,1,0,0"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+
+        <!-- 改进的端口样式 - 更加Aero风格 -->
+        <Style x:Key="PortPreviewStyle" TargetType="Ellipse">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Stroke" Value="#80FFFFFF"/>
+            <Setter Property="StrokeThickness" Value="1"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.5" Color="#FF000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 改进的连接线样式 - 更加光滑 -->
+        <Style x:Key="ConnectionPreviewStyle" TargetType="Path">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeEndLineCap" Value="Round"/>
+            <Setter Property="StrokeStartLineCap" Value="Round"/>
+            <Setter Property="Stroke">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF4D6183" Offset="0"/>
+                        <GradientStop Color="#FF667DA0" Offset="0.5"/>
+                        <GradientStop Color="#FF3A4A68" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.4" Color="#FF000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- 端口文本样式 -->
+        <Style x:Key="PortTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFD0D8E8"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="1" BlurRadius="1" Opacity="0.8" Color="#FF000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Border Background="#FF1A1F28" BorderBrush="#FF263040" BorderThickness="1" CornerRadius="3">
+            <ScrollViewer x:Name="MainScrollViewer" 
+                        HorizontalScrollBarVisibility="Auto" 
+                        VerticalScrollBarVisibility="Auto"
+                        Padding="5">
+                <Canvas x:Name="MainCanvas" 
+                      Width="2000" Height="2000">
+                    <!-- 背景网格线 -->
+                    <Rectangle Width="{Binding ActualWidth, ElementName=MainCanvas}" 
+                             Height="{Binding ActualHeight, ElementName=MainCanvas}" 
+                             Fill="#FF161B24">
+                        <Rectangle.OpacityMask>
+                            <DrawingBrush TileMode="Tile" 
+                                         Viewport="0,0,40,40" 
+                                         ViewportUnits="Absolute">
+                                <DrawingBrush.Drawing>
+                                    <DrawingGroup>
+                                        <GeometryDrawing Brush="#10FFFFFF">
+                                            <GeometryDrawing.Geometry>
+                                                <RectangleGeometry Rect="0,0,40,40"/>
+                                            </GeometryDrawing.Geometry>
+                                        </GeometryDrawing>
+                                        <GeometryDrawing Brush="#07FFFFFF">
+                                            <GeometryDrawing.Geometry>
+                                                <RectangleGeometry Rect="0,0,1,40"/>
+                                            </GeometryDrawing.Geometry>
+                                        </GeometryDrawing>
+                                        <GeometryDrawing Brush="#07FFFFFF">
+                                            <GeometryDrawing.Geometry>
+                                                <RectangleGeometry Rect="0,0,40,1"/>
+                                            </GeometryDrawing.Geometry>
+                                        </GeometryDrawing>
+                                    </DrawingGroup>
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </Rectangle.OpacityMask>
+                    </Rectangle>
+
+                    <!-- 连接线层 -->
+                    <Canvas x:Name="ConnectionsCanvas"/>
+
+                    <!-- 节点层 -->
+                    <Canvas x:Name="NodesCanvas"/>
+                </Canvas>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl> 

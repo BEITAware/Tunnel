@@ -14,8 +14,8 @@ namespace Tunnel_Next.Services.ImageProcessing
         event Action<ProcessingResult>? ProcessingCompleted;
         event Action<string>? StatusChanged;
 
-        Task<ProcessingResult> ProcessNodeGraphAsync(NodeGraph nodeGraph, CancellationToken cancellationToken = default);
-        Task<ProcessingResult> ProcessChangedNodesAsync(NodeGraph nodeGraph, Node[] changedNodes, CancellationToken cancellationToken = default);
+        Task<ProcessingResult> ProcessNodeGraphAsync(NodeGraph nodeGraph, ProcessorEnvironment environment, CancellationToken cancellationToken = default);
+        Task<ProcessingResult> ProcessChangedNodesAsync(NodeGraph nodeGraph, Node[] changedNodes, ProcessorEnvironment environment, CancellationToken cancellationToken = default);
         void CancelProcessing();
         bool IsProcessing { get; }
     }
@@ -64,7 +64,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 处理节点图（MVVM模式，完全异步）
         /// </summary>
-        public async Task<ProcessingResult> ProcessNodeGraphAsync(NodeGraph nodeGraph, CancellationToken cancellationToken = default)
+        public async Task<ProcessingResult> ProcessNodeGraphAsync(NodeGraph nodeGraph, ProcessorEnvironment environment, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 return new ProcessingResult { Success = false, ErrorMessage = "服务已释放" };
@@ -84,7 +84,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 NotifyUIAsync(() => StatusChanged?.Invoke("开始处理节点图"));
 
                 // 在后台线程执行图像处理，完全不涉及UI
-                var success = await _imageProcessor.ProcessNodeGraphAsync(nodeGraph);
+                var success = await _imageProcessor.ProcessNodeGraphAsync(nodeGraph, environment);
 
                 result.Success = success;
                 result.ProcessedNodeCount = nodeGraph.Nodes.Count;
@@ -117,7 +117,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 处理变化的节点（增量处理）
         /// </summary>
-        public async Task<ProcessingResult> ProcessChangedNodesAsync(NodeGraph nodeGraph, Node[] changedNodes, CancellationToken cancellationToken = default)
+        public async Task<ProcessingResult> ProcessChangedNodesAsync(NodeGraph nodeGraph, Node[] changedNodes, ProcessorEnvironment environment, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 return new ProcessingResult { Success = false, ErrorMessage = "服务已释放" };
@@ -135,7 +135,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 NotifyUIAsync(() => ProcessingStateChanged?.Invoke(true));
                 NotifyUIAsync(() => StatusChanged?.Invoke($"增量处理 {changedNodes.Length} 个节点"));
 
-                var success = await _imageProcessor.ProcessChangedNodesAsync(nodeGraph, changedNodes);
+                var success = await _imageProcessor.ProcessChangedNodesAsync(nodeGraph, changedNodes, environment);
 
                 result.Success = success;
                 result.ProcessedNodeCount = changedNodes.Length;

@@ -11,11 +11,13 @@
     <BackEase x:Key="QuickEase" EasingMode="EaseOut" Amplitude="0.3"/>
     
     <!-- 菜单项背景色 - 使用径向渐变 -->
-    <RadialGradientBrush x:Key="MenuItemIdleBrush" RadiusX="4.37757" RadiusY="6.21475" Center="0.499677,1.08794" GradientOrigin="0.499677,1.08794">
+    <RadialGradientBrush x:Key="MenuItemIdleBrush" RadiusX="4.37756" RadiusY="6.21475" Center="0.499677,1.08794" GradientOrigin="0.499677,1.08794">
         <RadialGradientBrush.GradientStops>
-            <GradientStop Color="#12FFFFFF" Offset="0"/>
-            <GradientStop Color="#00A5DBFF" Offset="0.114855"/>
-            <GradientStop Color="#C30099FF" Offset="0.690659"/>
+            <GradientStop Color="#6ADDFFFD" Offset="0.00153139"/>
+            <GradientStop Color="#76000000" Offset="0.148545"/>
+            <GradientStop Color="#E07FCEFF" Offset="0.32925"/>
+            <GradientStop Color="#FF000000" Offset="0.344564"/>
+            <GradientStop Color="#FF0099FF" Offset="0.828484"/>
         </RadialGradientBrush.GradientStops>
         <RadialGradientBrush.RelativeTransform>
             <TransformGroup>
@@ -26,9 +28,10 @@
     
     <RadialGradientBrush x:Key="MenuItemHoverBrush" RadiusX="4.37756" RadiusY="6.21475" Center="0.499677,1.08794" GradientOrigin="0.499677,1.08794">
         <RadialGradientBrush.GradientStops>
-            <GradientStop Color="#7A00F3FF" Offset="0"/>
-            <GradientStop Color="#0AA5DBFF" Offset="0.166922"/>
-            <GradientStop Color="#C30099FF" Offset="0.577335"/>
+            <GradientStop Color="#7800F3FF" Offset="0"/>
+            <GradientStop Color="#6A000000" Offset="0.148545"/>
+            <GradientStop Color="#FFA5DBFF" Offset="0.316998"/>
+            <GradientStop Color="#FF0099FF" Offset="0.577335"/>
         </RadialGradientBrush.GradientStops>
         <RadialGradientBrush.RelativeTransform>
             <TransformGroup>
@@ -37,10 +40,11 @@
         </RadialGradientBrush.RelativeTransform>
     </RadialGradientBrush>
     
-    <RadialGradientBrush x:Key="MenuItemClickedBrush" RadiusX="4.37756" RadiusY="6.21475" Center="0.499677,1.08794" GradientOrigin="0.499677,1.08794">
+    <RadialGradientBrush x:Key="MenuItemClickedBrush" RadiusX="4.37757" RadiusY="6.21475" Center="0.499677,1.08794" GradientOrigin="0.499677,1.08794">
         <RadialGradientBrush.GradientStops>
-            <GradientStop Color="#BA00F3FF" Offset="0"/>
-            <GradientStop Color="#0AA5DBFF" Offset="0.157734"/>
+            <GradientStop Color="#FF00F3FF" Offset="0"/>
+            <GradientStop Color="#59000000" Offset="0.169985"/>
+            <GradientStop Color="#EBA5DBFF" Offset="0.307808"/>
             <GradientStop Color="#FF0099FF" Offset="0.577335"/>
         </RadialGradientBrush.GradientStops>
         <RadialGradientBrush.RelativeTransform>

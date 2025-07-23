@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
+using Tunnel_Next.Windows;
 
 namespace Tunnel_Next.ViewModels
 {
@@ -259,6 +260,9 @@ namespace Tunnel_Next.ViewModels
         public ICommand? ArrangeNodesVerticalCommand { get; private set; }
         public ICommand? ArrangeNodesBalancedCommand { get; private set; }
         public ICommand? ShowNodeStatusCommand { get; private set; }
+        
+        // 新增批量处理命令
+        public ICommand? BatchProcessCommand { get; private set; }
 
         #endregion
 
@@ -295,6 +299,9 @@ namespace Tunnel_Next.ViewModels
             ArrangeNodesVerticalCommand = new RelayCommand(ExecuteArrangeNodesVertical);
             ArrangeNodesBalancedCommand = new RelayCommand(ExecuteArrangeNodesBalanced);
             ShowNodeStatusCommand = new RelayCommand(ExecuteShowNodeStatus);
+            
+            // 实用工具命令
+            BatchProcessCommand = new RelayCommand(ExecuteBatchProcess);
         }
 
         private async void InitializeCollections()
@@ -1489,6 +1496,36 @@ namespace Tunnel_Next.ViewModels
                 }
             }
             return count > 0 ? sum / count : double.MaxValue;
+        }
+
+        /// <summary>
+        /// 执行批量处理命令
+        /// </summary>
+        private void ExecuteBatchProcess()
+        {
+            try
+            {
+                TaskStatus = "正在打开批量处理器...";
+
+                // 创建并打开批量处理器窗口
+                var batchProcessWindow = new BatchProcessWindow(_revivalScriptManager);
+                
+                // 设置Owner属性
+                var mainWindow = System.Windows.Application.Current?.MainWindow;
+                if (mainWindow != null && mainWindow != batchProcessWindow)
+                {
+                    batchProcessWindow.Owner = mainWindow;
+                }
+
+                // 显示对话框
+                batchProcessWindow.ShowDialog();
+
+                TaskStatus = "批量处理器已关闭";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"打开批量处理器失败: {ex.Message}";
+            }
         }
 
         #endregion

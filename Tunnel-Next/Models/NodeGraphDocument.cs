@@ -60,6 +60,14 @@ namespace Tunnel_Next.Models
             _title = nodeGraph.Name;
             _isModified = nodeGraph.IsModified;
 
+            // 确保全局元数据包含节点图名称
+            if (!_nodeGraph.Metadata.ContainsKey("节点图名称"))
+            {
+                _nodeGraph.Metadata["节点图名称"] = _nodeGraph.Name;
+            }
+
+            _nodeEditor.UpdateNodeGraphName(_nodeGraph.Name);
+
             // 监听节点图修改状态
             _nodeEditor.NodeGraphModified += OnNodeGraphModified;
 
@@ -93,6 +101,12 @@ namespace Tunnel_Next.Models
                 {
                     _title = value;
                     _nodeGraph.Name = value;
+
+                    // 同步更新全局元数据中的节点图名称
+                    _nodeGraph.Metadata["节点图名称"] = value;
+
+                    _nodeEditor.UpdateNodeGraphName(value);
+
                     TitleChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
