@@ -1,0 +1,83 @@
+<UserControl x:Class="Tunnel_Next.UtilityTools.BatchProcessor.Views.Controls.ProcessBlockControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:Tunnel_Next.UtilityTools.BatchProcessor.Converters">
+    
+    <UserControl.Resources>
+        <!-- 转换器 -->
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- 处理积木的特殊形状 -->
+        <Border Background="{Binding Color}" CornerRadius="20,8,20,8" Padding="16,8" Margin="2"
+                BorderThickness="2" BorderBrush="Transparent">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect ShadowDepth="2" BlurRadius="4" Opacity="0.3" Color="Black"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <Setter Property="BorderBrush" Value="#FFD4AF37"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                            <Setter Property="Opacity" Value="0.7"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            
+            <StackPanel Orientation="Horizontal">
+                <!-- 左侧箭头 -->
+                <TextBlock Text="&gt;" FontWeight="Bold" FontSize="16" 
+                           Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                
+                <!-- 处理文本 -->
+                <TextBlock Text="{Binding DisplayText}" FontWeight="Bold" FontSize="14" 
+                           Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                
+                <!-- 插槽 -->
+                <ItemsControl ItemsSource="{Binding Slots}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="4" Padding="8,4" Margin="4,2"
+                                    BorderThickness="1" BorderBrush="#40FFFFFF"
+                                    Background="#20000000" MinWidth="60" MinHeight="24"
+                                    AllowDrop="True" Drop="Slot_Drop" DragOver="Slot_DragOver">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                                <Setter Property="Background" Value="#40FFFFFF"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <TextBlock Text="&lt;&gt;" FontSize="12" Foreground="#CCFFFFFF" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <ContentPresenter Content="{Binding Content}" 
+                                                      Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                
+                <!-- 右侧箭头 -->
+                <TextBlock Text="&lt;" FontWeight="Bold" FontSize="16" 
+                           Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,117 @@
+<UserControl x:Class="Tunnel_Next.UtilityTools.BatchProcessor.Views.Controls.CodeBlockControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:Tunnel_Next.UtilityTools.BatchProcessor.Models"
+             xmlns:converters="clr-namespace:Tunnel_Next.UtilityTools.BatchProcessor.Converters">
+    
+    <UserControl.Resources>
+        <!-- 转换器 -->
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- 代码块样式 -->
+        <Style x:Key="CodeBlockStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="2" BlurRadius="4" Opacity="0.3" Color="Black"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="BorderBrush" Value="#FFD4AF37"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                    <Setter Property="Opacity" Value="0.7"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 插槽样式 -->
+        <Style x:Key="SlotStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="4,2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+            <Setter Property="Background" Value="#20000000"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                    <Setter Property="Background" Value="#40FFFFFF"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 集合插槽模板 -->
+        <DataTemplate x:Key="CollectionSlotTemplate">
+            <Border Style="{StaticResource SlotStyle}" AllowDrop="True"
+                    Drop="Slot_Drop" DragOver="Slot_DragOver">
+                <Grid>
+                    <TextBlock Text="[]" FontSize="12" Foreground="#CCFFFFFF"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ContentPresenter Content="{Binding Content}"
+                                      Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- 多功能插槽模板 -->
+        <DataTemplate x:Key="MultiFunctionSlotTemplate">
+            <Border Style="{StaticResource SlotStyle}" AllowDrop="True"
+                    Drop="Slot_Drop" DragOver="Slot_DragOver">
+                <Grid>
+                    <TextBlock Text="&lt;&gt;" FontSize="12" Foreground="#CCFFFFFF"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ContentPresenter Content="{Binding Content}"
+                                      Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- 逻辑插槽模板 -->
+        <DataTemplate x:Key="LogicSlotTemplate">
+            <Border Style="{StaticResource SlotStyle}" MinHeight="40" AllowDrop="True"
+                    Drop="Slot_Drop" DragOver="Slot_DragOver">
+                <Grid>
+                    <TextBlock Text="{}" FontSize="12" Foreground="#CCFFFFFF"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ContentPresenter Content="{Binding Content}"
+                                      Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- 插槽模板选择器 -->
+        <models:SlotTemplateSelector x:Key="SlotTemplateSelector"
+                                     CollectionTemplate="{StaticResource CollectionSlotTemplate}"
+                                     MultiFunctionTemplate="{StaticResource MultiFunctionSlotTemplate}"
+                                     LogicTemplate="{StaticResource LogicSlotTemplate}"/>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource CodeBlockStyle}" Background="{Binding Color}">
+        <StackPanel Orientation="Horizontal">
+            <!-- 代码块文本 -->
+            <TextBlock Text="{Binding DisplayText}" FontWeight="Bold" FontSize="14" 
+                       Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            
+            <!-- 插槽列表 -->
+            <ItemsControl ItemsSource="{Binding Slots}" 
+                          ItemTemplateSelector="{StaticResource SlotTemplateSelector}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

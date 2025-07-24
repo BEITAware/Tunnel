@@ -1,0 +1,117 @@
+<UserControl x:Class="Tunnel_Next.UtilityTools.BatchProcessor.Views.Controls.LoopBlockControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:Tunnel_Next.UtilityTools.BatchProcessor.Converters">
+    
+    <UserControl.Resources>
+        <!-- 转换器 -->
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- C字形循环积木 -->
+        <Border Background="{Binding Color}" CornerRadius="8" Padding="12,8" Margin="2"
+                BorderThickness="2" BorderBrush="Transparent">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect ShadowDepth="2" BlurRadius="4" Opacity="0.3" Color="Black"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <Setter Property="BorderBrush" Value="#FFD4AF37"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                            <Setter Property="Opacity" Value="0.7"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            
+            <StackPanel>
+                <!-- 顶部：循环头部 -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="{Binding DisplayText}" FontWeight="Bold" FontSize="14" 
+                               Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    
+                    <!-- 集合插槽 -->
+                    <Border CornerRadius="4" Padding="8,4" Margin="4,2"
+                            BorderThickness="1" BorderBrush="#40FFFFFF"
+                            Background="#20000000" MinWidth="60" MinHeight="24"
+                            AllowDrop="True" Drop="Slot_Drop" DragOver="Slot_DragOver">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Slots[0].IsHighlighted}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                        <Setter Property="Background" Value="#40FFFFFF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <TextBlock Text="[]" FontSize="12" Foreground="#CCFFFFFF" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Slots[0].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <ContentPresenter Content="{Binding Slots[0].Content}" 
+                                              Visibility="{Binding Slots[0].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                        </Grid>
+                    </Border>
+                    
+                    <TextBlock Text="中的" FontWeight="Bold" FontSize="14" 
+                               Foreground="White" VerticalAlignment="Center" Margin="8,0,8,0"/>
+                    
+                    <!-- 多功能插槽 -->
+                    <Border CornerRadius="4" Padding="8,4" Margin="4,2"
+                            BorderThickness="1" BorderBrush="#40FFFFFF"
+                            Background="#20000000" MinWidth="60" MinHeight="24"
+                            AllowDrop="True" Drop="Slot_Drop" DragOver="Slot_DragOver">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Slots[1].IsHighlighted}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                        <Setter Property="Background" Value="#40FFFFFF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <TextBlock Text="&lt;&gt;" FontSize="12" Foreground="#CCFFFFFF" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Slots[1].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <ContentPresenter Content="{Binding Slots[1].Content}" 
+                                              Visibility="{Binding Slots[1].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+                
+                <!-- 中间：逻辑插槽区域 -->
+                <Border CornerRadius="4" Padding="12,8" Margin="16,0,0,0"
+                        BorderThickness="1" BorderBrush="#40FFFFFF"
+                        Background="#20000000" MinHeight="60"
+                        AllowDrop="True" Drop="Slot_Drop" DragOver="Slot_DragOver">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Slots[2].IsHighlighted}" Value="True">
+                                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                    <Setter Property="Background" Value="#40FFFFFF"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <TextBlock Text="在此处放置要执行的代码块" FontSize="12" Foreground="#CCFFFFFF" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" FontStyle="Italic"
+                                   Visibility="{Binding Slots[2].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <ContentPresenter Content="{Binding Slots[2].Content}" 
+                                          Visibility="{Binding Slots[2].IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

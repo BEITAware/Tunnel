@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using Tunnel_Next.Windows;
 
 namespace Tunnel_Next.ViewModels
 {
@@ -35,6 +34,7 @@ namespace Tunnel_Next.ViewModels
         private ResourceScanService _resourceScanService;
         private ResourceWatcherService _resourceWatcherService;
         private readonly StaticNodeService _staticNodeService;
+        private NodeGraphInterpreterService? _nodeGraphInterpreterService;
         private DocumentManagerService? _documentManager;
 
         public MainViewModel(RevivalScriptManager? revivalScriptManager = null, bool initializeImmediately = true)
@@ -49,6 +49,12 @@ namespace Tunnel_Next.ViewModels
             _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
             _staticNodeService = new StaticNodeService(_workFolderService);
             _nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
+
+            // 初始化节点图解释器服务（如果RevivalScriptManager可用）
+            if (_revivalScriptManager != null)
+            {
+                _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
+            }
 
             InitializeCommands();
 
@@ -1508,7 +1514,7 @@ namespace Tunnel_Next.ViewModels
                 TaskStatus = "正在打开批量处理器...";
 
                 // 创建并打开批量处理器窗口
-                var batchProcessWindow = new BatchProcessWindow(_revivalScriptManager);
+                var batchProcessWindow = new UtilityTools.BatchProcessor.Views.BatchProcessWindow(_revivalScriptManager);
                 
                 // 设置Owner属性
                 var mainWindow = System.Windows.Application.Current?.MainWindow;
@@ -1548,8 +1554,28 @@ namespace Tunnel_Next.ViewModels
             // 更新NodeEditor的RevivalScriptManager
             _nodeEditor.UpdateRevivalScriptManager(_revivalScriptManager);
 
+            // 重新创建节点图解释器服务
+            _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
+
             System.Diagnostics.Debug.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
             Console.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
+        }
+
+        #endregion
+
+        #region 节点图解释器服务
+
+        /// <summary>
+        /// 解释执行节点图
+        /// </summary>
+        /// <param name="nodeGraphPath">节点图文件的绝对路径</param>
+        /// <returns>返回节点的输入值，如果没有找到返回节点则返回null</returns>
+        public async Task<Dictionary<string, object>?> InterpretNodeGraphAsync(string nodeGraphPath)
+        {
+            if (_nodeGraphInterpreterService == null)
+                throw new InvalidOperationException("节点图解释器服务未初始化，请确保RevivalScriptManager已正确设置");
+
+            return await _nodeGraphInterpreterService.InterpretNodeGraphAsync(nodeGraphPath);
         }
 
         #endregion

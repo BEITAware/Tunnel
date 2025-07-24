@@ -13,16 +13,16 @@ namespace Tunnel_Next.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             bool isSelected = (bool)value;
-            
+
             if (isSelected)
             {
-                // 选中状态使用淡蓝色背景
-                return new SolidColorBrush(Color.FromRgb(217, 240, 255));
+                // 选中状态使用蓝色边框
+                return Color.FromRgb(68, 102, 255);
             }
             else
             {
-                // 未选中状态使用白色背景
-                return new SolidColorBrush(Colors.White);
+                // 未选中状态使用透明边框
+                return Color.FromArgb(0, 255, 255, 255);
             }
         }
 
