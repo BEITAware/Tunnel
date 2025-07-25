@@ -41,6 +41,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\*.png" />
+    <Resource Include="Resources\*.ico" />
     <Resource Include="designs\*.xaml" />
   </ItemGroup>
 

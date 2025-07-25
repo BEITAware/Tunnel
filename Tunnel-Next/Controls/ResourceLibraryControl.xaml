@@ -368,12 +368,23 @@
                     </StackPanel>
                 </Button>
 
-                <TextBlock Text="资源面板"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource PrimaryForeground}"
-                           FontWeight="Medium"
-                           FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
-                           Margin="8,0,0,0"/>
+                <Button x:Name="ManageButton"
+                        ToolTip="打开资源管理器"
+                        Style="{StaticResource ResourceToolbarButtonStyle}"
+                        Height="32"
+                        MinWidth="60"
+                        Margin="8,0,0,0"
+                        Click="ManageButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/WorkFolder.png"
+                               Width="16" Height="16"
+                               Margin="0,0,4,0"
+                               VerticalAlignment="Center"/>
+                        <TextBlock Text="管理"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource PrimaryForeground}"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Border>
 

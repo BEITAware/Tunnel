@@ -27,6 +27,9 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.Views
             _viewModel.BackRequested += OnBackRequested;
             _viewModel.CancelRequested += OnCancelRequested;
             _viewModel.ProcessingStarted += OnProcessingStarted;
+
+            // 设置积木块设定面板的数据上下文，让它自动绑定到SelectedBlock
+            CodeBlockSettingsControl.DataContext = _viewModel;
             
             // 注册窗口加载事件
             Loaded += BatchProcessEditorWindow_Loaded;
@@ -74,58 +77,7 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.Views
             MessageBox.Show("批处理功能即将推出！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        /// <summary>
-        /// 工具箱项目鼠标按下事件
-        /// </summary>
-        private void ToolboxItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is CodeBlock templateBlock)
-            {
-                // 创建新的代码块实例
-                var newBlock = CodeBlockFactory.CreateCodeBlock(templateBlock.Type);
-
-                // 开始拖拽操作
-                DragDrop.DoDragDrop(element, newBlock, DragDropEffects.Copy);
-                e.Handled = true;
-            }
-        }
-
-        /// <summary>
-        /// 编辑画布拖拽悬停事件
-        /// </summary>
-        private void EditorCanvas_DragOver(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(typeof(CodeBlock)))
-            {
-                e.Effects = DragDropEffects.Copy;
-            }
-            else
-            {
-                e.Effects = DragDropEffects.None;
-            }
-            e.Handled = true;
-        }
-
-        /// <summary>
-        /// 编辑画布放置事件
-        /// </summary>
-        private void EditorCanvas_Drop(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(typeof(CodeBlock)))
-            {
-                var codeBlock = e.Data.GetData(typeof(CodeBlock)) as CodeBlock;
-                if (codeBlock != null)
-                {
-                    // 获取放置位置
-                    var dropPosition = e.GetPosition(EditorCanvas);
-                    codeBlock.Position = dropPosition;
-
-                    // 添加到编辑器
-                    _viewModel.EditorBlocks.Add(codeBlock);
-                }
-            }
-            e.Handled = true;
-        }
+        // 积木块选择变化现在通过数据绑定自动处理
 
         /// <summary>
         /// 窗口关闭时清理资源

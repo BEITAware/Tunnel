@@ -386,5 +386,14 @@ namespace Tunnel_Next.Controls
         {
             ImportRequested?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <summary>
+        /// 管理按钮点击
+        /// </summary>
+        private void ManageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 打开资源管理器窗口
+            Windows.ResourceManagerWindow.ShowResourceManager(Window.GetWindow(this));
+        }
     }
 }

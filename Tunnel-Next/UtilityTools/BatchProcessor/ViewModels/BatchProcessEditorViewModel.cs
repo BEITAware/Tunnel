@@ -21,7 +21,6 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
 
         private readonly IEnumerable<BatchProcessNodeGraphItem> _selectedNodeGraphs;
         private int _selectedNodeGraphsCount;
-        private readonly DragDropService _dragDropService;
 
         #endregion
 
@@ -44,14 +43,19 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         }
 
         /// <summary>
-        /// 工具箱中的代码块模板
+        /// 可用的积木块列表（新架构）
         /// </summary>
-        public ObservableCollection<CodeBlock> ToolboxBlocks { get; } = new();
+        public ObservableCollection<CodeBlockBase> AvailableBlocks { get; } = new();
 
         /// <summary>
-        /// 编辑器中的代码块
+        /// 编辑器中的积木块（新架构）
         /// </summary>
-        public ObservableCollection<CodeBlock> EditorBlocks { get; } = new();
+        public ObservableCollection<CodeBlockBase> EditorBlocks { get; } = new();
+
+        /// <summary>
+        /// 当前选中的积木块
+        /// </summary>
+        public CodeBlockBase? SelectedBlock { get; set; }
 
         #endregion
 
@@ -83,9 +87,9 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         public ICommand RemoveCodeBlockCommand { get; }
 
         /// <summary>
-        /// 从工具箱创建代码块命令
+        /// 选择积木块命令
         /// </summary>
-        public ICommand CreateFromToolboxCommand { get; }
+        public ICommand SelectBlockCommand { get; }
 
         #endregion
 
@@ -95,11 +99,7 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         {
             _selectedNodeGraphs = selectedNodeGraphs ?? throw new ArgumentNullException(nameof(selectedNodeGraphs));
 
-            // 初始化拖拽服务
-            _dragDropService = new DragDropService();
-            _dragDropService.DragStarted += OnDragStarted;
-            _dragDropService.DragCompleted += OnDragCompleted;
-            _dragDropService.DragCancelled += OnDragCancelled;
+            // 旧的拖拽服务已移除
 
             // 初始化命令
             BackCommand = new RelayCommand(ExecuteBack);
@@ -107,7 +107,7 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
             StartProcessingCommand = new RelayCommand(ExecuteStartProcessing, CanExecuteStartProcessing);
             AddCodeBlockCommand = new RelayCommand<string>(ExecuteAddCodeBlock);
             RemoveCodeBlockCommand = new RelayCommand<object>(ExecuteRemoveCodeBlock);
-            CreateFromToolboxCommand = new RelayCommand<CodeBlock>(ExecuteCreateFromToolbox);
+            SelectBlockCommand = new RelayCommand<CodeBlockBase>(ExecuteSelectBlock);
         }
 
         #endregion
@@ -122,9 +122,8 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
             // 设置选中的节点图数量
             SelectedNodeGraphsCount = _selectedNodeGraphs.Count();
 
-            // 将来在这里初始化代码块工具箱和编辑器
-            InitializeCodeBlockToolbox();
-            InitializeWorkflowEditor();
+            // 初始化新的积木块系统
+            InitializeAvailableBlocks();
         }
 
         #endregion
@@ -132,28 +131,15 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         #region 私有方法
 
         /// <summary>
-        /// 初始化代码块工具箱
+        /// 初始化可用积木块列表
         /// </summary>
-        private void InitializeCodeBlockToolbox()
+        private void InitializeAvailableBlocks()
         {
-            // 添加可用的代码块类型
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.NodeGraphSequence));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.FileSequence));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.NumberSequence));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.NodeScript));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.ProcessBlock));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.LoopBlock));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.CollectionLiteral));
-            ToolboxBlocks.Add(CodeBlockFactory.CreateCodeBlock(CodeBlockType.MultiFunctionLiteral));
-        }
+            // 添加可用的积木块类型（使用新架构）
+            AvailableBlocks.Add(new NodeGraphSequenceBlock());
+            AvailableBlocks.Add(new FileSequenceBlock());
 
-        /// <summary>
-        /// 初始化工作流编辑器
-        /// </summary>
-        private void InitializeWorkflowEditor()
-        {
-            // 将来在这里初始化拖拽编辑器
-            // 设置画布、网格、连接线等
+            // 将来添加更多积木块类型
         }
 
         /// <summary>
@@ -202,62 +188,47 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         }
 
         /// <summary>
-        /// 执行删除代码块命令
+        /// 执行删除积木块命令
         /// </summary>
         private void ExecuteRemoveCodeBlock(object? codeBlock)
         {
-            if (codeBlock is CodeBlock block)
+            if (codeBlock is CodeBlockBase block)
             {
                 EditorBlocks.Remove(block);
+                if (SelectedBlock == block)
+                {
+                    SelectedBlock = null;
+                    OnPropertyChanged(nameof(SelectedBlock));
+                }
             }
         }
 
         /// <summary>
-        /// 执行从工具箱创建代码块命令
+        /// 执行选择积木块命令
         /// </summary>
-        private void ExecuteCreateFromToolbox(CodeBlock? templateBlock)
+        private void ExecuteSelectBlock(CodeBlockBase? block)
         {
-            if (templateBlock == null)
-                return;
-
-            // 创建新的代码块实例
-            var newBlock = CodeBlockFactory.CreateCodeBlock(templateBlock.Type);
-            newBlock.Position = new Point(100, 100); // 默认位置
-
-            EditorBlocks.Add(newBlock);
-        }
-
-        /// <summary>
-        /// 拖拽开始事件处理
-        /// </summary>
-        private void OnDragStarted(CodeBlock codeBlock)
-        {
-            // 可以在这里添加拖拽开始时的逻辑
-        }
-
-        /// <summary>
-        /// 拖拽完成事件处理
-        /// </summary>
-        private void OnDragCompleted(CodeBlock codeBlock, Point dropPoint)
-        {
-            // 更新代码块位置
-            codeBlock.Position = dropPoint;
-
-            // 如果是从工具箱拖拽的新代码块，添加到编辑器
-            if (!EditorBlocks.Contains(codeBlock))
+            // 清除所有积木块的选中状态
+            foreach (var availableBlock in AvailableBlocks)
             {
-                EditorBlocks.Add(codeBlock);
+                availableBlock.IsSelected = false;
             }
+            foreach (var editorBlock in EditorBlocks)
+            {
+                editorBlock.IsSelected = false;
+            }
+
+            // 设置新选中的积木块
+            if (block != null)
+            {
+                block.IsSelected = true;
+            }
+
+            SelectedBlock = block;
+            OnPropertyChanged(nameof(SelectedBlock));
         }
 
-        /// <summary>
-        /// 拖拽取消事件处理
-        /// </summary>
-        private void OnDragCancelled(CodeBlock codeBlock)
-        {
-            // 如果是从工具箱拖拽的新代码块，不添加到编辑器
-            // 如果是编辑器中的代码块，恢复原位置
-        }
+        // 旧的拖拽事件处理方法已移除，将来实现新的积木块交互逻辑
 
         #endregion
 

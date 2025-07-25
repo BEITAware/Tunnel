@@ -1,10 +1,152 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Tunnel_Next.Models
 {
+    /// <summary>
+    /// 资源操作结果
+    /// </summary>
+    public class ResourceOperationResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? OutputPath { get; set; }
+        public Dictionary<string, object> AdditionalData { get; set; } = new();
+    }
 
+    /// <summary>
+    /// 导出委托 - 将资源打包成Zip文件
+    /// </summary>
+    /// <param name="resource">要导出的资源对象</param>
+    /// <param name="outputPath">输出Zip文件路径</param>
+    /// <returns>操作结果</returns>
+    public delegate Task<ResourceOperationResult> ExportDelegate(ResourceObject resource, string outputPath);
+
+    /// <summary>
+    /// 导入委托 - 从Zip文件导入资源
+    /// </summary>
+    /// <param name="zipPath">Zip文件路径</param>
+    /// <param name="targetDirectory">目标目录</param>
+    /// <returns>操作结果，包含导入的资源对象</returns>
+    public delegate Task<ResourceOperationResult> ImportDelegate(string zipPath, string targetDirectory);
+
+    /// <summary>
+    /// 删除委托 - 删除资源及其关联文件
+    /// </summary>
+    /// <param name="resource">要删除的资源对象</param>
+    /// <returns>操作结果</returns>
+    public delegate Task<ResourceOperationResult> DeleteDelegate(ResourceObject resource);
+
+    /// <summary>
+    /// 重命名委托 - 重命名资源及其关联文件
+    /// </summary>
+    /// <param name="resource">要重命名的资源对象</param>
+    /// <param name="newName">新名称（不包含扩展名）</param>
+    /// <returns>操作结果</returns>
+    public delegate Task<ResourceOperationResult> RenameDelegate(ResourceObject resource, string newName);
+
+    /// <summary>
+    /// 通用资源操作委托
+    /// </summary>
+    /// <param name="resource">资源对象</param>
+    /// <param name="parameters">操作参数</param>
+    /// <returns>操作结果</returns>
+    public delegate Task<ResourceOperationResult> ResourceOperationDelegate(ResourceObject resource, Dictionary<string, object>? parameters = null);
+
+    /// <summary>
+    /// 资源委托集
+    /// </summary>
+    public class ResourceDelegateSet
+    {
+        private readonly Dictionary<string, Delegate> _delegates = new();
+
+        /// <summary>
+        /// 导出委托
+        /// </summary>
+        public ExportDelegate? ExportDelegate
+        {
+            get => GetDelegate<ExportDelegate>("Export");
+            set => SetDelegate("Export", value);
+        }
+
+        /// <summary>
+        /// 导入委托
+        /// </summary>
+        public ImportDelegate? ImportDelegate
+        {
+            get => GetDelegate<ImportDelegate>("Import");
+            set => SetDelegate("Import", value);
+        }
+
+        /// <summary>
+        /// 删除委托
+        /// </summary>
+        public DeleteDelegate? DeleteDelegate
+        {
+            get => GetDelegate<DeleteDelegate>("Delete");
+            set => SetDelegate("Delete", value);
+        }
+
+        /// <summary>
+        /// 重命名委托
+        /// </summary>
+        public RenameDelegate? RenameDelegate
+        {
+            get => GetDelegate<RenameDelegate>("Rename");
+            set => SetDelegate("Rename", value);
+        }
+
+        /// <summary>
+        /// 设置委托
+        /// </summary>
+        public void SetDelegate(string name, Delegate? delegateInstance)
+        {
+            if (delegateInstance == null)
+            {
+                _delegates.Remove(name);
+            }
+            else
+            {
+                _delegates[name] = delegateInstance;
+            }
+        }
+
+        /// <summary>
+        /// 获取委托
+        /// </summary>
+        public T? GetDelegate<T>(string name) where T : Delegate
+        {
+            return _delegates.TryGetValue(name, out var del) ? del as T : null;
+        }
+
+        /// <summary>
+        /// 检查是否包含指定委托
+        /// </summary>
+        public bool HasDelegate(string name)
+        {
+            return _delegates.ContainsKey(name);
+        }
+
+        /// <summary>
+        /// 获取所有委托名称
+        /// </summary>
+        public IEnumerable<string> GetDelegateNames()
+        {
+            return _delegates.Keys;
+        }
+
+        /// <summary>
+        /// 检查是否包含所有基本委托
+        /// </summary>
+        public bool HasAllBasicDelegates()
+        {
+            return HasDelegate("Export") && HasDelegate("Import") &&
+                   HasDelegate("Delete") && HasDelegate("Rename");
+        }
+    }
 
     /// <summary>
     /// 资源类型定义
@@ -65,6 +207,11 @@ namespace Tunnel_Next.Models
         /// 资源扫描委托
         /// </summary>
         public ResourceScanDelegate? ScanDelegate { get; set; }
+
+        /// <summary>
+        /// 资源操作委托集
+        /// </summary>
+        public ResourceDelegateSet DelegateSet { get; set; } = new();
     }
 
     /// <summary>
@@ -91,6 +238,12 @@ namespace Tunnel_Next.Models
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
 
+            // 如果委托集为空，设置默认委托
+            if (!definition.DelegateSet.HasAllBasicDelegates())
+            {
+                Services.DefaultResourceDelegates.SetupDefaultDelegates(definition);
+            }
+
             _typeDefinitions[definition.Type] = definition;
 
             // 更新扩展名映射
@@ -99,7 +252,7 @@ namespace Tunnel_Next.Models
                 var normalizedExt = extension.ToLowerInvariant();
                 if (!normalizedExt.StartsWith("."))
                     normalizedExt = "." + normalizedExt;
-                
+
                 _extensionMapping[normalizedExt] = definition.Type;
             }
         }

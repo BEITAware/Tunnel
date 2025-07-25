@@ -180,6 +180,19 @@ namespace Tunnel_Next.Models
         {
             get
             {
+                // 对于节点图，优先使用同文件夹下的{nodegraphname}.png作为缩略图
+                if (ResourceType == ResourceItemType.NodeGraph)
+                {
+                    var directory = Path.GetDirectoryName(FilePath);
+                    var nameWithoutExtension = Path.GetFileNameWithoutExtension(FilePath);
+                    var thumbnailPath = Path.Combine(directory!, $"{nameWithoutExtension}.png");
+
+                    if (File.Exists(thumbnailPath))
+                    {
+                        return thumbnailPath;
+                    }
+                }
+
                 // 如果资源类型支持缩略图且有缩略图文件，则使用缩略图
                 if (ResourceTypeRegistry.SupportsThumbnail(ResourceType) &&
                     !string.IsNullOrEmpty(ThumbnailPath) &&

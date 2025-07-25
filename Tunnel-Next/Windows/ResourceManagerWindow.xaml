@@ -1,0 +1,284 @@
+<Window x:Class="Tunnel_Next.Windows.ResourceManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Tunnel_Next.Controls"
+        Title="资源管理器" Height="600" Width="1000"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource Layer_1}">
+
+    <Window.Resources>
+        <!-- 标题样式 -->
+        <Style x:Key="WindowTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Tab样式 -->
+        <Style x:Key="ResourceTabStyle" TargetType="TabItem">
+            <Setter Property="Background" Value="{DynamicResource Layer_2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+        </Style>
+
+        <!-- 资源项样式 -->
+        <Style x:Key="ResourceItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Layer_2}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 选中的资源项样式 -->
+        <Style x:Key="SelectedResourceItemStyle" TargetType="Border" BasedOn="{StaticResource ResourceItemStyle}">
+            <Setter Property="Background" Value="{DynamicResource ButtonActiveBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <!-- 按钮样式 -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ButtonIdleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ToolbarBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <TextBlock Text="资源管理器" Style="{StaticResource WindowTitleStyle}"/>
+        </Border>
+
+        <!-- 主内容区域 -->
+        <Grid Grid.Row="1" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左侧：资源列表区域 -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource Layer_2}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="0,0,4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 搜索栏 -->
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="SearchTextBox"
+                                     Grid.Column="0"
+                                     Padding="8,4"
+                                     FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                                     FontSize="12"
+                                     Background="{DynamicResource Layer_1}"
+                                     Foreground="{DynamicResource PrimaryForeground}"
+                                     BorderBrush="{DynamicResource BorderBrush}"
+                                     BorderThickness="1"
+                                     VerticalAlignment="Center"
+                                     TextChanged="SearchTextBox_TextChanged"/>
+
+                            <ComboBox x:Name="SortComboBox"
+                                      Grid.Column="1"
+                                      Width="100"
+                                      Margin="8,0,0,0"
+                                      FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                                      FontSize="12"
+                                      Background="{DynamicResource Layer_1}"
+                                      Foreground="{DynamicResource PrimaryForeground}"
+                                      BorderBrush="{DynamicResource BorderBrush}"
+                                      SelectedIndex="0"
+                                      SelectionChanged="SortComboBox_SelectionChanged">
+                                <ComboBoxItem Content="按名称"/>
+                                <ComboBoxItem Content="按时间"/>
+                                <ComboBoxItem Content="按大小"/>
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tab控件 -->
+                    <TabControl x:Name="ResourceTabControl"
+                                Grid.Row="1"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                SelectionChanged="ResourceTabControl_SelectionChanged">
+                        <!-- Tab项将动态创建 -->
+                    </TabControl>
+
+                    <!-- 资源列表 -->
+                    <ScrollViewer x:Name="ResourceScrollViewer"
+                                  Grid.Row="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="8">
+                        <WrapPanel x:Name="ResourceWrapPanel"
+                                   Orientation="Horizontal"
+                                   ItemWidth="120"
+                                   ItemHeight="100"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- 分隔符 -->
+            <GridSplitter Grid.Column="1"
+                          Width="4"
+                          Background="{DynamicResource BorderBrush}"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Center"/>
+
+            <!-- 右侧：预览和操作区域 -->
+            <Border Grid.Column="2"
+                    Background="{DynamicResource Layer_2}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="4,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 预览标题 -->
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <TextBlock x:Name="PreviewTitleTextBlock"
+                                   Text="预览"
+                                   FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryForeground}"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <!-- 预览区域 (4:3比例) -->
+                    <Border Grid.Row="1"
+                            Margin="12"
+                            Background="{DynamicResource Layer_1}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <Grid>
+                            <!-- 图片预览 -->
+                            <Viewbox x:Name="ImagePreviewViewbox"
+                                     Stretch="Uniform"
+                                     Visibility="Visible">
+                                <Border Width="400" Height="300">
+                                    <Image x:Name="PreviewImage"
+                                           Stretch="Uniform"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                                </Border>
+                            </Viewbox>
+
+                            <!-- 节点图预览 -->
+                            <local:NodePreviewControl x:Name="NodePreviewControl"
+                                                      Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- 操作按钮区域 -->
+                    <Border Grid.Row="2"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="12">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <!-- 基本操作按钮 -->
+                                <TextBlock Text="基本操作"
+                                           FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SecondaryForeground}"
+                                           Margin="0,0,0,4"/>
+
+                                <Button x:Name="ExportButton"
+                                        Content="导出"
+                                        Style="{StaticResource ActionButtonStyle}"
+                                        Click="ExportButton_Click"/>
+                                <Button x:Name="ImportButton"
+                                        Content="导入"
+                                        Style="{StaticResource ActionButtonStyle}"
+                                        Click="ImportButton_Click"/>
+                                <Button x:Name="DeleteButton"
+                                        Content="删除"
+                                        Style="{StaticResource ActionButtonStyle}"
+                                        Click="DeleteButton_Click"/>
+                                <Button x:Name="RenameButton"
+                                        Content="重命名"
+                                        Style="{StaticResource ActionButtonStyle}"
+                                        Click="RenameButton_Click"/>
+
+                                <!-- 扩展操作集 -->
+                                <StackPanel x:Name="ExtendedOperationsPanel"
+                                            Margin="0,8,0,0">
+                                    <TextBlock x:Name="ExtendedOperationsTitle"
+                                               Text="扩展操作"
+                                               FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryForeground}"
+                                               Margin="0,0,0,4"
+                                               Visibility="Collapsed"/>
+
+                                    <StackPanel x:Name="ExtendedButtonsPanel"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

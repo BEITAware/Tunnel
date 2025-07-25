@@ -43,6 +43,8 @@ namespace Tunnel_Next.Models
         Boolean,
         Color,
         Vector,
+        Set,
+        F32bmpSet,
         Any
     }
 
@@ -353,6 +355,28 @@ namespace Tunnel_Next.Models
                 WpfColor = Color.FromRgb(0x8F, 0xBC, 0x8F),
                 Category = "基础",
                 CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Vector }
+            };
+
+            definitions[NodePortDataType.Set] = new PortTypeInfo
+            {
+                Type = NodePortDataType.Set,
+                Name = "Set",
+                Description = "集合类型",
+                HexColor = "#DDA0DD",
+                WpfColor = Color.FromRgb(0xDD, 0xA0, 0xDD),
+                Category = "基础",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Set, NodePortDataType.F32bmpSet }
+            };
+
+            definitions[NodePortDataType.F32bmpSet] = new PortTypeInfo
+            {
+                Type = NodePortDataType.F32bmpSet,
+                Name = "F32bmpSet",
+                Description = "F32BMP图像集合类型",
+                HexColor = "#D02090",
+                WpfColor = Color.FromRgb(0xD0, 0x20, 0x90),
+                Category = "基础",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmpSet }
             };
 
             definitions[NodePortDataType.Any] = new PortTypeInfo

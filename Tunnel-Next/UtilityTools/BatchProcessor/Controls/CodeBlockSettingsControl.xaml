@@ -1,0 +1,37 @@
+<UserControl x:Class="Tunnel_Next.UtilityTools.BatchProcessor.Controls.CodeBlockSettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="300">
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/ScriptsControls/SharedBrushes.xaml"/>
+                <ResourceDictionary Source="/Resources/ScriptsControls/PanelStyles.xaml"/>
+                <ResourceDictionary Source="/Resources/ScriptsControls/TextBlockStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource AeroBackgroundBrush}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Style="{DynamicResource AeroScrollViewerStyle}">
+            <StackPanel x:Name="SettingsContainer" Margin="10">
+                <!-- 积木块设定控件将在这里动态添加 -->
+                <TextBlock x:Name="NoSelectionText"
+                           Text="请选择一个积木块来编辑设定"
+                           Foreground="{DynamicResource AeroForegroundBrush}"
+                           FontFamily="{DynamicResource AeroFontFamily}"
+                           FontSize="{DynamicResource AeroFontSize}"
+                           FontStyle="Italic"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Opacity="0.7"
+                           Margin="0,20"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
