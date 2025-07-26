@@ -1,9 +1,12 @@
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using Tunnel_Next.Models;
 using Tunnel_Next.Services;
@@ -86,7 +89,6 @@ namespace Tunnel_Next.Windows
                 var tabItem = new TabItem
                 {
                     Header = ResourceTypeRegistry.GetDisplayName(resourceType),
-                    Style = (Style)FindResource("ResourceTabStyle"),
                     Tag = resourceType
                 };
                 ResourceTabControl.Items.Add(tabItem);
@@ -175,10 +177,26 @@ namespace Tunnel_Next.Windows
         {
             var border = new Border
             {
-                Style = _selectedItems.Contains(item) ?
-                    (Style)FindResource("SelectedResourceItemStyle") :
-                    (Style)FindResource("ResourceItemStyle"),
+                Background = _selectedItems.Contains(item) ?
+                    (Brush)FindResource("ResourceObjectHoverBrush") :
+                    (Brush)FindResource("ResourceObjectIdleBrush"),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0)), // #FF000000
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(1), // 非常小的圆角
+                Margin = new Thickness(2),
+                Padding = new Thickness(6),
+                Cursor = Cursors.Hand,
                 Tag = item
+            };
+
+            // 添加阴影效果
+            border.Effect = new DropShadowEffect
+            {
+                Color = Colors.Black,
+                Direction = 270,
+                ShadowDepth = 2,
+                BlurRadius = 3,
+                Opacity = 0.4
             };
 
             var stackPanel = new StackPanel();
@@ -196,9 +214,7 @@ namespace Tunnel_Next.Windows
             var nameText = new TextBlock
             {
                 Text = item.Name,
-                FontFamily = new FontFamily("Segoe UI, Microsoft YaHei UI, Arial"),
                 FontSize = 10,
-                Foreground = (Brush)FindResource("PrimaryForeground"),
                 TextAlignment = TextAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 MaxWidth = 100
@@ -207,6 +223,70 @@ namespace Tunnel_Next.Windows
             stackPanel.Children.Add(icon);
             stackPanel.Children.Add(nameText);
             border.Child = stackPanel;
+
+            // 添加鼠标悬停效果 - 使用主程序资源管理面板的样式
+            border.MouseEnter += (s, e) =>
+            {
+                if (!_selectedItems.Contains(item))
+                {
+                    border.Background = (Brush)FindResource("ResourceObjectHoverBrush");
+                    // 增强阴影效果
+                    border.Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 270,
+                        ShadowDepth = 2,
+                        BlurRadius = 5,
+                        Opacity = 0.7
+                    };
+                }
+            };
+            border.MouseLeave += (s, e) =>
+            {
+                if (!_selectedItems.Contains(item))
+                {
+                    border.Background = (Brush)FindResource("ResourceObjectIdleBrush");
+                    // 恢复正常阴影
+                    border.Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 270,
+                        ShadowDepth = 2,
+                        BlurRadius = 3,
+                        Opacity = 0.4
+                    };
+                }
+            };
+
+            // 添加鼠标按下效果
+            border.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                // 按下时使用更强烈的阴影效果
+                border.Effect = new DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    Direction = 270,
+                    ShadowDepth = 1,
+                    BlurRadius = 2,
+                    Opacity = 0.8
+                };
+            };
+
+            border.PreviewMouseLeftButtonUp += (s, e) =>
+            {
+                // 释放时恢复到悬停状态（如果鼠标还在上面）
+                if (border.IsMouseOver && !_selectedItems.Contains(item))
+                {
+                    border.Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 270,
+                        ShadowDepth = 2,
+                        BlurRadius = 5,
+                        Opacity = 0.7
+                    };
+                }
+            };
 
             // 添加点击事件
             border.MouseLeftButtonDown += (s, e) => ResourceItem_Click(item, e);
@@ -236,11 +316,25 @@ namespace Tunnel_Next.Windows
                 {
                     try
                     {
+                        // 使用FileStream读取文件到内存，然后立即关闭文件句柄
+                        byte[] imageBytes;
+                        using (var fileStream = new FileStream(thumbnailPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        {
+                            imageBytes = new byte[fileStream.Length];
+                            fileStream.Read(imageBytes, 0, imageBytes.Length);
+                        }
+
+                        // 从内存中的字节数组创建BitmapImage，确保MemoryStream被正确释放
                         var bitmap = new BitmapImage();
                         bitmap.BeginInit();
-                        bitmap.UriSource = new Uri(thumbnailPath);
-                        bitmap.DecodePixelWidth = 48; // 限制缩略图大小
-                        bitmap.EndInit();
+                        using (var memoryStream = new MemoryStream(imageBytes))
+                        {
+                            bitmap.StreamSource = memoryStream;
+                            bitmap.DecodePixelWidth = 48; // 限制缩略图大小
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.EndInit();
+                        }
+                        bitmap.Freeze();
                         return bitmap;
                     }
                     catch
@@ -518,14 +612,21 @@ namespace Tunnel_Next.Windows
             // 清空现有按钮
             ExtendedButtonsPanel.Children.Clear();
 
-            if (_selectedItems.Count != 1)
+            if (_selectedItems.Count == 0)
             {
                 ExtendedOperationsTitle.Visibility = Visibility.Collapsed;
                 return;
             }
 
-            var selectedResource = _selectedItems.First();
-            var typeDefinition = ResourceTypeRegistry.GetTypeDefinition(selectedResource.ResourceType);
+            // 检查是否所有选中的资源都是同一类型
+            var firstResourceType = _selectedItems.First().ResourceType;
+            if (!_selectedItems.All(item => item.ResourceType == firstResourceType))
+            {
+                ExtendedOperationsTitle.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var typeDefinition = ResourceTypeRegistry.GetTypeDefinition(firstResourceType);
 
             if (typeDefinition?.DelegateSet == null)
             {
@@ -554,7 +655,8 @@ namespace Tunnel_Next.Windows
                 var button = new Button
                 {
                     Content = GetDelegateDisplayName(delegateName),
-                    Style = (Style)FindResource("ActionButtonStyle"),
+                    Margin = new Thickness(0, 4, 0, 0),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
                     Tag = delegateName
                 };
 
@@ -593,54 +695,101 @@ namespace Tunnel_Next.Windows
             if (sender is not Button button || button.Tag is not string delegateName)
                 return;
 
-            if (_selectedItems.Count != 1)
+            if (_selectedItems.Count == 0)
                 return;
 
-            var selectedResource = _selectedItems.First();
-            var typeDefinition = ResourceTypeRegistry.GetTypeDefinition(selectedResource.ResourceType);
+            // 检查是否所有选中的资源都是同一类型
+            var firstResourceType = _selectedItems.First().ResourceType;
+            if (!_selectedItems.All(item => item.ResourceType == firstResourceType))
+            {
+                MessageBox.Show("请选择相同类型的资源", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
+            var typeDefinition = ResourceTypeRegistry.GetTypeDefinition(firstResourceType);
             if (typeDefinition?.DelegateSet == null)
                 return;
 
-            try
+            // 尝试获取ResourceOperationDelegate类型的委托
+            var operationDelegate = typeDefinition.DelegateSet.GetDelegate<ResourceOperationDelegate>(delegateName);
+            if (operationDelegate == null)
             {
-                // 尝试获取ResourceOperationDelegate类型的委托
-                var operationDelegate = typeDefinition.DelegateSet.GetDelegate<ResourceOperationDelegate>(delegateName);
-
-                if (operationDelegate != null)
+                // 尝试其他类型的委托
+                var genericDelegate = typeDefinition.DelegateSet.GetDelegate<Delegate>(delegateName);
+                if (genericDelegate != null)
                 {
-                    // 执行操作委托
-                    var result = await operationDelegate(selectedResource, null);
-
-                    if (result.Success)
-                    {
-                        MessageBox.Show($"操作 '{GetDelegateDisplayName(delegateName)}' 执行成功", "成功",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-
-                        // 如果操作可能影响资源，刷新显示
-                        UpdateResourceDisplay();
-                        UpdatePreview();
-                    }
-                    else
-                    {
-                        MessageBox.Show($"操作 '{GetDelegateDisplayName(delegateName)}' 执行失败: {result.ErrorMessage}", "错误",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    MessageBox.Show($"委托 '{GetDelegateDisplayName(delegateName)}' 存在但类型不匹配，需要自定义处理", "提示",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    // 尝试其他类型的委托
-                    var genericDelegate = typeDefinition.DelegateSet.GetDelegate<Delegate>(delegateName);
-                    if (genericDelegate != null)
+                    MessageBox.Show($"未找到委托 '{delegateName}'", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                return;
+            }
+
+            // 为每个选中的资源执行操作
+            var successCount = 0;
+            var failureCount = 0;
+            var errors = new List<string>();
+
+            try
+            {
+                foreach (var resource in _selectedItems)
+                {
+                    try
                     {
-                        MessageBox.Show($"委托 '{GetDelegateDisplayName(delegateName)}' 存在但类型不匹配，需要自定义处理", "提示",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
+                        var result = await operationDelegate(resource, null);
+                        if (result.Success)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            failureCount++;
+                            errors.Add($"{resource.Name}: {result.ErrorMessage}");
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        MessageBox.Show($"未找到委托 '{delegateName}'", "错误",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
+                        failureCount++;
+                        errors.Add($"{resource.Name}: {ex.Message}");
                     }
+                }
+
+                // 显示执行结果
+                if (failureCount == 0)
+                {
+                    MessageBox.Show($"操作 '{GetDelegateDisplayName(delegateName)}' 执行成功，共处理 {successCount} 个资源", "成功",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else if (successCount == 0)
+                {
+                    var errorMessage = $"操作 '{GetDelegateDisplayName(delegateName)}' 全部失败：\n" + string.Join("\n", errors.Take(5));
+                    if (errors.Count > 5)
+                        errorMessage += $"\n... 还有 {errors.Count - 5} 个错误";
+
+                    MessageBox.Show(errorMessage, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    var message = $"操作 '{GetDelegateDisplayName(delegateName)}' 部分成功：\n成功: {successCount} 个\n失败: {failureCount} 个";
+                    if (errors.Count > 0)
+                    {
+                        message += "\n\n失败详情：\n" + string.Join("\n", errors.Take(3));
+                        if (errors.Count > 3)
+                            message += $"\n... 还有 {errors.Count - 3} 个错误";
+                    }
+
+                    MessageBox.Show(message, "部分成功", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // 如果操作可能影响资源，刷新显示
+                if (successCount > 0)
+                {
+                    UpdateResourceDisplay();
+                    UpdatePreview();
                 }
             }
             catch (Exception ex)

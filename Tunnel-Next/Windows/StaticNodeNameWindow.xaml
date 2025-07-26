@@ -45,12 +45,8 @@
                        Margin="0,0,0,10"/>
 
             <!-- 名称输入框 -->
-            <TextBox Grid.Row="2" 
+            <TextBox Grid.Row="2"
                      x:Name="NodeNameTextBox"
-                     Style="{StaticResource TextBoxStyle}"
-                     Background="#22000000"
-                     BorderBrush="{StaticResource BorderBrush}"
-                     BorderThickness="1"
                      VerticalAlignment="Top"
                      Margin="-4,21,0,0" Height="33"/>
 

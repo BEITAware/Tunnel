@@ -701,6 +701,30 @@ namespace Tunnel_Next
             }
         }
 
+        private async void FilmPreviewControl_RegenerateThumbnailRequested(object sender, FilmPreviewItem item)
+        {
+            try
+            {
+                await _viewModel.RegenerateThumbnailAsync(item);
+            }
+            catch (Exception ex)
+            {
+                _viewModel.TaskStatus = $"重新生成缩略图失败: {ex.Message}";
+            }
+        }
+
+        private async void FilmPreviewControl_DeleteNodeGraphRequested(object sender, FilmPreviewItem item)
+        {
+            try
+            {
+                await _viewModel.DeleteFilmPreviewItemAsync(item);
+            }
+            catch (Exception ex)
+            {
+                _viewModel.TaskStatus = $"删除节点图失败: {ex.Message}";
+            }
+        }
+
         #endregion
 
         #region 资源库事件

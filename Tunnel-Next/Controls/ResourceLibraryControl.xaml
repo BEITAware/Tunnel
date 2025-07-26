@@ -400,11 +400,10 @@
                 </LinearGradientBrush>
             </Border.Background>
             <TextBox x:Name="SearchTextBox"
-                     Style="{StaticResource DefaultTextBoxStyle}"
                      TextChanged="SearchTextBox_TextChanged"
                      Height="24">
                 <TextBox.Resources>
-                    <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                         <Style.Triggers>
                             <Trigger Property="Text" Value="">
                                 <Setter Property="Background">

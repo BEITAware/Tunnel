@@ -37,6 +37,13 @@
     <SolidColorBrush x:Key="AeroForegroundBrush" Color="{DynamicResource AeroTextColor}"/>
     <SolidColorBrush x:Key="AeroDisabledForegroundBrush" Color="{DynamicResource AeroDisabledTextColor}"/>
     <SolidColorBrush x:Key="AeroDisabledBackgroundBrush" Color="{DynamicResource AeroDisabledBgColor}"/>
+
+    <!-- 按钮状态画笔 -->
+    <SolidColorBrush x:Key="ButtonIdleBrush" Color="#FF2A3240"/>
+    <SolidColorBrush x:Key="ButtonHoverBrush" Color="#FF3A4250"/>
+    <SolidColorBrush x:Key="ButtonActiveBrush" Color="#FF4A5260"/>
+    <SolidColorBrush x:Key="ButtonPressedBrush" Color="#FF1A2230"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#FF4466FF"/>
     
     <!-- 渐变画笔 -->
     <LinearGradientBrush x:Key="AeroGlassBrush" StartPoint="0,0" EndPoint="0,1">

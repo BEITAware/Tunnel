@@ -121,50 +121,73 @@
                             </Style>
                         </Grid.Resources>
                         
-                        <!-- 主边框 - 添加1px低饱和度青色边框 -->
-                        <Border x:Name="mainBorder"
-                                Background="{StaticResource CheckboxComboBoxBackgroundBrush}" 
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                        <!-- 使用ToggleButton替代Border来处理点击事件 -->
+                        <ToggleButton x:Name="toggleButton"
+                                     BorderThickness="{TemplateBinding BorderThickness}"
+                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Focusable="false">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="mainBorder"
+                                           Background="{StaticResource CheckboxComboBoxBackgroundBrush}" 
+                                           BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                           BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                           CornerRadius="0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
 
-                                <!-- 内容区域 -->
-                                <ContentPresenter Grid.Column="0" 
-                                                 Content="{TemplateBinding SelectionBoxItem}"
-                                                 ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                 ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                                 Margin="{TemplateBinding Padding}"
-                                                 VerticalAlignment="Center"/>
+                                            <!-- 内容区域 - 使用ContentPresenter以保持内容点击区域完整 -->
+                                            <ContentPresenter Grid.Column="0" 
+                                                             IsHitTestVisible="False"
+                                                             Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                             ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                             ContentTemplateSelector="{Binding ItemTemplateSelector, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                             Margin="{Binding Padding, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                             VerticalAlignment="Center"/>
 
-                                <!-- 下拉按钮 -->
-                                <Path Grid.Column="1" 
-                                      x:Name="arrow"
-                                      Data="M0,0 L6,0 L3,4 z"
-                                      Fill="{StaticResource CheckboxComboBoxForegroundBrush}"
-                                      Width="8"
-                                      Height="5"
-                                      Margin="0,0,8,0"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+                                            <!-- 下拉按钮 -->
+                                            <Path Grid.Column="1" 
+                                                 x:Name="arrow"
+                                                 Data="M0,0 L6,0 L3,4 z"
+                                                 Fill="{StaticResource CheckboxComboBoxForegroundBrush}"
+                                                 Width="8"
+                                                 Height="5"
+                                                 Margin="0,0,8,0"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" TargetName="mainBorder" Value="0.9"/>
+                                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Opacity" TargetName="mainBorder" Value="1.0"/>
+                                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
 
                         <!-- 下拉弹出框 - 添加1px低饱和度青色边框 -->
                         <Popup x:Name="PART_Popup" 
                                AllowsTransparency="True"
                                IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                Placement="Bottom" 
-                               PopupAnimation="Slide">
+                               Focusable="False"
+                               StaysOpen="False"
+                               PopupAnimation="None">
                             <Border x:Name="dropDownBorder"
                                     Background="#FF001A2C"
                                     BorderBrush="{StaticResource CheckboxComboBoxBorderBrush}"
                                     BorderThickness="1" 
                                     CornerRadius="0"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                     MinWidth="{TemplateBinding ActualWidth}">
                                 <ScrollViewer x:Name="DropDownScrollViewer" 
                                              VerticalScrollBarVisibility="Auto"
@@ -176,14 +199,6 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Opacity" TargetName="mainBorder" Value="0.9"/>
-                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
-                        </Trigger>
-                        <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter Property="Opacity" TargetName="mainBorder" Value="1.0"/>
-                            <Setter Property="BorderBrush" TargetName="mainBorder" Value="#8800FFFF"/>
-                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5"/>
                         </Trigger>

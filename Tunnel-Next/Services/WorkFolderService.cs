@@ -19,6 +19,7 @@ namespace Tunnel_Next.Services
         private string _tempFolder = string.Empty;
         private string _userScriptsFolder = string.Empty;
         private string _userResourcesFolder = string.Empty;
+        private string _resourcesFolder = string.Empty;
 
         /// <summary>
         /// 当前工作文件夹路径
@@ -51,6 +52,11 @@ namespace Tunnel_Next.Services
         /// 用户脚本资源文件夹路径（脚本文件夹下的RevivalResources）
         /// </summary>
         public string UserResourcesFolder => _userResourcesFolder;
+
+        /// <summary>
+        /// 工作文件夹下的Resources文件夹路径
+        /// </summary>
+        public string ResourcesFolder => _resourcesFolder;
 
         /// <summary>
         /// 支持的图片文件扩展名
@@ -95,6 +101,7 @@ namespace Tunnel_Next.Services
                 _nodeGraphsFolder = Path.Combine(_workFolder, "Projects");
                 _thumbnailsFolder = _nodeGraphsFolder;
                 _tempFolder = Path.Combine(_nodeGraphsFolder, "temp");
+                _resourcesFolder = Path.Combine(_workFolder, "Resources");
 
                 // 添加调试输出
                 System.Diagnostics.Debug.WriteLine($"[WorkFolderService] 工作文件夹: {_workFolder}");
@@ -178,7 +185,8 @@ namespace Tunnel_Next.Services
                 (_workFolder, "工作文件夹"),
                 (_nodeGraphsFolder, "节点图文件夹"),
                 (_thumbnailsFolder, "缩略图文件夹"),
-                (_tempFolder, "临时文件夹")
+                (_tempFolder, "临时文件夹"),
+                (_resourcesFolder, "资源文件夹")
             };
 
             foreach (var (dirPath, dirName) in directoriesToCreate)

@@ -16,7 +16,7 @@ namespace Tunnel_Next.ViewModels
     /// <summary>
     /// 主窗口ViewModel
     /// </summary>
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : ViewModelBase, IDisposable
     {
         private string _taskStatus = "就绪";
         private double _zoomLevel = 1.0;
@@ -29,6 +29,7 @@ namespace Tunnel_Next.ViewModels
         private readonly WorkFolderService _workFolderService = new();
         private readonly FileService _fileService;
         private readonly ThumbnailService _thumbnailService;
+        private readonly ThumbnailManager _thumbnailManager;
         private RevivalScriptManager? _revivalScriptManager;
         private readonly ResourceCatalogService _resourceCatalogService;
         private ResourceScanService _resourceScanService;
@@ -44,6 +45,7 @@ namespace Tunnel_Next.ViewModels
             // 初始化服务（传入RevivalScriptManager）
             _fileService = new FileService(_workFolderService, _revivalScriptManager);
             _thumbnailService = new ThumbnailService(_workFolderService);
+            _thumbnailManager = new ThumbnailManager(_thumbnailService);
             _resourceCatalogService = new ResourceCatalogService(_workFolderService);
             _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
             _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
@@ -54,6 +56,9 @@ namespace Tunnel_Next.ViewModels
             if (_revivalScriptManager != null)
             {
                 _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
+
+                // 初始化节点图导出服务并设置委托
+                SetupNodeGraphExportDelegate();
             }
 
             InitializeCommands();
@@ -210,6 +215,11 @@ namespace Tunnel_Next.ViewModels
         /// 资源扫描服务
         /// </summary>
         public ResourceScanService ResourceScanService => _resourceScanService;
+
+        /// <summary>
+        /// 缩略图管理器
+        /// </summary>
+        public ThumbnailManager ThumbnailManager => _thumbnailManager;
 
         /// <summary>
         /// 资源监控服务
@@ -522,7 +532,40 @@ namespace Tunnel_Next.ViewModels
                 {
                     CurrentNodeGraph = nodeGraph;
 
-                    // 让 FilmPreview 稍后刷新并生成缩略图
+                    // 生成缩略图（从当前预览控件获取图像）- 使用Dispatcher确保UI线程上执行
+                    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        try
+                        {
+                            if (!string.IsNullOrEmpty(nodeGraph.FilePath))
+                            {
+                                // 获取当前活动文档的预览控件
+                                var activeDocument = DocumentManager.ActiveDocument as Models.NodeGraphDocument;
+                                var previewControl = activeDocument?.GetImagePreviewControl();
+
+                                // 确保UI完全渲染
+                                await Task.Delay(100); // 短暂延迟确保UI已渲染
+
+                                // 从预览控件生成缩略图
+                                await _thumbnailManager.GenerateAndCacheThumbnailFromPreviewAsync(nodeGraph.FilePath, previewControl);
+                                
+                                // 更新FilmPreview以显示新缩略图
+                                var item = FilmPreviewItems.FirstOrDefault(i => i.FilePath == nodeGraph.FilePath);
+                                if (item != null)
+                                {
+                                    var thumbnailPath = _thumbnailManager.GetNodeGraphThumbnailPath(nodeGraph.FilePath);
+                                    item.ThumbnailPath = thumbnailPath;
+                                    item.Thumbnail = _thumbnailManager.GetThumbnail(thumbnailPath);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MainViewModel] 生成缩略图失败: {ex.Message}");
+                        }
+                    });
+
+                    // 让 FilmPreview 稍后刷新
                     await UpdateFilmPreviewAsync();
 
                     TaskStatus = $"已保存节点图: {nodeGraph.Name}";
@@ -1557,6 +1600,9 @@ namespace Tunnel_Next.ViewModels
             // 重新创建节点图解释器服务
             _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
 
+            // 重新设置节点图导出委托
+            SetupNodeGraphExportDelegate();
+
             System.Diagnostics.Debug.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
             Console.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
         }
@@ -1589,13 +1635,33 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
+                TaskStatus = "正在初始化...";
+                
                 // 初始化工作文件夹
                 await _workFolderService.InitializeAsync();
+                
+                // 在最开始整理缩略图，避免文件句柄冲突
+                try
+                {
+                    TaskStatus = "正在整理缩略图并清理无关PNG文件...";
+                    _thumbnailService.OrganizeThumbnails();
+                    TaskStatus = "缩略图整理和清理完成";
+                    
+                    // 执行缓存清理
+                    _thumbnailManager.CleanupCache();
+                }
+                catch (Exception thumbEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"缩略图整理失败: {thumbEx.Message}");
+                    TaskStatus = "缩略图整理失败，继续初始化...";
+                }
 
                 // 更新胶片预览
+                TaskStatus = "正在加载项目预览...";
                 await UpdateFilmPreviewAsync();
 
                 // 更新资源库
+                TaskStatus = "正在加载资源库...";
                 await UpdateResourceLibraryAsync();
 
                 // 启动资源文件监控
@@ -1616,6 +1682,11 @@ namespace Tunnel_Next.ViewModels
         {
             try
             {
+                // 在清除之前，先释放所有现有项目的资源
+                foreach (var existingItem in FilmPreviewItems)
+                {
+                    existingItem?.Dispose();
+                }
                 FilmPreviewItems.Clear();
 
                 var nodeGraphFiles = _workFolderService.GetNodeGraphFiles();
@@ -1630,20 +1701,21 @@ namespace Tunnel_Next.ViewModels
                         Name = fileName,
                         FilePath = filePath,
                         CreatedTime = fileInfo.CreationTime,
-                        LastModified = fileInfo.LastWriteTime
+                        LastModified = fileInfo.LastWriteTime,
+                        ThumbnailPath = _thumbnailService.GetNodeGraphThumbnailPath(filePath)
                     };
 
-                    // 加载缩略图
-                    var thumbnailPath = _thumbnailService.GetNodeGraphThumbnailPath(filePath);
+                    // 使用ThumbnailManager加载缩略图，确保文件句柄正确释放
+                    var thumbnailPath = _thumbnailManager.GetNodeGraphThumbnailPath(filePath);
                     if (File.Exists(thumbnailPath))
                     {
-                        item.Thumbnail = _thumbnailService.LoadThumbnail(thumbnailPath);
+                        item.Thumbnail = _thumbnailManager.GetThumbnail(thumbnailPath);
                     }
                     else
                     {
                         // 生成默认缩略图
-                        await _thumbnailService.GenerateNodeGraphThumbnailAsync(filePath);
-                        item.Thumbnail = _thumbnailService.LoadThumbnail(thumbnailPath);
+                        await _thumbnailManager.GenerateAndCacheThumbnailAsync(filePath);
+                        item.Thumbnail = _thumbnailManager.GetThumbnail(thumbnailPath);
                     }
 
                     FilmPreviewItems.Add(item);
@@ -1652,6 +1724,86 @@ namespace Tunnel_Next.ViewModels
             }
             catch (Exception ex)
             {
+            }
+        }
+
+
+
+        /// <summary>
+        /// 删除胶片预览项目
+        /// </summary>
+        /// <param name="item">要删除的项目</param>
+        public async Task DeleteFilmPreviewItemAsync(FilmPreviewItem item)
+        {
+            try
+            {
+                // 删除节点图文件
+                if (File.Exists(item.FilePath))
+                {
+                    File.Delete(item.FilePath);
+                }
+
+                // 删除缩略图文件
+                _thumbnailManager.DeleteThumbnail(item.FilePath);
+
+                // 释放项目资源
+                item?.Dispose();
+
+                // 从列表中移除
+                FilmPreviewItems.Remove(item);
+
+                TaskStatus = $"已删除节点图: {item.Name}";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"删除节点图失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 重新生成缩略图
+        /// </summary>
+        /// <param name="item">胶片预览项目</param>
+        public async Task RegenerateThumbnailAsync(FilmPreviewItem item)
+        {
+            try
+            {
+                // 先清除当前缩略图引用（这会触发Thumbnail属性的setter，释放旧资源）
+                item.Thumbnail = null;
+                
+                // 获取文档以访问预览控件
+                var document = _documentManager?.Documents.FirstOrDefault(d => 
+                    d is Models.NodeGraphDocument nodeDoc && 
+                    nodeDoc.FilePath == item.FilePath) as Models.NodeGraphDocument;
+                
+                if (document != null)
+                {
+                    // 从预览控件生成缩略图
+                    var previewControl = document.GetImagePreviewControl();
+                    
+                                                    // 确保在UI线程上执行，并等待UI渲染完成
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                        await Task.Delay(100); // 给UI一点时间完成渲染
+                        await _thumbnailManager.GenerateAndCacheThumbnailFromPreviewAsync(item.FilePath, previewControl);
+                        
+                        // 更新缩略图引用
+                        item.ThumbnailPath = _thumbnailManager.GetNodeGraphThumbnailPath(item.FilePath);
+                        item.Thumbnail = _thumbnailManager.GetThumbnail(item.ThumbnailPath);
+                    });
+                }
+                else
+                {
+                    // 如果没有打开的文档，则使用普通方法生成缩略图
+                    await _thumbnailManager.GenerateAndCacheThumbnailAsync(item.FilePath);
+                    item.Thumbnail = _thumbnailManager.GetThumbnail(item.ThumbnailPath);
+                }
+
+                TaskStatus = $"已重新生成缩略图: {item.Name}";
+            }
+            catch (Exception ex)
+            {
+                TaskStatus = $"重新生成缩略图失败: {ex.Message}";
+                item.Thumbnail = null;
             }
         }
 
@@ -1711,7 +1863,7 @@ namespace Tunnel_Next.ViewModels
                         previewMat = mat;
                     }
 
-                    await _thumbnailService.GenerateNodeGraphThumbnailAsync(CurrentNodeGraph.FilePath, previewMat);
+                    await _thumbnailManager.GenerateAndCacheThumbnailAsync(CurrentNodeGraph.FilePath, previewMat);
                 }
             }
             catch (Exception ex)
@@ -1772,6 +1924,85 @@ namespace Tunnel_Next.ViewModels
             // 更新节点数量
             NodeCount = nodeEditor.Nodes.Count;
 
+        }
+
+        /// <summary>
+        /// 设置节点图导出委托
+        /// </summary>
+        private void SetupNodeGraphExportDelegate()
+        {
+            try
+            {
+                if (_nodeGraphInterpreterService == null)
+                    return;
+
+                // 创建节点图导出服务
+                var exportService = new NodeGraphExportService(_nodeGraphInterpreterService, _workFolderService);
+
+                // 获取节点图资源类型定义
+                var nodeGraphDefinition = ResourceTypeRegistry.GetTypeDefinition(ResourceItemType.NodeGraph);
+                if (nodeGraphDefinition != null)
+                {
+                    // 设置节点图导出委托为ResourceOperationDelegate
+                    nodeGraphDefinition.DelegateSet.SetDelegate("导出为JPEG", (ResourceOperationDelegate)exportService.ExportNodeGraphAsync);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] 设置节点图导出委托失败: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        private bool _disposed = false;
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源的具体实现
+        /// </summary>
+        /// <param name="disposing">是否正在释放托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                // 释放所有FilmPreviewItem资源
+                foreach (var item in FilmPreviewItems)
+                {
+                    item?.Dispose();
+                }
+                FilmPreviewItems.Clear();
+
+                // 释放所有ResourceLibraryItem资源
+                foreach (var item in ResourceLibraryItems)
+                {
+                    item?.Dispose();
+                }
+                ResourceLibraryItems.Clear();
+
+                // 释放ThumbnailManager
+                _thumbnailManager?.Dispose();
+
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        ~MainViewModel()
+        {
+            Dispose(false);
         }
 
         #endregion

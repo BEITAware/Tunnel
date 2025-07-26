@@ -553,8 +553,41 @@ namespace Tunnel_Next.Controls
 
             try
             {
-                var imageUri = new Uri(source);
-                image.Source = new BitmapImage(imageUri);
+                // 如果是文件路径，使用安全的加载方式
+                if (File.Exists(source))
+                {
+                    // 使用FileStream读取文件到内存，然后立即关闭文件句柄
+                    byte[] imageBytes;
+                    using (var fileStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        imageBytes = new byte[fileStream.Length];
+                        fileStream.Read(imageBytes, 0, imageBytes.Length);
+                    }
+
+                    // 从内存中的字节数组创建BitmapImage，确保MemoryStream被正确释放
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    using (var memoryStream = new MemoryStream(imageBytes))
+                    {
+                        bitmap.StreamSource = memoryStream;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                    }
+                    bitmap.Freeze();
+                    image.Source = bitmap;
+                }
+                else
+                {
+                    // 如果是URI，使用原来的方式
+                    var imageUri = new Uri(source);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = imageUri;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    image.Source = bitmap;
+                }
             }
             catch
             {

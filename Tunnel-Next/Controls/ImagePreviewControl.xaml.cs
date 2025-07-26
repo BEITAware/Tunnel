@@ -24,6 +24,11 @@ namespace Tunnel_Next.Controls
         public static readonly DependencyProperty ImageSourceProperty =
             DependencyProperty.Register(nameof(ImageSource), typeof(Mat), typeof(ImagePreviewControl),
                 new PropertyMetadata(null, OnImageSourceChanged));
+                
+        /// <summary>
+        /// 获取预览图像控件引用，便于缩略图生成访问
+        /// </summary>
+        public System.Windows.Controls.Image PreviewImageControl => this.PreviewImage;
 
         // 核心属性 - Revival Scripts系统
         private Mat? _currentImage;

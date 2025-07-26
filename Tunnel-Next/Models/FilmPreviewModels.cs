@@ -8,7 +8,7 @@ namespace Tunnel_Next.Models
     /// <summary>
     /// 胶片预览项目
     /// </summary>
-    public class FilmPreviewItem : INotifyPropertyChanged
+    public class FilmPreviewItem : INotifyPropertyChanged, IDisposable
     {
         private string _name = string.Empty;
         private string _filePath = string.Empty;
@@ -16,6 +16,8 @@ namespace Tunnel_Next.Models
         private DateTime _lastModified = DateTime.Now;
         private BitmapSource? _thumbnail;
         private bool _isSelected;
+        private string _thumbnailPath = string.Empty;
+        private bool _disposed = false;
 
         /// <summary>
         /// 显示名称
@@ -59,7 +61,19 @@ namespace Tunnel_Next.Models
         public BitmapSource? Thumbnail
         {
             get => _thumbnail;
-            set => SetProperty(ref _thumbnail, value);
+            set
+            {
+                if (_thumbnail != value)
+                {
+                    // 释放旧的缩略图资源（如果不是冻结的系统资源）
+                    if (_thumbnail != null && _thumbnail.CanFreeze)
+                    {
+                        // BitmapSource通常是冻结的，不需要手动释放
+                        // 但我们清除引用以帮助GC
+                    }
+                    SetProperty(ref _thumbnail, value);
+                }
+            }
         }
 
         /// <summary>
@@ -70,6 +84,20 @@ namespace Tunnel_Next.Models
             get => _isSelected;
             set => SetProperty(ref _isSelected, value);
         }
+
+        /// <summary>
+        /// 缩略图文件路径
+        /// </summary>
+        public string ThumbnailPath
+        {
+            get => _thumbnailPath;
+            set => SetProperty(ref _thumbnailPath, value);
+        }
+
+        /// <summary>
+        /// 缩略图是否存在
+        /// </summary>
+        public bool ThumbnailExists => !string.IsNullOrEmpty(ThumbnailPath) && System.IO.File.Exists(ThumbnailPath);
 
         /// <summary>
         /// 工具提示文本
@@ -90,12 +118,43 @@ namespace Tunnel_Next.Models
             OnPropertyChanged(propertyName);
             return true;
         }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源的具体实现
+        /// </summary>
+        /// <param name="disposing">是否正在释放托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                // 清除缩略图引用
+                _thumbnail = null;
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        ~FilmPreviewItem()
+        {
+            Dispose(false);
+        }
     }
 
     /// <summary>
     /// 资源库项目
     /// </summary>
-    public class ResourceLibraryItem : INotifyPropertyChanged
+    public class ResourceLibraryItem : INotifyPropertyChanged, IDisposable
     {
         private string _name = string.Empty;
         private string _filePath = string.Empty;
@@ -103,6 +162,7 @@ namespace Tunnel_Next.Models
         private BitmapSource? _thumbnail;
         private bool _isExpanded;
         private bool _isSelected;
+        private bool _disposed = false;
 
         /// <summary>
         /// 显示名称
@@ -137,7 +197,19 @@ namespace Tunnel_Next.Models
         public BitmapSource? Thumbnail
         {
             get => _thumbnail;
-            set => SetProperty(ref _thumbnail, value);
+            set
+            {
+                if (_thumbnail != value)
+                {
+                    // 释放旧的缩略图资源（如果不是冻结的系统资源）
+                    if (_thumbnail != null && _thumbnail.CanFreeze)
+                    {
+                        // BitmapSource通常是冻结的，不需要手动释放
+                        // 但我们清除引用以帮助GC
+                    }
+                    SetProperty(ref _thumbnail, value);
+                }
+            }
         }
 
         /// <summary>
@@ -209,6 +281,37 @@ namespace Tunnel_Next.Models
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源的具体实现
+        /// </summary>
+        /// <param name="disposing">是否正在释放托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                // 清除缩略图引用
+                _thumbnail = null;
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        ~ResourceLibraryItem()
+        {
+            Dispose(false);
         }
     }
 

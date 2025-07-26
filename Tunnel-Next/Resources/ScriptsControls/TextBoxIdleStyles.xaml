@@ -10,7 +10,8 @@
 		<GradientStop Color="#C30099FF" Offset="0.792"/>
 	</LinearGradientBrush>
 
-	<Style x:Key="DefaultTextBoxStyle" TargetType="TextBox">
+	<!-- 旧的闲置样式，已被新的动画样式替代 -->
+	<Style x:Key="LegacyTextBoxIdleStyle" TargetType="TextBox">
 		<Setter Property="Background" Value="{StaticResource TextBoxIdleBrush}"/>
 		<Setter Property="Foreground" Value="{StaticResource PrimaryForeground}"/>
 		<Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>

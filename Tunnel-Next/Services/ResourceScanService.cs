@@ -230,13 +230,25 @@ namespace Tunnel_Next.Services
 
                 return await Task.Run(() =>
                 {
+                    // 使用FileStream读取文件到内存，然后立即关闭文件句柄
+                    byte[] imageBytes;
+                    using (var fileStream = new FileStream(thumbnailPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        imageBytes = new byte[fileStream.Length];
+                        fileStream.Read(imageBytes, 0, imageBytes.Length);
+                    }
+
+                    // 从内存中的字节数组创建BitmapImage，确保MemoryStream被正确释放
                     var bitmap = new BitmapImage();
                     bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(thumbnailPath);
-                    bitmap.DecodePixelWidth = 64; // 缩略图大小
-                    bitmap.DecodePixelHeight = 64;
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
+                    using (var memoryStream = new MemoryStream(imageBytes))
+                    {
+                        bitmap.StreamSource = memoryStream;
+                        bitmap.DecodePixelWidth = 64; // 缩略图大小
+                        bitmap.DecodePixelHeight = 64;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                    }
                     bitmap.Freeze();
                     return bitmap;
                 });

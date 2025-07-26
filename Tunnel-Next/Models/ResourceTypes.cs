@@ -56,6 +56,8 @@ namespace Tunnel_Next.Models
     /// <returns>操作结果</returns>
     public delegate Task<ResourceOperationResult> ResourceOperationDelegate(ResourceObject resource, Dictionary<string, object>? parameters = null);
 
+
+
     /// <summary>
     /// 资源委托集
     /// </summary>
@@ -98,6 +100,8 @@ namespace Tunnel_Next.Models
             get => GetDelegate<RenameDelegate>("Rename");
             set => SetDelegate("Rename", value);
         }
+
+
 
         /// <summary>
         /// 设置委托
@@ -340,7 +344,7 @@ namespace Tunnel_Next.Models
             if (_initialized) return;
 
             // 节点图
-            RegisterType(new ResourceTypeDefinition
+            var nodeGraphDefinition = new ResourceTypeDefinition
             {
                 Type = ResourceItemType.NodeGraph,
                 DisplayName = "节点图",
@@ -352,7 +356,8 @@ namespace Tunnel_Next.Models
                 SupportsFolderAssociation = false,
                 ScanPriority = 10,
                 ScanDelegate = BuiltinResourceScanners.ScanNodeGraphsAsync
-            });
+            };
+            RegisterType(nodeGraphDefinition);
 
             // 模板
             RegisterType(new ResourceTypeDefinition

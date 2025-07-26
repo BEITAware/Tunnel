@@ -7,62 +7,35 @@
         Background="{DynamicResource Layer_1}">
 
     <Window.Resources>
-        <!-- 标题样式 -->
-        <Style x:Key="WindowTitleStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
-        </Style>
+        <!-- 资源项状态渐变画笔 - 来自主程序资源管理面板 -->
+        <RadialGradientBrush x:Key="ResourceObjectIdleBrush" RadiusX="4.37757" RadiusY="6.21475" Center="-0.707033,-0.303034" GradientOrigin="-0.707033,-0.303034">
+            <RadialGradientBrush.GradientStops>
+                <GradientStop Color="#6BDDFFFD" Offset="0.0811639"/>
+                <GradientStop Color="#3A000000" Offset="0.243492"/>
+                <GradientStop Color="#907FCEFF" Offset="0.500766"/>
+                <GradientStop Color="#FF000000" Offset="0.586524"/>
+                <GradientStop Color="#FF0099FF" Offset="0.828484"/>
+            </RadialGradientBrush.GradientStops>
+            <RadialGradientBrush.RelativeTransform>
+                <TransformGroup>
+                    <RotateTransform CenterX="-0.707033" CenterY="-0.303034" Angle="-90"/>
+                </TransformGroup>
+            </RadialGradientBrush.RelativeTransform>
+        </RadialGradientBrush>
 
-        <!-- Tab样式 -->
-        <Style x:Key="ResourceTabStyle" TargetType="TabItem">
-            <Setter Property="Background" Value="{DynamicResource Layer_2}"/>
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="Margin" Value="0,0,2,0"/>
-        </Style>
-
-        <!-- 资源项样式 -->
-        <Style x:Key="ResourceItemStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource Layer_2}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 选中的资源项样式 -->
-        <Style x:Key="SelectedResourceItemStyle" TargetType="Border" BasedOn="{StaticResource ResourceItemStyle}">
-            <Setter Property="Background" Value="{DynamicResource ButtonActiveBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-        </Style>
-
-        <!-- 按钮样式 -->
-        <Style x:Key="ActionButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource ButtonIdleBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI, Arial"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="0,4"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-        </Style>
+        <RadialGradientBrush x:Key="ResourceObjectHoverBrush" RadiusX="4.37757" RadiusY="6.21475" Center="-0.50849,0.0296108" GradientOrigin="-0.50849,0.0296108">
+            <RadialGradientBrush.GradientStops>
+                <GradientStop Color="#7800F3FF" Offset="0.0597243"/>
+                <GradientStop Color="#2B000000" Offset="0.234303"/>
+                <GradientStop Color="#FFA5DBFF" Offset="0.372129"/>
+                <GradientStop Color="#FF0099FF" Offset="0.577335"/>
+            </RadialGradientBrush.GradientStops>
+            <RadialGradientBrush.RelativeTransform>
+                <TransformGroup>
+                    <RotateTransform CenterX="-0.50849" CenterY="0.0296108" Angle="-90"/>
+                </TransformGroup>
+            </RadialGradientBrush.RelativeTransform>
+        </RadialGradientBrush>
     </Window.Resources>
 
     <Grid>
@@ -77,7 +50,11 @@
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,12">
-            <TextBlock Text="资源管理器" Style="{StaticResource WindowTitleStyle}"/>
+            <TextBlock Text="资源管理器"
+                       FontWeight="Bold"
+                       FontSize="16"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"/>
         </Border>
 
         <!-- 主内容区域 -->
@@ -116,12 +93,6 @@
                             <TextBox x:Name="SearchTextBox"
                                      Grid.Column="0"
                                      Padding="8,4"
-                                     FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
-                                     FontSize="12"
-                                     Background="{DynamicResource Layer_1}"
-                                     Foreground="{DynamicResource PrimaryForeground}"
-                                     BorderBrush="{DynamicResource BorderBrush}"
-                                     BorderThickness="1"
                                      VerticalAlignment="Center"
                                      TextChanged="SearchTextBox_TextChanged"/>
 
@@ -129,12 +100,9 @@
                                       Grid.Column="1"
                                       Width="100"
                                       Margin="8,0,0,0"
-                                      FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
-                                      FontSize="12"
-                                      Background="{DynamicResource Layer_1}"
-                                      Foreground="{DynamicResource PrimaryForeground}"
-                                      BorderBrush="{DynamicResource BorderBrush}"
                                       SelectedIndex="0"
+                                      Panel.ZIndex="100"
+                                      Style="{StaticResource CustomComboBoxStyle}"
                                       SelectionChanged="SortComboBox_SelectionChanged">
                                 <ComboBoxItem Content="按名称"/>
                                 <ComboBoxItem Content="按时间"/>
@@ -194,10 +162,8 @@
                             Padding="12,8">
                         <TextBlock x:Name="PreviewTitleTextBlock"
                                    Text="预览"
-                                   FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
                                    FontSize="14"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryForeground}"
                                    HorizontalAlignment="Center"/>
                     </Border>
 
@@ -237,27 +203,29 @@
                             <StackPanel>
                                 <!-- 基本操作按钮 -->
                                 <TextBlock Text="基本操作"
-                                           FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
                                            FontSize="11"
                                            FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SecondaryForeground}"
                                            Margin="0,0,0,4"/>
 
                                 <Button x:Name="ExportButton"
                                         Content="导出"
-                                        Style="{StaticResource ActionButtonStyle}"
+                                        Margin="0,4"
+                                        HorizontalAlignment="Stretch"
                                         Click="ExportButton_Click"/>
                                 <Button x:Name="ImportButton"
                                         Content="导入"
-                                        Style="{StaticResource ActionButtonStyle}"
+                                        Margin="0,4"
+                                        HorizontalAlignment="Stretch"
                                         Click="ImportButton_Click"/>
                                 <Button x:Name="DeleteButton"
                                         Content="删除"
-                                        Style="{StaticResource ActionButtonStyle}"
+                                        Margin="0,4"
+                                        HorizontalAlignment="Stretch"
                                         Click="DeleteButton_Click"/>
                                 <Button x:Name="RenameButton"
                                         Content="重命名"
-                                        Style="{StaticResource ActionButtonStyle}"
+                                        Margin="0,4"
+                                        HorizontalAlignment="Stretch"
                                         Click="RenameButton_Click"/>
 
                                 <!-- 扩展操作集 -->
@@ -265,10 +233,8 @@
                                             Margin="0,8,0,0">
                                     <TextBlock x:Name="ExtendedOperationsTitle"
                                                Text="扩展操作"
-                                               FontFamily="Segoe UI, Microsoft YaHei UI, Arial"
                                                FontSize="11"
                                                FontWeight="SemiBold"
-                                               Foreground="{DynamicResource SecondaryForeground}"
                                                Margin="0,0,0,4"
                                                Visibility="Collapsed"/>
 

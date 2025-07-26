@@ -5,9 +5,27 @@
         <ResourceDictionary Source="SharedBrushes.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Base TextBox Style -->
+    <!-- 非线性缓动函数 - 更敏捷的动画 -->
+    <BackEase x:Key="BackEaseOut" EasingMode="EaseOut" Amplitude="0.3"/>
+    <ExponentialEase x:Key="ExpoEaseOut" EasingMode="EaseOut" Exponent="8"/>
+    <QuinticEase x:Key="QuinticEaseInOut" EasingMode="EaseInOut"/>
+
+    <!-- 闲置状态渐变画笔 -->
+    <LinearGradientBrush x:Key="TextBoxIdleBrush" StartPoint="0.438,5.527" EndPoint="0.438,-4.527">
+        <GradientStop Color="#91007BFF" Offset="0.143"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.503"/>
+        <GradientStop Color="#C30099FF" Offset="0.792"/>
+    </LinearGradientBrush>
+
+    <!-- 激活状态渐变画笔 -->
+    <LinearGradientBrush x:Key="TextBoxActivatedBrush" StartPoint="0.438,5.527" EndPoint="0.438,-4.527">
+        <GradientStop Color="#AF00C7FF" Offset="0.414"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.495"/>
+        <GradientStop Color="#FF00ECFF" Offset="0.692"/>
+    </LinearGradientBrush>
+
+    <!-- 增强的TextBox样式，带有动画效果 -->
     <Style x:Key="DefaultTextBoxStyle" TargetType="{x:Type TextBox}">
-        <Setter Property="Background" Value="{StaticResource Layer_2_M}"/>
         <Setter Property="Foreground" Value="{StaticResource PrimaryForeground}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -20,17 +38,104 @@
                     <Border x:Name="border"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            Background="{TemplateBinding Background}"
                             SnapsToDevicePixels="True">
+                        <!-- 使用动态渐变背景 -->
+                        <Border.Background>
+                            <LinearGradientBrush x:Name="backgroundBrush" StartPoint="0.438,5.527" EndPoint="0.438,-4.527">
+                                <GradientStop x:Name="gradientStop1" Color="#91007BFF" Offset="0.143"/>
+                                <GradientStop x:Name="gradientStop2" Color="#00FFFFFF" Offset="0.503"/>
+                                <GradientStop x:Name="gradientStop3" Color="#C30099FF" Offset="0.792"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
                         <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- 鼠标悬停效果 -->
                         <Trigger Property="IsMouseOver" Value="true">
                             <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource AccentColor}"/>
                         </Trigger>
+
+                        <!-- 获得焦点时的动画 -->
                         <Trigger Property="IsKeyboardFocused" Value="true">
                             <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource AccentColor}"/>
-                            <Setter Property="Background" Value="{StaticResource Layer_1_M}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 渐变色1动画 -->
+                                        <ColorAnimation Storyboard.TargetName="gradientStop1"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#AF00C7FF"
+                                                      Duration="0:0:0.08"
+                                                      EasingFunction="{StaticResource BackEaseOut}"/>
+                                        <!-- 渐变色2保持不变 -->
+                                        <ColorAnimation Storyboard.TargetName="gradientStop2"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#00FFFFFF"
+                                                      Duration="0:0:0.08"
+                                                      EasingFunction="{StaticResource ExpoEaseOut}"/>
+                                        <!-- 渐变色3动画 -->
+                                        <ColorAnimation Storyboard.TargetName="gradientStop3"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#FF00ECFF"
+                                                      Duration="0:0:0.08"
+                                                      EasingFunction="{StaticResource BackEaseOut}"/>
+                                        <!-- 渐变位置微调动画 -->
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop1"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.414"
+                                                       Duration="0:0:0.1"
+                                                       EasingFunction="{StaticResource ExpoEaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop2"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.495"
+                                                       Duration="0:0:0.1"
+                                                       EasingFunction="{StaticResource ExpoEaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop3"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.692"
+                                                       Duration="0:0:0.1"
+                                                       EasingFunction="{StaticResource ExpoEaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- 失去焦点时恢复到闲置状态 -->
+                                        <ColorAnimation Storyboard.TargetName="gradientStop1"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#91007BFF"
+                                                      Duration="0:0:0.12"
+                                                      EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                        <ColorAnimation Storyboard.TargetName="gradientStop2"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#00FFFFFF"
+                                                      Duration="0:0:0.12"
+                                                      EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                        <ColorAnimation Storyboard.TargetName="gradientStop3"
+                                                      Storyboard.TargetProperty="Color"
+                                                      To="#C30099FF"
+                                                      Duration="0:0:0.12"
+                                                      EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                        <!-- 恢复渐变位置 -->
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop1"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.143"
+                                                       Duration="0:0:0.15"
+                                                       EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop2"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.503"
+                                                       Duration="0:0:0.15"
+                                                       EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="gradientStop3"
+                                                       Storyboard.TargetProperty="Offset"
+                                                       To="0.792"
+                                                       Duration="0:0:0.15"
+                                                       EasingFunction="{StaticResource QuinticEaseInOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -38,4 +143,4 @@
         </Setter>
     </Style>
 
-</ResourceDictionary> 
+</ResourceDictionary>

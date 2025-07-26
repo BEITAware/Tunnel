@@ -13,6 +13,7 @@
             <!-- 转换器 -->
             <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
             <local:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
             <!-- 轻微阴影 - 有角度且柔和 -->
             <DropShadowEffect x:Key="FilmItemShadow"
@@ -231,6 +232,32 @@
                                     </Grid>
                                 </Border>
 
+                                <!-- 右键菜单按钮 -->
+                                <Border x:Name="ContextMenuButtonBorder"
+                                        Width="20" Height="20"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,2,2,0"
+                                        Background="#80000000"
+                                        CornerRadius="10"
+                                        Opacity="0">
+                                    <Button x:Name="ContextMenuButton"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Content="⋮"
+                                            Foreground="White"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Click="ContextMenuButton_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="重新生成缩略图" Click="RegenerateThumbnail_Click"/>
+                                                <MenuItem Header="删除节点图" Click="DeleteNodeGraph_Click"/>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                </Border>
+
                                 <!-- 玻璃覆盖层 - 覆盖并超出图像的透明玻璃 -->
                                 <Border x:Name="GlassOverlay"
                                         Width="110" Height="85"
@@ -271,12 +298,16 @@
                         </StackPanel>
 
                         <DataTemplate.Triggers>
-                            <!-- 父容器悬停时显示透明玻璃效果 - 平滑透明度动画 -->
+                            <!-- 父容器悬停时显示透明玻璃效果和菜单按钮 - 平滑透明度动画 -->
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsMouseOver}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetName="GlassOverlay"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="1" Duration="0:0:0.25"
+                                                           AccelerationRatio="0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ContextMenuButtonBorder"
                                                            Storyboard.TargetProperty="Opacity"
                                                            To="1" Duration="0:0:0.25"
                                                            AccelerationRatio="0.3"/>
@@ -287,6 +318,10 @@
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetName="GlassOverlay"
+                                                           Storyboard.TargetProperty="Opacity"
+                                                           To="0" Duration="0:0:0.2"
+                                                           DecelerationRatio="0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ContextMenuButtonBorder"
                                                            Storyboard.TargetProperty="Opacity"
                                                            To="0" Duration="0:0:0.2"
                                                            DecelerationRatio="0.3"/>

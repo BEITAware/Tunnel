@@ -160,6 +160,19 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
+        /// 获取图像预览控件
+        /// </summary>
+        public Controls.ImagePreviewControl? GetImagePreviewControl()
+        {
+            // 确保预览控件已创建
+            if (_imagePreview == null && _contentGrid != null)
+            {
+                CreateContentControl();
+            }
+            return _imagePreview;
+        }
+
+        /// <summary>
         /// 保存文档
         /// </summary>
         public async Task<bool> SaveAsync(string? filePath = null)
@@ -194,6 +207,85 @@ namespace Tunnel_Next.Models
                     _nodeGraph.FilePath = currentNodeGraph.FilePath;
                     _nodeGraph.IsModified = false;
                     _nodeGraph.LastModified = currentNodeGraph.LastModified;
+
+                    // 保存成功后生成缩略图
+                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 文件保存成功，准备生成缩略图: {currentNodeGraph.FilePath}");
+                    
+                    // 改为异步任务，避免UI阻塞
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // 等待一段时间，确保文件保存完全完成
+                            await Task.Delay(200);
+                            
+                            // 获取ThumbnailManager实例（通过MainWindow的ViewModel）
+                            System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 获取ThumbnailManager");
+                            var thumbnailManager = await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                if (Application.Current.MainWindow?.DataContext is ViewModels.MainViewModel mainViewModel)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 成功获取ThumbnailManager");
+                                    return mainViewModel.ThumbnailManager;
+                                }
+                                System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 无法获取ThumbnailManager");
+                                return null;
+                            });
+
+                            if (thumbnailManager != null && !string.IsNullOrEmpty(currentNodeGraph.FilePath))
+                            {
+                                // 在UI线程上获取预览控件信息，确保线程安全
+                                System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 开始生成缩略图: {currentNodeGraph.FilePath}");
+                                
+                                // 使用另一种方法获取预览图像
+                                var previewMat = await Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 预览控件状态: {(_imagePreview == null ? "null" : "非null")}");
+                                    if (_imagePreview != null && _imagePreview.ImageSource != null)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 获取预览图像");
+                                        // 克隆图像以确保线程安全
+                                        return _imagePreview.ImageSource.Clone();
+                                    }
+                                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 无法获取预览图像");
+                                    return null;
+                                });
+                                
+                                // 使用获取的预览图像生成缩略图，优先使用控件引用生成高质量缩略图
+                                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                    try {
+                                        // 尝试通过控件生成更高质量的缩略图
+                                        await thumbnailManager.GenerateAndCacheThumbnailFromPreviewAsync(currentNodeGraph.FilePath, _imagePreview);
+                                        System.Diagnostics.Debug.WriteLine("[NodeGraphDocument] 通过预览控件生成缩略图成功");
+                                    }
+                                    catch (Exception ex) {
+                                        System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 通过预览控件生成缩略图失败: {ex.Message}，尝试使用Mat对象");
+                                        // 如果控件方法失败，回退到使用Mat对象
+                                        if (previewMat != null) {
+                                            await thumbnailManager.GenerateAndCacheThumbnailAsync(currentNodeGraph.FilePath, previewMat);
+                                            previewMat.Dispose();
+                                            System.Diagnostics.Debug.WriteLine("[NodeGraphDocument] 通过Mat对象生成缩略图成功");
+                                        }
+                                    }
+                                });
+                                // 预览Mat已经在上面的代码中处理或释放了
+                                // 这里不需要额外的缩略图生成代码，避免重复操作
+                            }
+                            else
+                            {
+                                if (thumbnailManager == null)
+                                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] ThumbnailManager为空");
+                                if (string.IsNullOrEmpty(currentNodeGraph.FilePath))
+                                    System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 文件路径为空");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // 缩略图生成失败不影响保存操作
+                            System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 生成缩略图失败: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"[NodeGraphDocument] 异常详情: {ex}");
+                        }
+                    });
 
                     return true;
                 }

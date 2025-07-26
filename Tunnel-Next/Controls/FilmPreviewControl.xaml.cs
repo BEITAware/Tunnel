@@ -28,6 +28,16 @@ namespace Tunnel_Next.Controls
         /// </summary>
         public event EventHandler? RefreshRequested;
 
+        /// <summary>
+        /// 重新生成缩略图事件
+        /// </summary>
+        public event EventHandler<FilmPreviewItem>? RegenerateThumbnailRequested;
+
+        /// <summary>
+        /// 删除节点图事件
+        /// </summary>
+        public event EventHandler<FilmPreviewItem>? DeleteNodeGraphRequested;
+
         public FilmPreviewControl()
         {
             InitializeComponent();
@@ -102,6 +112,54 @@ namespace Tunnel_Next.Controls
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
             RefreshRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+
+
+        /// <summary>
+        /// 菜单按钮点击
+        /// </summary>
+        private void ContextMenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        /// <summary>
+        /// 重新生成缩略图菜单项点击
+        /// </summary>
+        private void RegenerateThumbnail_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem &&
+                menuItem.DataContext is FilmPreviewItem item)
+            {
+                RegenerateThumbnailRequested?.Invoke(this, item);
+            }
+        }
+
+        /// <summary>
+        /// 删除节点图菜单项点击
+        /// </summary>
+        private void DeleteNodeGraph_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem &&
+                menuItem.DataContext is FilmPreviewItem item)
+            {
+                // 显示确认对话框
+                var result = MessageBox.Show(
+                    $"确定要删除节点图 '{item.Name}' 吗？\n\n此操作将同时删除节点图文件和缩略图，且无法撤销。",
+                    "确认删除",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    DeleteNodeGraphRequested?.Invoke(this, item);
+                }
+            }
         }
     }
 

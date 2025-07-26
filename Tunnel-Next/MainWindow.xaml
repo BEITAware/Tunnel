@@ -515,7 +515,9 @@
                                                  DataContext="{Binding}"
                                                  FilmItemSelected="FilmPreviewControl_FilmItemSelected"
                                                  FilmItemDoubleClicked="FilmPreviewControl_FilmItemDoubleClicked"
-                                                 RefreshRequested="FilmPreviewControl_RefreshRequested"/>
+                                                 RefreshRequested="FilmPreviewControl_RefreshRequested"
+                                                 RegenerateThumbnailRequested="FilmPreviewControl_RegenerateThumbnailRequested"
+                                                 DeleteNodeGraphRequested="FilmPreviewControl_DeleteNodeGraphRequested"/>
                 </Border>
             </Grid>
 

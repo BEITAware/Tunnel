@@ -36,8 +36,9 @@ namespace Tunnel_Next.Services
         /// 解释执行节点图
         /// </summary>
         /// <param name="nodeGraphPath">节点图文件的绝对路径</param>
+        /// <param name="environment">处理环境，如果为null则创建默认环境</param>
         /// <returns>返回节点的输入值，如果没有找到返回节点则返回null</returns>
-        public async Task<Dictionary<string, object>?> InterpretNodeGraphAsync(string nodeGraphPath)
+        public async Task<Dictionary<string, object>?> InterpretNodeGraphAsync(string nodeGraphPath, ProcessorEnvironment? environment = null)
         {
             if (string.IsNullOrEmpty(nodeGraphPath))
                 throw new ArgumentException("节点图路径不能为空", nameof(nodeGraphPath));
@@ -57,13 +58,20 @@ namespace Tunnel_Next.Services
                 if (returnNode == null)
                     return null; // 没有找到返回节点
 
-                // 3. 使用ImageProcessor执行节点图
+                // 3. 创建环境（如果未提供）
+                if (environment == null)
+                {
+                    var nodeGraphName = Path.GetFileNameWithoutExtension(nodeGraphPath);
+                    environment = new ProcessorEnvironment(nodeGraphName);
+                }
+
+                // 4. 使用ImageProcessor执行节点图
                 var imageProcessor = new ImageProcessor(_revivalScriptManager);
-                var success = await imageProcessor.ProcessNodeGraphAsync(nodeGraph, null);
+                var success = await imageProcessor.ProcessNodeGraphAsync(nodeGraph, environment);
                 if (!success)
                     throw new InvalidOperationException("节点图执行失败");
 
-                // 4. 获取返回节点的输入值
+                // 5. 获取返回节点的输入值
                 var returnInputs = GetReturnNodeInputs(returnNode, nodeGraph, imageProcessor);
 
                 return returnInputs;

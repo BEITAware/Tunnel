@@ -430,6 +430,25 @@ namespace Tunnel_Next.Services
             // 添加扩展委托
             typeDefinition.DelegateSet.SetDelegate("Validate", (ResourceOperationDelegate)ValidateResourceDelegate);
             typeDefinition.DelegateSet.SetDelegate("Backup", (ResourceOperationDelegate)BackupResourceDelegate);
+
+            // 为节点图类型设置专门的导出委托
+            if (typeDefinition.Type == ResourceItemType.NodeGraph)
+            {
+                SetupNodeGraphDelegates(typeDefinition);
+            }
+        }
+
+        /// <summary>
+        /// 为节点图资源类型设置专门的委托
+        /// </summary>
+        public static void SetupNodeGraphDelegates(ResourceTypeDefinition typeDefinition)
+        {
+            // 这里暂时留空，等待依赖注入系统完善后再实现
+            // 节点图导出委托需要NodeGraphExportService，而该服务需要其他依赖
+            // 将在应用程序启动时通过依赖注入容器设置
+
+            // 避免编译器警告
+            _ = typeDefinition;
         }
     }
 }
