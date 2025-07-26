@@ -207,11 +207,11 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Width="120" Margin="3">
-                            <Grid Width="110" Height="85">
+                        <StackPanel Width="90" Margin="2">
+                            <Grid Width="80" Height="80">
                                 <!-- 缩略图 - 纯净无边框 -->
                                 <Border x:Name="ThumbnailContainer"
-                                        Width="100" Height="75"
+                                        Width="70" Height="70"
                                         CornerRadius="2"
                                         Background="White"
                                         ClipToBounds="True">

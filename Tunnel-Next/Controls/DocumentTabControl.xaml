@@ -190,28 +190,6 @@
                            VerticalAlignment="Center"/>
 
                 <!-- 新建文档按钮 -->
-                <Button Grid.Column="1" x:Name="NewDocumentButton"
-                        Content="+"
-                        Width="24" Height="20"
-                        FontSize="14" FontWeight="Bold"
-                        Background="Transparent"
-                        BorderThickness="1"
-                        BorderBrush="#CCCCCC"
-                        Foreground="#666666"
-                        Cursor="Hand"
-                        ToolTip="新建文档"
-                        Click="NewDocumentButton_Click">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#E6F3FF"/>
-                                    <Setter Property="BorderBrush" Value="#4A90E2"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
             </Grid>
         </Border>
 

@@ -3,7 +3,10 @@ name: Build and Release Tunnel
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]
+    tags:
+      - "PABv*"
+      - "PBBv*"
+      - "RBv*"
   pull_request:
     branches: [ "main" ]
 
@@ -21,6 +24,15 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
+    - name: Update Scripts from BEITAware/TunnelScripts
+      run: |
+        git clone --depth 1 https://github.com/BEITAware/TunnelScripts.git temp-scripts
+        Remove-Item -Recurse -Force -Path "InstallationWizard\Scripts" -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Path "InstallationWizard\Scripts"
+        Copy-Item -Path "temp-scripts\*" -Destination "InstallationWizard\Scripts" -Recurse -Force
+        Remove-Item -Recurse -Force -Path "temp-scripts"
+        echo "Scripts updated successfully."
 
     - name: Get version number
       id: version
@@ -54,13 +66,10 @@ jobs:
         if (!(Test-Path "InstallationWizard\App")) {
           New-Item -ItemType Directory -Path "InstallationWizard\App" -Force
         }
-
         # Clear existing App folder contents
         Remove-Item "InstallationWizard\App\*" -Recurse -Force -ErrorAction SilentlyContinue
-
         # Copy compiled main program to App folder
-        Copy-Item "MainProgram\*" -Destination "InstallationWizard\App\" -Recurse -Force
-
+        Copy-Item "MainProgram\*" -Destination "InstallationWizard\App" -Recurse -Force
         echo "App folder prepared with main program files"
 
     - name: Update installation wizard version
@@ -86,17 +95,20 @@ jobs:
           -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
           -p:FileVersion=${{ steps.version.outputs.VERSION }}
 
-    - name: Rename installation wizard executable
+    - name: Package installation wizard
+      id: package
       run: |
-        Move-Item "InstallationWizardOutput\InstallationWizard.exe" "InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe"
+        $zipFileName = "Tunnel安装向导-预览测试版-${{ steps.version.outputs.VERSION }}.zip"
+        Compress-Archive -Path "InstallationWizardOutput\*" -DestinationPath $zipFileName
+        echo "ZIP_FILE_NAME=$zipFileName" >> $env:GITHUB_OUTPUT
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: tunnel-build-${{ steps.version.outputs.VERSION }}
         path: |
-          InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
-          MainProgram\**
+          ${{ steps.package.outputs.ZIP_FILE_NAME }}
+          MainProgram/
 
     - name: Create Release (on tag push)
       id: create_release
@@ -108,17 +120,18 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Tunnel v${{ steps.version.outputs.VERSION }}
         draft: false
-        prerelease: false
+        prerelease: true
         body: |
-          ## Tunnel v${{ steps.version.outputs.VERSION }}
+          ## Tunnel v${{ steps.version.outputs.VERSION }} (预览测试版)
 
           ### Installation
-          Download and run `TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe`
+          Download and unzip `Tunnel安装向导-预览测试版-${{ steps.version.outputs.VERSION }}.zip`, then run the installer.
 
           ### Changes
-          - Automated build with ReadyToRun optimization
-          - Main program: Non-single file for better performance
-          - Installation wizard: Single file for easy distribution
+          - Automated build with ReadyToRun optimization.
+          - Updated scripts from BEITAware/TunnelScripts.
+          - Main program: Non-single file for better performance.
+          - Installation wizard: Single file for easy distribution.
 
     - name: Upload Release Asset (on tag push)
       if: startsWith(github.ref, 'refs/tags/v')
@@ -127,6 +140,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: InstallationWizardOutput\TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
-        asset_name: TunnelInstaller-v${{ steps.version.outputs.VERSION }}.exe
-        asset_content_type: application/octet-stream
+        asset_path: ${{ steps.package.outputs.ZIP_FILE_NAME }}
+        asset_name: ${{ steps.package.outputs.ZIP_FILE_NAME }}
+        asset_content_type: application/zip

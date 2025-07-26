@@ -87,7 +87,7 @@ namespace Tunnel_Next.Controls
         }
 
         /// <summary>
-        /// 加载资源
+        /// 加载资源 - 确保在UI线程上执行UI操作
         /// </summary>
         public async Task LoadResourcesAsync()
         {
@@ -95,26 +95,32 @@ namespace Tunnel_Next.Controls
 
             try
             {
-                ShowLoadingState();
+                await Dispatcher.InvokeAsync(() => ShowLoadingState());
 
-                // 直接从内存中获取资源，不从磁盘加载
-                _allResources = _catalogService.Catalog.Resources.ToList();
-
-                // 应用搜索过滤
-                ApplySearchFilter();
-
-                // 更新UI
-                UpdateResourcesDisplay();
+                // 获取资源可以在后台线程进行
+                var resources = await Task.Run(() => _catalogService.Catalog.Resources.ToList());
+                
+                // 回到UI线程进行UI更新操作
+                await Dispatcher.InvokeAsync(() => {
+                    // 更新内存中的资源列表
+                    _allResources = resources;
+                    
+                    // 应用搜索过滤
+                    ApplySearchFilter();
+                    
+                    // 更新UI
+                    UpdateResourcesDisplay();
+                });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ResourceLibraryControl] 加载资源失败: {ex.Message}");
-                ShowEmptyState();
+                await Dispatcher.InvokeAsync(() => ShowEmptyState());
             }
         }
 
         /// <summary>
-        /// 刷新资源
+        /// 刷新资源 - 异步操作，不阻塞UI线程
         /// </summary>
         public async Task RefreshResourcesAsync()
         {
@@ -122,23 +128,27 @@ namespace Tunnel_Next.Controls
 
             try
             {
-                ShowLoadingState();
+                // 在UI线程上显示加载状态
+                await Dispatcher.InvokeAsync(() => ShowLoadingState());
 
-                // 扫描所有资源
-                var resources = await _scanService.ScanAllResourcesAsync();
+                // 在后台线程上扫描所有资源
+                var resources = await Task.Run(async () => await _scanService.ScanAllResourcesAsync());
 
-                // 直接更新内存中的资源列表，不保存到磁盘
-                _catalogService.Catalog.Resources.Clear();
-                _catalogService.Catalog.Resources.AddRange(resources);
-                _catalogService.Catalog.UpdateStatistics();
+                // 回到UI线程，更新内存中的资源列表
+                await Dispatcher.InvokeAsync(() => {
+                    // 直接更新内存中的资源列表，不保存到磁盘
+                    _catalogService.Catalog.Resources.Clear();
+                    _catalogService.Catalog.Resources.AddRange(resources);
+                    _catalogService.Catalog.UpdateStatistics();
+                });
 
-                // 重新加载UI显示
+                // 重新加载UI显示 (LoadResourcesAsync已经在UI线程上执行)
                 await LoadResourcesAsync();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ResourceLibraryControl] 刷新资源失败: {ex.Message}");
-                ShowEmptyState();
+                await Dispatcher.InvokeAsync(() => ShowEmptyState());
             }
         }
 

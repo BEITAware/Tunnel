@@ -366,6 +366,63 @@ namespace Tunnel_Next.ViewModels
 
         #region Command Implementations
 
+        /// <summary>
+        /// 确保节点图名称的唯一性，避免与现有文件和已打开文档冲突
+        /// </summary>
+        /// <param name="baseName">基础名称</param>
+        /// <returns>唯一的名称</returns>
+        private async Task<string> EnsureUniqueNodeGraphNameAsync(string baseName)
+        {
+            var projectsDir = _workFolderService.NodeGraphsFolder;
+
+            int index = 1;
+            string candidate = baseName;
+
+            while (await IsNodeGraphNameConflictedAsync(candidate, projectsDir))
+            {
+                candidate = $"{baseName}({index})";
+                index++;
+                if (index > 10000) break; // 防止无限循环
+            }
+
+            return candidate;
+        }
+
+        /// <summary>
+        /// 检查节点图名称是否与现有文件或已打开文档冲突
+        /// </summary>
+        /// <param name="name">要检查的名称</param>
+        /// <param name="projectsDir">项目目录</param>
+        /// <returns>是否存在冲突</returns>
+        private async Task<bool> IsNodeGraphNameConflictedAsync(string name, string projectsDir)
+        {
+            // 检查文件系统中的冲突
+            var candidatePath = Path.Combine(projectsDir, name + ".nodegraph");
+            if (File.Exists(candidatePath))
+                return true;
+
+            // 检查项目文件夹是否存在
+            var projectFolder = Path.Combine(projectsDir, name);
+            if (Directory.Exists(projectFolder))
+            {
+                var projectNodeGraphPath = Path.Combine(projectFolder, name + ".nodegraph");
+                if (File.Exists(projectNodeGraphPath))
+                    return true;
+            }
+
+            // 检查已打开文档的冲突
+            if (DocumentManager != null)
+            {
+                foreach (var doc in DocumentManager.Documents)
+                {
+                    if (string.Equals(doc.Title, name, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private async void ExecuteNewNodeGraph()
         {
             try
@@ -421,12 +478,13 @@ namespace Tunnel_Next.ViewModels
                 var json = await File.ReadAllTextAsync(templatePath);
                 var nodeGraph = deserializer.DeserializeNodeGraph(json);
 
-                // 步骤2: 设置名称并保存到项目（FileService 会自动创建项目文件夹）
-                nodeGraph.Name = newName;
+                // 步骤2: 最终验证名称唯一性并保存到项目
+                var finalName = await EnsureUniqueNodeGraphNameAsync(newName);
+                nodeGraph.Name = finalName;
 
                 var projectsDir = _workFolderService.NodeGraphsFolder;
                 Directory.CreateDirectory(projectsDir);
-                var initialPath = Path.Combine(projectsDir, newName + ".nodegraph");
+                var initialPath = Path.Combine(projectsDir, finalName + ".nodegraph");
 
                 var saveSuccess = await _fileService.SaveNodeGraphAsync(nodeGraph, initialPath);
                 if (!saveSuccess)

@@ -100,7 +100,7 @@
                 <!-- 名称输入 -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
                     <TextBlock Text="名称:" Foreground="{DynamicResource LightTextBrush}" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                    <TextBox x:Name="GraphNameTextBox" Width="200"/>
+                    <TextBox x:Name="GraphNameTextBox" Width="200" KeyDown="GraphNameTextBox_KeyDown"/>
                 </StackPanel>
 
                 <!-- 创建按钮 -->

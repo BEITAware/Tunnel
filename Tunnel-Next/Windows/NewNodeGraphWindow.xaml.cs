@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Tunnel_Next.Controls;
 using Tunnel_Next.Models;
@@ -86,6 +87,18 @@ namespace Tunnel_Next.Windows
             var templateItem = _lastTemplate ?? SelectedTemplate;
             if (templateItem == null) return;
             var templateName = SanitizeFileName(templateItem.DisplayName);
+
+            var uniqueName = GenerateUniqueName(templateName);
+            GraphNameTextBox.Text = uniqueName;
+        }
+
+        /// <summary>
+        /// 生成唯一的节点图名称，避免与现有文件和已打开文档重复
+        /// </summary>
+        /// <param name="baseName">基础名称</param>
+        /// <returns>唯一的名称</returns>
+        private string GenerateUniqueName(string baseName)
+        {
             var projectsDir = GetProjectsDirectory();
             if (!Directory.Exists(projectsDir))
             {
@@ -96,13 +109,78 @@ namespace Tunnel_Next.Windows
             string candidate;
             do
             {
-                candidate = $"{templateName}({index})";
-                var candidatePath = Path.Combine(projectsDir, candidate + ".nodegraph");
-                if (!File.Exists(candidatePath)) break;
+                candidate = $"{baseName}({index})";
+                if (!IsNameConflicted(candidate, projectsDir))
+                    break;
                 index++;
             } while (index < 10000);
 
-            GraphNameTextBox.Text = candidate;
+            return candidate;
+        }
+
+        /// <summary>
+        /// 检查名称是否与现有文件或已打开文档冲突
+        /// </summary>
+        /// <param name="name">要检查的名称</param>
+        /// <param name="projectsDir">项目目录</param>
+        /// <returns>是否存在冲突</returns>
+        private bool IsNameConflicted(string name, string projectsDir)
+        {
+            // 检查文件系统中的冲突
+            var candidatePath = Path.Combine(projectsDir, name + ".nodegraph");
+            if (File.Exists(candidatePath))
+                return true;
+
+            // 检查项目文件夹是否存在
+            var projectFolder = Path.Combine(projectsDir, name);
+            if (Directory.Exists(projectFolder))
+            {
+                var projectNodeGraphPath = Path.Combine(projectFolder, name + ".nodegraph");
+                if (File.Exists(projectNodeGraphPath))
+                    return true;
+            }
+
+            // 检查已打开文档的冲突
+            try
+            {
+                var mainWindow = System.Windows.Application.Current?.MainWindow;
+                if (mainWindow != null)
+                {
+                    // 通过反射获取MainWindow的DocumentManager
+                    var documentManagerProperty = mainWindow.GetType().GetProperty("DocumentManager");
+                    if (documentManagerProperty != null)
+                    {
+                        var documentManager = documentManagerProperty.GetValue(mainWindow);
+                        if (documentManager != null)
+                        {
+                            var documentsProperty = documentManager.GetType().GetProperty("Documents");
+                            if (documentsProperty != null)
+                            {
+                                var documents = documentsProperty.GetValue(documentManager) as System.Collections.IEnumerable;
+                                if (documents != null)
+                                {
+                                    foreach (var doc in documents)
+                                    {
+                                        var titleProperty = doc.GetType().GetProperty("Title");
+                                        if (titleProperty != null)
+                                        {
+                                            var title = titleProperty.GetValue(doc) as string;
+                                            if (string.Equals(title, name, StringComparison.OrdinalIgnoreCase))
+                                                return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // 如果反射失败，忽略已打开文档的检查
+            }
+
+            return false;
         }
 
         private static string SanitizeFileName(string name)
@@ -181,8 +259,22 @@ namespace Tunnel_Next.Windows
 
         private void CreateButton_Click(object sender, RoutedEventArgs e)
         {
+            CreateNodeGraph();
+        }
+
+        private void GraphNameTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                CreateNodeGraph();
+                e.Handled = true;
+            }
+        }
+
+        private void CreateNodeGraph()
+        {
 #if DEBUG
-            Debug.WriteLine($"[DEBUG] CreateButton_Click invoked");
+            Debug.WriteLine($"[DEBUG] CreateNodeGraph invoked");
             Debug.WriteLine($"[DEBUG] _lastTemplate null? {_lastTemplate == null}");
             Debug.WriteLine($"[DEBUG] SelectedTemplate null? {SelectedTemplate == null}");
             Debug.WriteLine($"[DEBUG] Templates count: {Templates.Count}");
@@ -191,14 +283,6 @@ namespace Tunnel_Next.Windows
             {
                 MessageBox.Show(this, "请先选择一个模板。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
-            }
-
-            var name = string.IsNullOrWhiteSpace(GraphNameTextBox.Text) ? SanitizeFileName(_lastTemplate.DisplayName) : SanitizeFileName(GraphNameTextBox.Text);
-
-            // 如果用户未填写，则重新生成唯一名称
-            if (string.IsNullOrWhiteSpace(GraphNameTextBox.Text))
-            {
-                GraphNameTextBox.Text = name;
             }
 
             if (_lastTemplate == null)
@@ -218,11 +302,53 @@ namespace Tunnel_Next.Windows
                 }
             }
 
+            // 获取并验证名称
+            var inputName = GraphNameTextBox.Text?.Trim();
+            string finalName;
+
+            if (string.IsNullOrWhiteSpace(inputName))
+            {
+                // 用户未填写，使用模板名称生成唯一名称
+                finalName = GenerateUniqueName(SanitizeFileName(_lastTemplate.DisplayName));
+            }
+            else
+            {
+                // 用户填写了名称，检查是否需要调整以避免冲突
+                var sanitizedName = SanitizeFileName(inputName);
+                var projectsDir = GetProjectsDirectory();
+
+                if (IsNameConflicted(sanitizedName, projectsDir))
+                {
+                    // 存在冲突，生成唯一名称
+                    finalName = GenerateUniqueName(sanitizedName);
+
+                    // 提示用户名称已调整
+                    var result = MessageBox.Show(this,
+                        $"名称 \"{sanitizedName}\" 已存在，将使用 \"{finalName}\" 代替。\n\n是否继续创建？",
+                        "名称冲突",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes)
+                    {
+                        // 用户选择不继续，更新输入框并返回
+                        GraphNameTextBox.Text = finalName;
+                        GraphNameTextBox.Focus();
+                        GraphNameTextBox.SelectAll();
+                        return;
+                    }
+                }
+                else
+                {
+                    finalName = sanitizedName;
+                }
+            }
+
             // 使用所选模板创建新节点图
 #if DEBUG
-            Debug.WriteLine($"[DEBUG] Using template path: {_lastTemplate.NodeGraphPath}, name: {name}");
+            Debug.WriteLine($"[DEBUG] Using template path: {_lastTemplate.NodeGraphPath}, name: {finalName}");
 #endif
-            this.Tag = new Tuple<string, string>(_lastTemplate.NodeGraphPath, name);
+            this.Tag = new Tuple<string, string>(_lastTemplate.NodeGraphPath, finalName);
             DialogResult = true;
             Close();
         }

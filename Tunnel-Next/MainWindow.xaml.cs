@@ -216,8 +216,21 @@ namespace Tunnel_Next
             // 初始化资源面板服务（此时RevivalScriptManager已经正确设置）
             ResourceLibraryControl?.InitializeServices(_viewModel.ResourceCatalogService, _viewModel.ResourceScanService, _viewModel.ResourceWatcherService);
 
-            // 立即刷新资源库以加载脚本
-            await ResourceLibraryControl?.RefreshResourcesAsync();
+            // 异步刷新资源库以加载脚本，不阻塞主线程
+            _ = Task.Run(async () => 
+            {
+                try
+                {
+                    await Dispatcher.InvokeAsync(async () => 
+                    {
+                        await ResourceLibraryControl?.RefreshResourcesAsync();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"资源库异步刷新失败: {ex.Message}");
+                }
+            });
 
             // 重新绑定事件（因为ViewModel已经重新创建）
             BindEvents();
