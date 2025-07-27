@@ -4,9 +4,9 @@ on:
   push:
     branches: [ "main" ]
     tags:
-      - "PABv*"
-      - "PBBv*"
-      - "RBv*"
+      - 'PABv*'
+      - 'PBBv*'
+      - 'RBv*'
   pull_request:
     branches: [ "main" ]
 
