@@ -521,7 +521,7 @@ namespace Tunnel_Next.Windows
                         if (nodeGraph != null)
                         {
                             // 创建新的NodeEditorViewModel实例用于预览
-                            // 使用现有NodeEditor的RevivalScriptManager（通过反射或其他方式）
+                            // 使用现有NodeEditor的TunnelExtensionScriptManager（通过反射或其他方式）
                             // 为了简化，我们直接创建一个临时的NodeEditorViewModel
                             var nodeEditorViewModel = new NodeEditorViewModel(null);
                             await nodeEditorViewModel.LoadNodeGraphAsync(nodeGraph);

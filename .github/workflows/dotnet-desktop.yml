@@ -34,16 +34,27 @@ jobs:
         Remove-Item -Recurse -Force -Path "temp-scripts"
         echo "Scripts updated successfully."
 
-    - name: Get version number
+    - name: Get version numbers from tag
       id: version
       run: |
-        if ($env:GITHUB_REF -match "refs/tags/v(.+)") {
-          $version = $matches[1]
-        } else {
-          $version = "1.0.$env:GITHUB_RUN_NUMBER"
+        # Default values for non-tag pushes
+        $technicalVersion = "1.0.$env:GITHUB_RUN_NUMBER.0"
+        $displayVersion = "Dev-Build-$env:GITHUB_RUN_NUMBER"
+
+        # Check if the ref is a tag matching the custom format, e.g., PABv123
+        if ($env:GITHUB_REF -match "refs/tags/((PAB|PBB|RB)v(\d)(\d)(\d))") {
+          $displayVersion = $matches[1]   # e.g., PABv123
+          $major = $matches[3]          # e.g., 1
+          $minor = $matches[4]          # e.g., 2
+          $patch = $matches[5]          # e.g., 3
+          
+          $technicalVersion = "$major.$minor.$patch.0"
         }
-        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        echo "Version: $version"
+
+        echo "TECHNICAL_VERSION=$technicalVersion" >> $env:GITHUB_OUTPUT
+        echo "DISPLAY_VERSION=$displayVersion" >> $env:GITHUB_OUTPUT
+        echo "Technical Version: $technicalVersion"
+        echo "Display Version: $displayVersion"
 
     - name: Restore main program dependencies
       run: dotnet restore Tunnel-Next\Tunnel-Next.csproj
@@ -57,18 +68,16 @@ jobs:
           --self-contained true `
           -p:PublishReadyToRun=true `
           -p:PublishSingleFile=false `
-          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
-          -p:FileVersion=${{ steps.version.outputs.VERSION }}
+          -p:AssemblyVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
+          -p:FileVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
+          -p:InformationalVersion=${{ steps.version.outputs.DISPLAY_VERSION }}
 
     - name: Prepare App folder for installation wizard
       run: |
-        # Create App folder in InstallationWizard if it doesn't exist
         if (!(Test-Path "InstallationWizard\App")) {
           New-Item -ItemType Directory -Path "InstallationWizard\App" -Force
         }
-        # Clear existing App folder contents
         Remove-Item "InstallationWizard\App\*" -Recurse -Force -ErrorAction SilentlyContinue
-        # Copy compiled main program to App folder
         Copy-Item "MainProgram\*" -Destination "InstallationWizard\App" -Recurse -Force
         echo "App folder prepared with main program files"
 
@@ -76,8 +85,9 @@ jobs:
       run: |
         $csprojPath = "InstallationWizard\InstallationWizard.csproj"
         $content = Get-Content $csprojPath -Raw
-        $content = $content -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>${{ steps.version.outputs.VERSION }}</AssemblyVersion>"
-        $content = $content -replace '<FileVersion>.*</FileVersion>', "<FileVersion>${{ steps.version.outputs.VERSION }}</FileVersion>"
+        $content = $content -replace '<AssemblyVersion>.*</AssemblyVersion>', "<AssemblyVersion>${{ steps.version.outputs.TECHNICAL_VERSION }}</AssemblyVersion>"
+        $content = $content -replace '<FileVersion>.*</FileVersion>', "<FileVersion>${{ steps.version.outputs.TECHNICAL_VERSION }}</FileVersion>"
+        $content = $content -replace '<InformationalVersion>.*</InformationalVersion>', "<InformationalVersion>${{ steps.version.outputs.DISPLAY_VERSION }}</InformationalVersion>"
         Set-Content $csprojPath $content
 
     - name: Restore installation wizard dependencies
@@ -92,40 +102,41 @@ jobs:
           --self-contained true `
           -p:PublishReadyToRun=true `
           -p:PublishSingleFile=true `
-          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
-          -p:FileVersion=${{ steps.version.outputs.VERSION }}
+          -p:AssemblyVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
+          -p:FileVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
+          -p:InformationalVersion=${{ steps.version.outputs.DISPLAY_VERSION }}
 
     - name: Package installation wizard
       id: package
       run: |
-        $zipFileName = "Tunnel安装向导-预览测试版-${{ steps.version.outputs.VERSION }}.zip"
+        $zipFileName = "Tunnel安装向导-${{ steps.version.outputs.DISPLAY_VERSION }}.zip"
         Compress-Archive -Path "InstallationWizardOutput\*" -DestinationPath $zipFileName
         echo "ZIP_FILE_NAME=$zipFileName" >> $env:GITHUB_OUTPUT
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tunnel-build-${{ steps.version.outputs.VERSION }}
+        name: tunnel-build-${{ steps.version.outputs.DISPLAY_VERSION }}
         path: |
           ${{ steps.package.outputs.ZIP_FILE_NAME }}
           MainProgram/
 
     - name: Create Release (on tag push)
       id: create_release
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: Tunnel v${{ steps.version.outputs.VERSION }}
+        release_name: Tunnel ${{ steps.version.outputs.DISPLAY_VERSION }}
         draft: false
         prerelease: true
         body: |
-          ## Tunnel v${{ steps.version.outputs.VERSION }} (预览测试版)
+          ## Tunnel ${{ steps.version.outputs.DISPLAY_VERSION }}
 
           ### Installation
-          Download and unzip `Tunnel安装向导-预览测试版-${{ steps.version.outputs.VERSION }}.zip`, then run the installer.
+          Download and unzip `${{ steps.package.outputs.ZIP_FILE_NAME }}`, then run the installer.
 
           ### Changes
           - Automated build with ReadyToRun optimization.
@@ -134,7 +145,7 @@ jobs:
           - Installation wizard: Single file for easy distribution.
 
     - name: Upload Release Asset (on tag push)
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

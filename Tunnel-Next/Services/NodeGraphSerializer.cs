@@ -12,9 +12,9 @@ namespace Tunnel_Next.Services
     /// </summary>
     public class NodeGraphSerializer
     {
-        private readonly RevivalScriptManager _scriptManager;
+        private readonly TunnelExtensionScriptManager _scriptManager;
 
-        public NodeGraphSerializer(RevivalScriptManager scriptManager)
+        public NodeGraphSerializer(TunnelExtensionScriptManager scriptManager)
         {
             _scriptManager = scriptManager ?? throw new ArgumentNullException(nameof(scriptManager));
         }
@@ -104,8 +104,8 @@ namespace Tunnel_Next.Services
                     }).ToList();
 
 
-                    // 序列化脚本参数（如果有Revival Script实例）
-                    if (node.Tag is IRevivalScript scriptInstance)
+                    // 序列化脚本参数（如果有TunnelExtension Script实例）
+                    if (node.Tag is ITunnelExtensionScript scriptInstance)
                     {
                         try
                         {

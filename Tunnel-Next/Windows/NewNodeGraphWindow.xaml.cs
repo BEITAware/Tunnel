@@ -239,13 +239,13 @@ namespace Tunnel_Next.Windows
                 var tempResourcesFolder = Path.Combine(Path.GetTempPath(), "TempResources");
                 Directory.CreateDirectory(tempScriptsFolder);
                 Directory.CreateDirectory(tempResourcesFolder);
-                var revivalScriptManager = new RevivalScriptManager(tempScriptsFolder, tempResourcesFolder);
+                var TunnelExtensionScriptManager = new TunnelExtensionScriptManager(tempScriptsFolder, tempResourcesFolder);
 
-                var deserializer = new NodeGraphDeserializer(revivalScriptManager);
+                var deserializer = new NodeGraphDeserializer(TunnelExtensionScriptManager);
                 var json = await File.ReadAllTextAsync(_lastTemplate.NodeGraphPath);
                 var nodeGraph = deserializer.DeserializeNodeGraph(json);
 
-                var viewModel = new NodeEditorViewModel(revivalScriptManager);
+                var viewModel = new NodeEditorViewModel(TunnelExtensionScriptManager);
                 await viewModel.LoadNodeGraphAsync(nodeGraph);
 
                 PreviewEditor.IsReadOnly = true;

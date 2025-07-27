@@ -192,7 +192,7 @@ namespace Tunnel_Next.Services.Scripting
             {
                 var projectAssemblies = new[]
                 {
-                    typeof(IRevivalScript).Assembly,
+                    typeof(ITunnelExtensionScript).Assembly,
                     typeof(Microsoft.Win32.OpenFileDialog).Assembly
                 };
 

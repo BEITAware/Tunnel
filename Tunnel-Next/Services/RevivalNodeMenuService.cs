@@ -10,18 +10,18 @@ using Tunnel_Next.Services.Scripting;
 namespace Tunnel_Next.Services
 {
     /// <summary>
-    /// Revival Scripts节点菜单服务 - 基于Revival Scripts系统的节点菜单
+    /// TunnelExtension Scripts节点菜单服务 - 基于TunnelExtension Scripts系统的节点菜单
     /// </summary>
-    public class RevivalNodeMenuService : INodeMenuService, IDisposable
+    public class TunnelExtensionNodeMenuService : INodeMenuService, IDisposable
     {
-        private readonly RevivalScriptManager _revivalScriptManager;
+        private readonly TunnelExtensionScriptManager _TunnelExtensionScriptManager;
 
-        public RevivalNodeMenuService(RevivalScriptManager revivalScriptManager)
+        public TunnelExtensionNodeMenuService(TunnelExtensionScriptManager TunnelExtensionScriptManager)
         {
-            _revivalScriptManager = revivalScriptManager ?? throw new ArgumentNullException(nameof(revivalScriptManager));
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager ?? throw new ArgumentNullException(nameof(TunnelExtensionScriptManager));
             
             // 订阅脚本编译完成事件，当脚本编译完成时重新排序菜单
-            _revivalScriptManager.ScriptsCompilationCompleted += OnScriptsCompilationCompleted;
+            _TunnelExtensionScriptManager.ScriptsCompilationCompleted += OnScriptsCompilationCompleted;
         }
         
         /// <summary>
@@ -31,7 +31,7 @@ namespace Tunnel_Next.Services
         {
             // 脚本编译完成后，菜单结构会在下次创建菜单时自动排序
             // 这里不需要额外处理，因为每次调用CreateNodeAddMenu时都会重新构建并排序菜单
-            Console.WriteLine("[Revival Node Menu] 脚本编译完成，下次打开菜单时将重新排序");
+            Console.WriteLine("[TunnelExtension Node Menu] 脚本编译完成，下次打开菜单时将重新排序");
         }
 
         /// <summary>
@@ -40,9 +40,9 @@ namespace Tunnel_Next.Services
         public void Dispose()
         {
             // 取消事件订阅，避免内存泄漏
-            if (_revivalScriptManager != null)
+            if (_TunnelExtensionScriptManager != null)
             {
-                _revivalScriptManager.ScriptsCompilationCompleted -= OnScriptsCompilationCompleted;
+                _TunnelExtensionScriptManager.ScriptsCompilationCompleted -= OnScriptsCompilationCompleted;
             }
         }
 
@@ -52,7 +52,7 @@ namespace Tunnel_Next.Services
         public ContextMenu CreateNodeAddMenu(Action<string> onNodeSelected)
         {
             var menu = new ContextMenu();
-            var menuItems = BuildRevivalMenuStructure();
+            var menuItems = BuildTunnelExtensionMenuStructure();
 
             foreach (var item in menuItems)
             {
@@ -65,7 +65,7 @@ namespace Tunnel_Next.Services
             {
                 var noScriptsItem = new MenuItem
                 {
-                    Header = "没有可用的Revival Scripts",
+                    Header = "没有可用的TunnelExtension Scripts",
                     IsEnabled = false
                 };
                 menu.Items.Add(noScriptsItem);
@@ -75,14 +75,14 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
-        /// 构建Revival Scripts菜单结构
+        /// 构建TunnelExtension Scripts菜单结构
         /// </summary>
-        private List<RevivalNodeMenuItem> BuildRevivalMenuStructure()
+        private List<TunnelExtensionNodeMenuItem> BuildTunnelExtensionMenuStructure()
         {
-            var rootItems = new List<RevivalNodeMenuItem>();
+            var rootItems = new List<TunnelExtensionNodeMenuItem>();
 
-            // 从Revival Scripts管理器获取脚本信息
-            var scripts = _revivalScriptManager.GetAvailableRevivalScripts();
+            // 从TunnelExtension Scripts管理器获取脚本信息
+            var scripts = _TunnelExtensionScriptManager.GetAvailableTunnelExtensionScripts();
 
             // 按脚本文件路径构建文件夹结构
             foreach (var kvp in scripts)
@@ -90,7 +90,7 @@ namespace Tunnel_Next.Services
                 var relativePath = kvp.Key;
                 var scriptInfo = kvp.Value;
 
-                AddRevivalScriptToMenuStructure(rootItems, relativePath, scriptInfo);
+                AddTunnelExtensionScriptToMenuStructure(rootItems, relativePath, scriptInfo);
             }
 
             // 对根菜单项进行排序，确保文件夹在上方
@@ -98,9 +98,9 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
-        /// 将Revival Script添加到菜单结构中
+        /// 将TunnelExtension Script添加到菜单结构中
         /// </summary>
-        private void AddRevivalScriptToMenuStructure(List<RevivalNodeMenuItem> rootItems, string relativePath, RevivalScriptInfo scriptInfo)
+        private void AddTunnelExtensionScriptToMenuStructure(List<TunnelExtensionNodeMenuItem> rootItems, string relativePath, TunnelExtensionScriptInfo scriptInfo)
         {
             var pathParts = relativePath.Replace('\\', '/').Split('/');
             var currentLevel = rootItems;
@@ -113,11 +113,11 @@ namespace Tunnel_Next.Services
 
                 if (existingFolder == null)
                 {
-                    existingFolder = new RevivalNodeMenuItem
+                    existingFolder = new TunnelExtensionNodeMenuItem
                     {
                         Name = folderName,
                         IsFolder = true,
-                        Children = new List<RevivalNodeMenuItem>()
+                        Children = new List<TunnelExtensionNodeMenuItem>()
                     };
                     currentLevel.Add(existingFolder);
                 }
@@ -125,8 +125,8 @@ namespace Tunnel_Next.Services
                 currentLevel = existingFolder.Children;
             }
 
-            // 添加Revival Script节点
-            var scriptItem = new RevivalNodeMenuItem
+            // 添加TunnelExtension Script节点
+            var scriptItem = new TunnelExtensionNodeMenuItem
             {
                 Name = scriptInfo.Name,
                 Category = scriptInfo.Category,
@@ -143,7 +143,7 @@ namespace Tunnel_Next.Services
         /// <summary>
         /// 创建菜单项
         /// </summary>
-        private MenuItem CreateMenuItem(RevivalNodeMenuItem item, Action<string> onNodeSelected)
+        private MenuItem CreateMenuItem(TunnelExtensionNodeMenuItem item, Action<string> onNodeSelected)
         {
             var menuItem = new MenuItem
             {
@@ -218,12 +218,12 @@ namespace Tunnel_Next.Services
         /// </summary>
         /// <param name="items">要排序的菜单项列表</param>
         /// <returns>排序后的菜单项列表</returns>
-        private List<RevivalNodeMenuItem> SortMenuItems(List<RevivalNodeMenuItem> items)
+        private List<TunnelExtensionNodeMenuItem> SortMenuItems(List<TunnelExtensionNodeMenuItem> items)
         {
             if (items == null || items.Count <= 1)
                 return items;
                 
-            var result = new List<RevivalNodeMenuItem>(items);
+            var result = new List<TunnelExtensionNodeMenuItem>(items);
             QuickSort(result, 0, result.Count - 1);
             return result;
         }
@@ -231,7 +231,7 @@ namespace Tunnel_Next.Services
         /// <summary>
         /// 快速排序算法实现
         /// </summary>
-        private void QuickSort(List<RevivalNodeMenuItem> items, int left, int right)
+        private void QuickSort(List<TunnelExtensionNodeMenuItem> items, int left, int right)
         {
             if (left < right)
             {
@@ -244,7 +244,7 @@ namespace Tunnel_Next.Services
         /// <summary>
         /// 快速排序分区函数
         /// </summary>
-        private int Partition(List<RevivalNodeMenuItem> items, int left, int right)
+        private int Partition(List<TunnelExtensionNodeMenuItem> items, int left, int right)
         {
             var pivot = items[right];
             int i = left - 1;
@@ -266,7 +266,7 @@ namespace Tunnel_Next.Services
         /// <summary>
         /// 交换列表中两个元素的位置
         /// </summary>
-        private void Swap(List<RevivalNodeMenuItem> items, int i, int j)
+        private void Swap(List<TunnelExtensionNodeMenuItem> items, int i, int j)
         {
             var temp = items[i];
             items[i] = items[j];
@@ -281,7 +281,7 @@ namespace Tunnel_Next.Services
         /// 等于0：item1和item2顺序相等
         /// 大于0：item1排在item2后面
         /// </returns>
-        private int CompareMenuItems(RevivalNodeMenuItem item1, RevivalNodeMenuItem item2)
+        private int CompareMenuItems(TunnelExtensionNodeMenuItem item1, TunnelExtensionNodeMenuItem item2)
         {
             // 先比较是否为文件夹（文件夹排在前面）
             if (item1.IsFolder && !item2.IsFolder)
@@ -296,9 +296,9 @@ namespace Tunnel_Next.Services
     }
 
     /// <summary>
-    /// Revival Scripts节点菜单项
+    /// TunnelExtension Scripts节点菜单项
     /// </summary>
-    public class RevivalNodeMenuItem
+    public class TunnelExtensionNodeMenuItem
     {
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
@@ -306,7 +306,7 @@ namespace Tunnel_Next.Services
         public string Color { get; set; } = string.Empty;
         public string ScriptPath { get; set; } = string.Empty;
         public bool IsFolder { get; set; }
-        public List<RevivalNodeMenuItem> Children { get; set; } = new();
-        public RevivalScriptInfo? ScriptInfo { get; set; }
+        public List<TunnelExtensionNodeMenuItem> Children { get; set; } = new();
+        public TunnelExtensionScriptInfo? ScriptInfo { get; set; }
     }
 }

@@ -18,7 +18,7 @@ namespace Tunnel_Next
     public partial class MainWindow : Window
     {
         private MainViewModel _viewModel;
-        private RevivalScriptManager? _revivalScriptManager;
+        private TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
         private INodeMenuService? _nodeMenuService;
         private DocumentFactory _documentFactory;
         private readonly DocumentManagerService _documentManager;
@@ -28,11 +28,11 @@ namespace Tunnel_Next
         public DocumentManagerService DocumentManager => _documentManager;
 
         /// <summary>
-        /// 获取RevivalScriptManager实例
+        /// 获取TunnelExtensionScriptManager实例
         /// </summary>
-        public RevivalScriptManager? GetRevivalScriptManager()
+        public TunnelExtensionScriptManager? GetTunnelExtensionScriptManager()
         {
-            return _revivalScriptManager;
+            return _TunnelExtensionScriptManager;
         }
 
         /// <summary>
@@ -65,10 +65,10 @@ namespace Tunnel_Next
         {
             InitializeComponent();
 
-            // 注意：不再初始化传统脚本管理器，只使用Revival Scripts
-            // Revival Scripts管理器将在InitializeScriptSystem中初始化
+            // 注意：不再初始化传统脚本管理器，只使用TunnelExtension Scripts
+            // TunnelExtension Scripts管理器将在InitializeScriptSystem中初始化
 
-            // 初始化ViewModel（暂时传入null，稍后会设置Revival Scripts管理器）
+            // 初始化ViewModel（暂时传入null，稍后会设置TunnelExtension Scripts管理器）
             _viewModel = new MainViewModel(null, false); // 传入false表示延迟初始化
             DataContext = _viewModel;
 
@@ -117,10 +117,10 @@ namespace Tunnel_Next
             {
                 _viewModel.TaskStatus = "正在初始化工作文件夹...";
 
-                // 初始化工作文件夹和Revival Scripts管理器
+                // 初始化工作文件夹和TunnelExtension Scripts管理器
                 var workFolderService = new WorkFolderService();
                 await workFolderService.InitializeAsync();
-                _revivalScriptManager = new RevivalScriptManager(
+                _TunnelExtensionScriptManager = new TunnelExtensionScriptManager(
                     workFolderService.UserScriptsFolder,
                     workFolderService.UserResourcesFolder);
 
@@ -130,16 +130,16 @@ namespace Tunnel_Next
                     Dispatcher.InvokeAsync(() => _viewModel.TaskStatus = status);
                 });
 
-                // 使用多线程扫描Revival Scripts
-                await _revivalScriptManager.ScanRevivalScriptsAsync(progress);
+                // 使用多线程扫描TunnelExtension Scripts
+                await _TunnelExtensionScriptManager.ScanTunnelExtensionScriptsAsync(progress);
 
                 _viewModel.TaskStatus = "正在创建脚本资源文件夹...";
 
                 // 确保所有脚本的资源文件夹存在
-                _revivalScriptManager.EnsureAllScriptResourceFolders();
+                _TunnelExtensionScriptManager.EnsureAllScriptResourceFolders();
 
-                // 使用多线程编译Revival Scripts
-                await _revivalScriptManager.CompileRevivalScriptsAsync(progress);
+                // 使用多线程编译TunnelExtension Scripts
+                await _TunnelExtensionScriptManager.CompileTunnelExtensionScriptsAsync(progress);
 
                 // 在UI线程上完成初始化
                 await Dispatcher.InvokeAsync(async () =>
@@ -147,14 +147,14 @@ namespace Tunnel_Next
                     await CompleteInitializationOnUIThread();
                 });
 
-                _viewModel.TaskStatus = "Revival Scripts系统初始化完成";
+                _viewModel.TaskStatus = "TunnelExtension Scripts系统初始化完成";
             }
             catch (Exception ex)
             {
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    _viewModel.TaskStatus = $"Revival Scripts系统初始化失败: {ex.Message}";
-                    MessageBox.Show($"Revival Scripts系统初始化失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _viewModel.TaskStatus = $"TunnelExtension Scripts系统初始化失败: {ex.Message}";
+                    MessageBox.Show($"TunnelExtension Scripts系统初始化失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             }
         }
@@ -164,8 +164,8 @@ namespace Tunnel_Next
             try
             {
 
-                // 初始化节点菜单服务（使用Revival Scripts管理器）
-                _nodeMenuService = new RevivalNodeMenuService(_revivalScriptManager);
+                // 初始化节点菜单服务（使用TunnelExtension Scripts管理器）
+                _nodeMenuService = new TunnelExtensionNodeMenuService(_TunnelExtensionScriptManager);
 
                 // 设置NodeEditorControl的NodeMenuService服务
                 if (NodeEditorControl != null)
@@ -173,15 +173,15 @@ namespace Tunnel_Next
                     NodeEditorControl.NodeMenuService = _nodeMenuService;
                 }
 
-                // 更新现有ViewModel的RevivalScriptManager和相关服务
-                _viewModel.FileService.UpdateScriptManager(_revivalScriptManager);
-                _viewModel.UpdateRevivalScriptManager(_revivalScriptManager);
+                // 更新现有ViewModel的TunnelExtensionScriptManager和相关服务
+                _viewModel.FileService.UpdateScriptManager(_TunnelExtensionScriptManager);
+                _viewModel.UpdateTunnelExtensionScriptManager(_TunnelExtensionScriptManager);
 
-                // 更新DocumentFactory以使用RevivalScriptManager
-                _documentFactory = new DocumentFactory(_viewModel.FileService, _revivalScriptManager);
+                // 更新DocumentFactory以使用TunnelExtensionScriptManager
+                _documentFactory = new DocumentFactory(_viewModel.FileService, _TunnelExtensionScriptManager);
                 _documentManager.UpdateDocumentFactory(_documentFactory);
 
-                // 现在初始化集合（此时RevivalScriptManager已经可用）
+                // 现在初始化集合（此时TunnelExtensionScriptManager已经可用）
                 await _viewModel.InitializeCollectionsAsync();
 
                 // 完整初始化UI（包括节点图相关的UI）
@@ -213,7 +213,7 @@ namespace Tunnel_Next
             // 初始化参数编辑器的DataContext（使用默认的NodeEditor）
             ParameterEditorControl.DataContext = _viewModel.NodeEditor;
 
-            // 初始化资源面板服务（此时RevivalScriptManager已经正确设置）
+            // 初始化资源面板服务（此时TunnelExtensionScriptManager已经正确设置）
             ResourceLibraryControl?.InitializeServices(_viewModel.ResourceCatalogService, _viewModel.ResourceScanService, _viewModel.ResourceWatcherService);
 
             // 异步刷新资源库以加载脚本，不阻塞主线程
@@ -798,7 +798,7 @@ namespace Tunnel_Next
                             }
 
                             // 方法2：直接通过脚本实例设置参数
-                            if (!parameterSet && lastNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript scriptInstance)
+                            if (!parameterSet && lastNode.Tag is Tunnel_Next.Services.Scripting.ITunnelExtensionScript scriptInstance)
                             {
                                 try
                                 {
@@ -810,9 +810,9 @@ namespace Tunnel_Next
                                         imagePathProperty.SetValue(scriptInstance, resource.FilePath);
 
                                         // 触发参数变化事件，确保UI和处理流程同步
-                                        if (scriptInstance is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                        if (scriptInstance is Tunnel_Next.Services.Scripting.TunnelExtensionScriptBase TunnelExtensionScript)
                                         {
-                                            revivalScript.OnParameterChanged("ImagePath", resource.FilePath);
+                                            TunnelExtensionScript.OnParameterChanged("ImagePath", resource.FilePath);
                                         }
 
                                         parameterSet = true;
@@ -921,7 +921,7 @@ namespace Tunnel_Next
                             }
                             
                             // 方法2：直接通过脚本实例设置参数
-                            if (!parameterSet && staticNode.Tag is Tunnel_Next.Services.Scripting.IRevivalScript staticScript)
+                            if (!parameterSet && staticNode.Tag is Tunnel_Next.Services.Scripting.ITunnelExtensionScript staticScript)
                             {
                                 try
                                 {
@@ -933,9 +933,9 @@ namespace Tunnel_Next
                                         filePathProperty.SetValue(staticScript, resource.FilePath);
                                         
                                         // 触发参数变化事件，确保UI和处理流程同步
-                                        if (staticScript is Tunnel_Next.Services.Scripting.RevivalScriptBase revivalScript)
+                                        if (staticScript is Tunnel_Next.Services.Scripting.TunnelExtensionScriptBase TunnelExtensionScript)
                                         {
-                                            revivalScript.OnParameterChanged("FilePath", resource.FilePath);
+                                            TunnelExtensionScript.OnParameterChanged("FilePath", resource.FilePath);
                                         }
                                         
                                         parameterSet = true;

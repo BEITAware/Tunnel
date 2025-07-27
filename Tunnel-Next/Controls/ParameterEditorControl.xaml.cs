@@ -221,25 +221,25 @@ namespace Tunnel_Next.Controls
             var nodeInfoPanel = CreateNodeInfoPanel();
             ParameterContainer.Children.Add(nodeInfoPanel);
 
-            // 检查是否是Revival Script节点
+            // 检查是否是TunnelExtension Script节点
 
             // 检查是否需要重建参数
-            if (SelectedNode.Tag is Services.Scripting.IRevivalScript scriptInstance && SelectedNode.Parameters.Count == 0)
+            if (SelectedNode.Tag is Services.Scripting.ITunnelExtensionScript scriptInstance && SelectedNode.Parameters.Count == 0)
             {
                 RebuildNodeParameters(SelectedNode, scriptInstance);
             }
 
-            if (TryCreateRevivalScriptControl(SelectedNode, out var revivalScriptControl))
+            if (TryCreateTunnelExtensionScriptControl(SelectedNode, out var TunnelExtensionScriptControl))
             {
                 // 保存当前脚本控件引用，用于动态更新
-                _currentScriptControl = revivalScriptControl;
-                ParameterContainer.Children.Add(revivalScriptControl);
+                _currentScriptControl = TunnelExtensionScriptControl;
+                ParameterContainer.Children.Add(TunnelExtensionScriptControl);
 
                 // ---------- 预览接管（参数窗口触发） ----------
                 try
                 {
                     object? scriptObj = null;
-                    if (SelectedNode.Tag is Services.Scripting.IRevivalScript rs)
+                    if (SelectedNode.Tag is Services.Scripting.ITunnelExtensionScript rs)
                         scriptObj = rs;
                     else if (SelectedNode.ViewModel is Services.Scripting.IScriptViewModel vm)
                         scriptObj = vm.Script;
@@ -617,23 +617,23 @@ namespace Tunnel_Next.Controls
         }
 
         /// <summary>
-        /// 尝试为Revival Script节点创建控件
+        /// 尝试为TunnelExtension Script节点创建控件
         /// </summary>
-        private bool TryCreateRevivalScriptControl(Node node, out FrameworkElement? control)
+        private bool TryCreateTunnelExtensionScriptControl(Node node, out FrameworkElement? control)
         {
             control = null;
 
             try
             {
 
-                // 检查节点是否有Revival Script实例
-                if (node.Tag is Services.Scripting.IRevivalScript revivalScript)
+                // 检查节点是否有TunnelExtension Script实例
+                if (node.Tag is Services.Scripting.ITunnelExtensionScript TunnelExtensionScript)
                 {
 
                     try
                     {
                         // 使用脚本提供的WPF控件
-                        control = revivalScript.CreateParameterControl();
+                        control = TunnelExtensionScript.CreateParameterControl();
 
                         if (control != null)
                         {
@@ -650,7 +650,7 @@ namespace Tunnel_Next.Controls
                     }
                 }
 
-                // 检查节点是否有Revival Script ViewModel
+                // 检查节点是否有TunnelExtension Script ViewModel
                 if (node.ViewModel is Services.Scripting.IScriptViewModel viewModel)
                 {
 
@@ -711,7 +711,7 @@ namespace Tunnel_Next.Controls
         /// <summary>
         /// 重建节点参数
         /// </summary>
-        private void RebuildNodeParameters(Node node, Services.Scripting.IRevivalScript scriptInstance)
+        private void RebuildNodeParameters(Node node, Services.Scripting.ITunnelExtensionScript scriptInstance)
         {
             try
             {

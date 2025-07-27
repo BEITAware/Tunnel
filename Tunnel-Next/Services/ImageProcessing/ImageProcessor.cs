@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 namespace Tunnel_Next.Services.ImageProcessing
 {
     /// <summary>
-    /// Revival Scripts图像处理核心服务
-    /// 专为Revival Scripts节点系统设计，完全移除传统脚本支持
+    /// TunnelExtension Scripts图像处理核心服务
+    /// 专为TunnelExtension Scripts节点系统设计，完全移除传统脚本支持
     /// </summary>
     public class ImageProcessor : IDisposable
     {
@@ -25,13 +25,13 @@ namespace Tunnel_Next.Services.ImageProcessing
 
         private bool _disposed = false;
         private int _isProcessing = 0;
-        private readonly RevivalScriptManager _revivalScriptManager;
+        private readonly TunnelExtensionScriptManager _TunnelExtensionScriptManager;
         private readonly IScriptContext _scriptContext;
 
-        public ImageProcessor(RevivalScriptManager revivalScriptManager, 
+        public ImageProcessor(TunnelExtensionScriptManager TunnelExtensionScriptManager, 
                               IScriptContext? scriptContext = null)
         {
-            _revivalScriptManager = revivalScriptManager ?? throw new ArgumentNullException(nameof(revivalScriptManager));
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager ?? throw new ArgumentNullException(nameof(TunnelExtensionScriptManager));
             _scriptContext = scriptContext ?? CreateDefaultContext();
         }
 
@@ -110,7 +110,7 @@ namespace Tunnel_Next.Services.ImageProcessing
 
                             try
                             {
-                                ProcessRevivalScriptNode(node, nodeGraph, environment);
+                                ProcessTunnelExtensionScriptNode(node, nodeGraph, environment);
 
                                 node.IsProcessed = true;
                                 node.ToBeProcessed = false; // 清除处理标记
@@ -169,9 +169,9 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 处理单个Revival Script节点
+        /// 处理单个TunnelExtension Script节点
         /// </summary>
-        private void ProcessRevivalScriptNode(Node node, NodeGraph nodeGraph, ProcessorEnvironment environment)
+        private void ProcessTunnelExtensionScriptNode(Node node, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
             var clonedMatsForThisNode = new List<Mat>();
             try
@@ -184,7 +184,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 var inputs = PrepareNodeInputs(node, nodeGraph, clonedMatsForThisNode);
 
                 // 执行脚本
-                var outputs = ExecuteRevivalScript(node, inputs, nodeGraph, environment); // This can return null if script fails
+                var outputs = ExecuteTunnelExtensionScript(node, inputs, nodeGraph, environment); // This can return null if script fails
 
                 if (outputs != null)
                 {
@@ -236,9 +236,9 @@ namespace Tunnel_Next.Services.ImageProcessing
                 }
                 else
                 {
-                    // 脚本执行失败 (ExecuteRevivalScript returned null due to an exception)
-                    node.HasError = true; // Error state should have been set by ExecuteRevivalScript's catch block
-                    // Ensure ErrorMessage is set if ExecuteRevivalScript didn't set it on the node directly
+                    // 脚本执行失败 (ExecuteTunnelExtensionScript returned null due to an exception)
+                    node.HasError = true; // Error state should have been set by ExecuteTunnelExtensionScript's catch block
+                    // Ensure ErrorMessage is set if ExecuteTunnelExtensionScript didn't set it on the node directly
                     if (string.IsNullOrEmpty(node.ErrorMessage)) node.ErrorMessage = "脚本执行失败";
 
                     _nodeOutputs.TryRemove(node.Id, out var removedOutputs); // Remove from cache
@@ -267,9 +267,9 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 执行Revival Script
+        /// 执行TunnelExtension Script
         /// </summary>
-        private Dictionary<string, object>? ExecuteRevivalScript(Node node, Dictionary<string, object> inputs, NodeGraph nodeGraph, ProcessorEnvironment environment)
+        private Dictionary<string, object>? ExecuteTunnelExtensionScript(Node node, Dictionary<string, object> inputs, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
             try
             {
@@ -343,11 +343,11 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 设置Revival Script参数
+        /// 设置TunnelExtension Script参数
         /// </summary>
-        private static void SetRevivalScriptParameters(IRevivalScript scriptInstance, Node node)
+        private static void SetTunnelExtensionScriptParameters(ITunnelExtensionScript scriptInstance, Node node)
         {
-            // 对于Revival Script，我们不需要从node.Parameters设置参数
+            // 对于TunnelExtension Script，我们不需要从node.Parameters设置参数
             // 因为参数已经通过UI控件直接设置到脚本实例中了
             // 这里只是记录当前的参数值用于调试
 
@@ -445,7 +445,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// 处理输出的元数据注入和传递
         /// </summary>
         private Dictionary<string, object> ProcessMetadataForOutputs(
-            IRevivalScript scriptInstance,
+            ITunnelExtensionScript scriptInstance,
             Node node,
             NodeGraph nodeGraph,
             ProcessorEnvironment environment,
@@ -552,7 +552,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// </summary>
         public Dictionary<string, object>? GetNodeMetadata(int nodeId)
         {
-            // 在新的Revival Scripts系统中，元数据包含在输出数据中
+            // 在新的TunnelExtension Scripts系统中，元数据包含在输出数据中
             if (_nodeOutputs.TryGetValue(nodeId, out var output))
             {
                 // 尝试从输出中获取元数据

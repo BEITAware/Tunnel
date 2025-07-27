@@ -171,7 +171,7 @@ namespace InstallationWizard.Pages
                     Path.Combine(workFolder, "Resources"),
                     Path.Combine(workFolder, "Resources", "Templates"),
                     PathSelectionPage.ScriptsFolderPath,
-                    Path.Combine(PathSelectionPage.ScriptsFolderPath, "RevivalResources"),
+                    Path.Combine(PathSelectionPage.ScriptsFolderPath, "TunnelExtensionResources"),
                     Path.Combine(PathSelectionPage.ScriptsFolderPath, "compiled")
                 };
 

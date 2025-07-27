@@ -6,11 +6,11 @@ using System.Windows.Controls;
 namespace Tunnel_Next.Services.Scripting
 {
     /// <summary>
-    /// SimpleRevivalScriptBase 提供对 RevivalScriptBase 的简化封装，
+    /// SimpleTunnelExtensionScriptBase 提供对 TunnelExtensionScriptBase 的简化封装，
     /// 默认实现了参数序列化 / 反序列化、空参数面板、
     /// 以及一个最小可用的 ViewModel，方便编写纯算法脚本。
     /// </summary>
-    public abstract class SimpleRevivalScriptBase : RevivalScriptBase
+    public abstract class SimpleTunnelExtensionScriptBase : TunnelExtensionScriptBase
     {
         #region 参数序列化/反序列化
         public override Dictionary<string, object> SerializeParameters() => new();
@@ -22,7 +22,7 @@ namespace Tunnel_Next.Services.Scripting
 
         private class NoOpViewModel : ScriptViewModelBase
         {
-            public NoOpViewModel(IRevivalScript script) : base(script) { }
+            public NoOpViewModel(ITunnelExtensionScript script) : base(script) { }
             public override Task OnParameterChangedAsync(string parameterName, object oldValue, object newValue) => Task.CompletedTask;
             public override ScriptValidationResult ValidateParameter(string parameterName, object value) => new(true);
             public override Dictionary<string, object> GetParameterData() => new();

@@ -16,15 +16,15 @@ using System.Xml.Linq;
 namespace Tunnel_Next.Services.Scripting
 {
     /// <summary>
-    /// Revival Scripts管理器 - 管理用户脚本系统
+    /// TunnelExtension Scripts管理器 - 管理用户脚本系统
     /// </summary>
-    public class RevivalScriptManager : IDisposable
+    public class TunnelExtensionScriptManager : IDisposable
     {
         private readonly string _userScriptsFolder;
         private readonly string _userResourcesFolder;
         private readonly string _compiledFolder;
         private readonly string _compilationCacheFile;
-        private readonly ConcurrentDictionary<string, RevivalScriptInfo> _scriptRegistry = new();
+        private readonly ConcurrentDictionary<string, TunnelExtensionScriptInfo> _scriptRegistry = new();
         private readonly AssemblyReferenceManager _assemblyReferenceManager;
         private CompilationCache _compilationCache = new();
         // 移除了_compiledScripts字段，不再缓存实例
@@ -55,7 +55,7 @@ namespace Tunnel_Next.Services.Scripting
         /// </summary>
         public event EventHandler? ScriptsCompilationCompleted;
 
-        public RevivalScriptManager(string userScriptsFolder, string userResourcesFolder)
+        public TunnelExtensionScriptManager(string userScriptsFolder, string userResourcesFolder)
         {
             _userScriptsFolder = userScriptsFolder ?? throw new ArgumentNullException(nameof(userScriptsFolder));
             _userResourcesFolder = userResourcesFolder ?? throw new ArgumentNullException(nameof(userResourcesFolder));
@@ -67,10 +67,10 @@ namespace Tunnel_Next.Services.Scripting
                 throw new ArgumentException("用户资源文件夹路径不能为空", nameof(userResourcesFolder));
 
             // 添加调试输出
-            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 初始化脚本管理器");
-            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 脚本文件夹: {_userScriptsFolder}");
-            System.Diagnostics.Debug.WriteLine($"[RevivalScriptManager] 资源文件夹: {_userResourcesFolder}");
-            Console.WriteLine($"[RevivalScriptManager] 创建脚本管理器，脚本文件夹: {_userScriptsFolder}");
+            System.Diagnostics.Debug.WriteLine($"[TunnelExtensionScriptManager] 初始化脚本管理器");
+            System.Diagnostics.Debug.WriteLine($"[TunnelExtensionScriptManager] 脚本文件夹: {_userScriptsFolder}");
+            System.Diagnostics.Debug.WriteLine($"[TunnelExtensionScriptManager] 资源文件夹: {_userResourcesFolder}");
+            Console.WriteLine($"[TunnelExtensionScriptManager] 创建脚本管理器，脚本文件夹: {_userScriptsFolder}");
             _compiledFolder = Path.Combine(_userScriptsFolder, "compiled");
             _compilationCacheFile = Path.Combine(_compiledFolder, "compilation-cache.json");
             _assemblyReferenceManager = new AssemblyReferenceManager(_userScriptsFolder, _userResourcesFolder);
@@ -90,9 +90,9 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 扫描Revival Scripts
+        /// 扫描TunnelExtension Scripts
         /// </summary>
-        public void ScanRevivalScripts()
+        public void ScanTunnelExtensionScripts()
         {
             // 检查并执行引用配置文件迁移
             MigrateReferenceConfigsIfNeeded();
@@ -104,9 +104,9 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 异步扫描Revival Scripts（多线程版本）
+        /// 异步扫描TunnelExtension Scripts（多线程版本）
         /// </summary>
-        public async Task ScanRevivalScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+        public async Task ScanTunnelExtensionScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
         {
             progress?.Report("正在迁移引用配置文件...");
 
@@ -136,7 +136,7 @@ namespace Tunnel_Next.Services.Scripting
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
-                    await Task.Run(() => RegisterRevivalScript(filePath), cancellationToken);
+                    await Task.Run(() => RegisterTunnelExtensionScript(filePath), cancellationToken);
                 }
                 finally
                 {
@@ -159,13 +159,13 @@ namespace Tunnel_Next.Services.Scripting
                 // 扫描C#脚本文件
                 foreach (var file in Directory.GetFiles(directory, "*.cs"))
                 {
-                    RegisterRevivalScript(file);
+                    RegisterTunnelExtensionScript(file);
                 }
 
                 // 扫描符号节点文件
                 foreach (var file in Directory.GetFiles(directory, "*.sn"))
                 {
-                    RegisterRevivalScript(file);
+                    RegisterTunnelExtensionScript(file);
                 }
 
                 // 递归扫描子目录
@@ -173,7 +173,7 @@ namespace Tunnel_Next.Services.Scripting
                 {
                     // 跳过编译输出目录和资源目录
                     var dirName = Path.GetFileName(subDir);
-                    if (dirName == "compiled" || dirName == "RevivalResources")
+                    if (dirName == "compiled" || dirName == "TunnelExtensionResources")
                         continue;
 
                     ScanDirectory(subDir);
@@ -204,7 +204,7 @@ namespace Tunnel_Next.Services.Scripting
                 {
                     // 跳过编译输出目录和资源目录
                     var dirName = Path.GetFileName(subDir);
-                    if (dirName == "compiled" || dirName == "RevivalResources")
+                    if (dirName == "compiled" || dirName == "TunnelExtensionResources")
                         continue;
 
                     CollectScriptFiles(subDir, scriptFiles);
@@ -220,18 +220,18 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 注册Revival Script文件
+        /// 注册TunnelExtension Script文件
         /// </summary>
-        private void RegisterRevivalScript(string filePath)
+        private void RegisterTunnelExtensionScript(string filePath)
         {
             try
             {
-                RevivalScriptInfo? scriptInfo = null;
+                TunnelExtensionScriptInfo? scriptInfo = null;
 
                 var ext = Path.GetExtension(filePath).ToLowerInvariant();
                 if (ext == ".cs")
                 {
-                    scriptInfo = ParseRevivalScriptInfo(filePath);
+                    scriptInfo = ParseTunnelExtensionScriptInfo(filePath);
                 }
                 else if (ext == ".sn")
                 {
@@ -265,9 +265,9 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 解析Revival Script信息
+        /// 解析TunnelExtension Script信息
         /// </summary>
-        private RevivalScriptInfo? ParseRevivalScriptInfo(string filePath)
+        private TunnelExtensionScriptInfo? ParseTunnelExtensionScriptInfo(string filePath)
         {
             try
             {
@@ -310,35 +310,35 @@ namespace Tunnel_Next.Services.Scripting
                 // 加载程序集并查找脚本类
                 var assembly = Assembly.Load(ms.ToArray());
                 var scriptType = assembly.GetTypes()
-                    .FirstOrDefault(t => typeof(IRevivalScript).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+                    .FirstOrDefault(t => typeof(ITunnelExtensionScript).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 
                 if (scriptType == null)
                 {
                     return null;
                 }
 
-                // 解析Revival Script特性信息
-                var revivalScriptAttr = scriptType.GetCustomAttribute<RevivalScriptAttribute>();
-                if (revivalScriptAttr == null)
+                // 解析TunnelExtension Script特性信息
+                var TunnelExtensionScriptAttr = scriptType.GetCustomAttribute<TunnelExtensionScriptAttribute>();
+                if (TunnelExtensionScriptAttr == null)
                 {
                     return null;
                 }
 
-                var scriptInfo = new RevivalScriptInfo
+                var scriptInfo = new TunnelExtensionScriptInfo
                 {
-                    Name = revivalScriptAttr.Name,
-                    Author = revivalScriptAttr.Author,
-                    Description = revivalScriptAttr.Description,
-                    Version = revivalScriptAttr.Version,
-                    Category = revivalScriptAttr.Category,
-                    Color = revivalScriptAttr.Color
+                    Name = TunnelExtensionScriptAttr.Name,
+                    Author = TunnelExtensionScriptAttr.Author,
+                    Description = TunnelExtensionScriptAttr.Description,
+                    Version = TunnelExtensionScriptAttr.Version,
+                    Category = TunnelExtensionScriptAttr.Category,
+                    Color = TunnelExtensionScriptAttr.Color
                 };
 
                 // 解析端口定义
                 try
                 {
                     // 创建临时实例来获取端口定义
-                    var tempInstance = Activator.CreateInstance(scriptType) as IRevivalScript;
+                    var tempInstance = Activator.CreateInstance(scriptType) as ITunnelExtensionScript;
                     if (tempInstance != null)
                     {
                         scriptInfo.InputPorts = tempInstance.GetInputPorts();
@@ -366,7 +366,7 @@ namespace Tunnel_Next.Services.Scripting
                 foreach (var prop in properties)
                 {
                     var paramAttr = prop.GetCustomAttribute<ScriptParameterAttribute>()!;
-                    var paramDef = new RevivalScriptParameterDefinition
+                    var paramDef = new TunnelExtensionScriptParameterDefinition
                     {
                         Name = prop.Name,
                         DisplayName = string.IsNullOrEmpty(paramAttr.DisplayName) ? prop.Name : paramAttr.DisplayName,
@@ -391,7 +391,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 解析符号节点信息
         /// </summary>
-        private RevivalScriptInfo? ParseSymbolNodeInfo(string filePath)
+        private TunnelExtensionScriptInfo? ParseSymbolNodeInfo(string filePath)
         {
             try
             {
@@ -403,7 +403,7 @@ namespace Tunnel_Next.Services.Scripting
                     return null;
                 }
 
-                var info = new RevivalScriptInfo
+                var info = new TunnelExtensionScriptInfo
                 {
                     Name = root.Attribute("Name")?.Value ?? Path.GetFileNameWithoutExtension(filePath),
                     Description = root.Attribute("Description")?.Value ?? string.Empty,
@@ -473,17 +473,17 @@ namespace Tunnel_Next.Services.Scripting
 
 
         /// <summary>
-        /// 获取所有可用的Revival Scripts
+        /// 获取所有可用的TunnelExtension Scripts
         /// </summary>
-        public Dictionary<string, RevivalScriptInfo> GetAvailableRevivalScripts()
+        public Dictionary<string, TunnelExtensionScriptInfo> GetAvailableTunnelExtensionScripts()
         {
-            return new Dictionary<string, RevivalScriptInfo>(_scriptRegistry);
+            return new Dictionary<string, TunnelExtensionScriptInfo>(_scriptRegistry);
         }
 
         /// <summary>
-        /// 编译所有Revival Scripts
+        /// 编译所有TunnelExtension Scripts
         /// </summary>
-        public void CompileRevivalScripts()
+        public void CompileTunnelExtensionScripts()
         {
             foreach (var kvp in _scriptRegistry)
             {
@@ -493,7 +493,7 @@ namespace Tunnel_Next.Services.Scripting
                 // 检查是否需要重新编译
                 if (NeedsRecompilation(scriptInfo))
                 {
-                    var result = CompileRevivalScript(scriptInfo);
+                    var result = CompileTunnelExtensionScript(scriptInfo);
 
                     if (result.Success)
                     {
@@ -539,26 +539,26 @@ namespace Tunnel_Next.Services.Scripting
             _isInitialized = true;
             
             // 触发脚本编译完成事件
-            Console.WriteLine("[RevivalScriptManager] 脚本编译完成");
-            Trace.WriteLine("[RevivalScriptManager] 脚本编译完成");
-            Debug.WriteLine("[RevivalScriptManager] 脚本编译完成");
+            Console.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
+            Trace.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
+            Debug.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
             
             var handler = ScriptsCompilationCompleted;
             if (handler != null)
             {
-                Console.WriteLine("[RevivalScriptManager] 触发脚本编译完成事件");
+                Console.WriteLine("[TunnelExtensionScriptManager] 触发脚本编译完成事件");
                 handler(this, EventArgs.Empty);
             }
             else
             {
-                Console.WriteLine("[RevivalScriptManager] 脚本编译完成事件没有订阅者");
+                Console.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成事件没有订阅者");
             }
         }
 
         /// <summary>
-        /// 异步编译所有Revival Scripts（多线程版本）
+        /// 异步编译所有TunnelExtension Scripts（多线程版本）
         /// </summary>
-        public async Task CompileRevivalScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
+        public async Task CompileTunnelExtensionScriptsAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default)
         {
             var scriptsToCompile = _scriptRegistry.Values
                 .Where(NeedsRecompilation)
@@ -570,11 +570,11 @@ namespace Tunnel_Next.Services.Scripting
                 _isInitialized = true;
                 
                 // 即使没有脚本需要编译，也触发编译完成事件
-                Console.WriteLine("[RevivalScriptManager] 所有脚本都是最新的，无需编译");
+                Console.WriteLine("[TunnelExtensionScriptManager] 所有脚本都是最新的，无需编译");
                 var noCompileHandler = ScriptsCompilationCompleted;
                 if (noCompileHandler != null)
                 {
-                    Console.WriteLine("[RevivalScriptManager] 触发脚本编译完成事件（无需编译情况）");
+                    Console.WriteLine("[TunnelExtensionScriptManager] 触发脚本编译完成事件（无需编译情况）");
                     noCompileHandler(this, EventArgs.Empty);
                 }
                 return;
@@ -591,7 +591,7 @@ namespace Tunnel_Next.Services.Scripting
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
-                    var result = await Task.Run(() => CompileRevivalScript(scriptInfo), cancellationToken);
+                    var result = await Task.Run(() => CompileTunnelExtensionScript(scriptInfo), cancellationToken);
 
                     if (result.Success)
                     {
@@ -648,38 +648,38 @@ namespace Tunnel_Next.Services.Scripting
             progress?.Report($"编译完成：成功 {compiledCount} 个，失败 {failedCount} 个");
             
             // 触发脚本编译完成事件
-            Console.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
-            Trace.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
-            Debug.WriteLine("[RevivalScriptManager] 异步脚本编译完成");
+            Console.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
+            Trace.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
+            Debug.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
             
             var handler = ScriptsCompilationCompleted;
             if (handler != null)
             {
-                Console.WriteLine("[RevivalScriptManager] 触发异步脚本编译完成事件");
+                Console.WriteLine("[TunnelExtensionScriptManager] 触发异步脚本编译完成事件");
                 handler(this, EventArgs.Empty);
             }
             else
             {
-                Console.WriteLine("[RevivalScriptManager] 异步脚本编译完成事件没有订阅者");
+                Console.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成事件没有订阅者");
             }
         }
 
-        // 移除了LoadCompiledRevivalScript方法，不再缓存实例
+        // 移除了LoadCompiledTunnelExtensionScript方法，不再缓存实例
 
         /// <summary>
-        /// 获取Revival Script信息
+        /// 获取TunnelExtension Script信息
         /// </summary>
-        public RevivalScriptInfo? GetRevivalScriptInfo(string relativePath)
+        public TunnelExtensionScriptInfo? GetTunnelExtensionScriptInfo(string relativePath)
         {
             return _scriptRegistry.TryGetValue(relativePath, out var info) ? info : null;
         }
 
-        // 移除了GetCompiledRevivalScript方法，不再缓存实例
+        // 移除了GetCompiledTunnelExtensionScript方法，不再缓存实例
 
         /// <summary>
-        /// 创建Revival Script实例 - 每次都创建新的独立实例
+        /// 创建TunnelExtension Script实例 - 每次都创建新的独立实例
         /// </summary>
-        public IRevivalScript? CreateRevivalScriptInstance(string relativePath)
+        public ITunnelExtensionScript? CreateTunnelExtensionScriptInstance(string relativePath)
         {
 
             if (!_scriptRegistry.TryGetValue(relativePath, out var scriptInfo))
@@ -691,7 +691,7 @@ namespace Tunnel_Next.Services.Scripting
             // 检查是否需要编译
             if (!scriptInfo.IsCompiled || NeedsRecompilation(scriptInfo))
             {
-                var result = CompileRevivalScript(scriptInfo);
+                var result = CompileTunnelExtensionScript(scriptInfo);
 
                 if (result.Success)
                 {
@@ -726,7 +726,7 @@ namespace Tunnel_Next.Services.Scripting
             if (!string.IsNullOrEmpty(scriptInfo.CompiledAssemblyPath) &&
                 File.Exists(scriptInfo.CompiledAssemblyPath))
             {
-                var instance = LoadRevivalScriptFromAssembly(scriptInfo.CompiledAssemblyPath);
+                var instance = LoadTunnelExtensionScriptFromAssembly(scriptInfo.CompiledAssemblyPath);
                 if (instance != null)
                 {
                     return instance;
@@ -739,7 +739,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 检查是否需要重新编译
         /// </summary>
-        private bool NeedsRecompilation(RevivalScriptInfo scriptInfo)
+        private bool NeedsRecompilation(TunnelExtensionScriptInfo scriptInfo)
         {
             // 符号节点不需要编译
             if (scriptInfo.IsSymbolNode)
@@ -773,11 +773,11 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 编译Revival Script
+        /// 编译TunnelExtension Script
         /// </summary>
-        private RevivalScriptCompilationResult CompileRevivalScript(RevivalScriptInfo scriptInfo)
+        private TunnelExtensionScriptCompilationResult CompileTunnelExtensionScript(TunnelExtensionScriptInfo scriptInfo)
         {
-            var result = new RevivalScriptCompilationResult();
+            var result = new TunnelExtensionScriptCompilationResult();
 
             try
             {
@@ -787,7 +787,7 @@ namespace Tunnel_Next.Services.Scripting
 
                 // 生成固定的程序集名称（不包含时间戳）
                 var fileName = Path.GetFileNameWithoutExtension(scriptInfo.FilePath);
-                var assemblyName = $"RevivalScript_{fileName}";
+                var assemblyName = $"TunnelExtensionScript_{fileName}";
                 var assemblyFileName = $"{assemblyName}.dll";
                 var outputPath = Path.Combine(_compiledFolder, assemblyFileName);
 
@@ -884,9 +884,9 @@ namespace Tunnel_Next.Services.Scripting
         }
 
         /// <summary>
-        /// 从程序集加载Revival Script
+        /// 从程序集加载TunnelExtension Script
         /// </summary>
-        private IRevivalScript? LoadRevivalScriptFromAssembly(string assemblyPath)
+        private ITunnelExtensionScript? LoadTunnelExtensionScriptFromAssembly(string assemblyPath)
         {
             try
             {
@@ -895,11 +895,11 @@ namespace Tunnel_Next.Services.Scripting
                 var allTypes = assembly.GetTypes();
 
                 var scriptType = allTypes
-                    .FirstOrDefault(t => typeof(IRevivalScript).IsAssignableFrom(t) && !t.IsAbstract);
+                    .FirstOrDefault(t => typeof(ITunnelExtensionScript).IsAssignableFrom(t) && !t.IsAbstract);
 
                 if (scriptType != null)
                 {
-                    var instance = Activator.CreateInstance(scriptType) as IRevivalScript;
+                    var instance = Activator.CreateInstance(scriptType) as ITunnelExtensionScript;
                     return instance;
                 }
                 else
@@ -1132,7 +1132,7 @@ namespace Tunnel_Next.Services.Scripting
         {
             // 跳过编译输出与资源目录
             var relative = Path.GetRelativePath(_userScriptsFolder, e.FullPath);
-            if (relative.StartsWith("compiled") || relative.StartsWith("RevivalResources")) return;
+            if (relative.StartsWith("compiled") || relative.StartsWith("TunnelExtensionResources")) return;
 
             lock (_watcherLock)
             {
@@ -1151,13 +1151,13 @@ namespace Tunnel_Next.Services.Scripting
         {
             try
             {
-                ScanRevivalScripts();
-                CompileRevivalScripts();
+                ScanTunnelExtensionScripts();
+                CompileTunnelExtensionScripts();
                 ScriptsCompilationCompleted?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[RevivalScriptManager] 热加载失败: {ex.Message}");
+                Debug.WriteLine($"[TunnelExtensionScriptManager] 热加载失败: {ex.Message}");
             }
         }
 
@@ -1169,21 +1169,21 @@ namespace Tunnel_Next.Services.Scripting
     }
 
     /// <summary>
-    /// Revival Script编译结果类
+    /// TunnelExtension Script编译结果类
     /// </summary>
-    public class RevivalScriptCompilationResult
+    public class TunnelExtensionScriptCompilationResult
     {
         public bool Success { get; set; }
         public string? AssemblyPath { get; set; }
-        public IRevivalScript? ScriptInstance { get; set; }
+        public ITunnelExtensionScript? ScriptInstance { get; set; }
         public List<string> Errors { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
     }
 
     /// <summary>
-    /// Revival Script信息类
+    /// TunnelExtension Script信息类
     /// </summary>
-    public class RevivalScriptInfo
+    public class TunnelExtensionScriptInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
@@ -1197,14 +1197,14 @@ namespace Tunnel_Next.Services.Scripting
         public string? CompiledAssemblyPath { get; set; }
         public Dictionary<string, PortDefinition> InputPorts { get; set; } = new();
         public Dictionary<string, PortDefinition> OutputPorts { get; set; } = new();
-        public Dictionary<string, RevivalScriptParameterDefinition> Parameters { get; set; } = new();
+        public Dictionary<string, TunnelExtensionScriptParameterDefinition> Parameters { get; set; } = new();
         public bool IsSymbolNode { get; set; } = false;
     }
 
     /// <summary>
-    /// Revival Script参数定义
+    /// TunnelExtension Script参数定义
     /// </summary>
-    public class RevivalScriptParameterDefinition
+    public class TunnelExtensionScriptParameterDefinition
     {
         public string Name { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;

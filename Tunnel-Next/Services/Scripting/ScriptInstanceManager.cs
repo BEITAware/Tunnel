@@ -98,7 +98,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 获取鲁棒的脚本实例 - 多重回退机制
         /// </summary>
-        public IRevivalScript? GetRobustScriptInstance(Node node)
+        public ITunnelExtensionScript? GetRobustScriptInstance(Node node)
         {
             try
             {
@@ -115,7 +115,7 @@ namespace Tunnel_Next.Services.Scripting
                 }
 
                 // 方法3: 从节点Tag直接获取脚本
-                if (node.Tag is IRevivalScript script)
+                if (node.Tag is ITunnelExtensionScript script)
                 {
                     return script;
                 }
@@ -132,7 +132,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 确保参数同步
         /// </summary>
-        public void EnsureParameterSynchronization(IRevivalScript scriptInstance, Node node)
+        public void EnsureParameterSynchronization(ITunnelExtensionScript scriptInstance, Node node)
         {
             try
             {
@@ -202,22 +202,22 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 创建脚本实例
         /// </summary>
-        private Task<IRevivalScript?> CreateScriptInstanceAsync(string scriptPath)
+        private Task<ITunnelExtensionScript?> CreateScriptInstanceAsync(string scriptPath)
         {
             try
             {
-                // 获取全局RevivalScriptManager实例
-                var revivalScriptManager = GetRevivalScriptManager();
-                if (revivalScriptManager == null)
+                // 获取全局TunnelExtensionScriptManager实例
+                var TunnelExtensionScriptManager = GetTunnelExtensionScriptManager();
+                if (TunnelExtensionScriptManager == null)
                 {
-                    return Task.FromResult<IRevivalScript?>(null);
+                    return Task.FromResult<ITunnelExtensionScript?>(null);
                 }
 
                 // 计算相对路径
-                var relativePath = Path.GetRelativePath(revivalScriptManager.UserScriptsFolder, scriptPath);
+                var relativePath = Path.GetRelativePath(TunnelExtensionScriptManager.UserScriptsFolder, scriptPath);
 
-                // 直接调用RevivalScriptManager创建实例
-                var instance = revivalScriptManager.CreateRevivalScriptInstance(relativePath);
+                // 直接调用TunnelExtensionScriptManager创建实例
+                var instance = TunnelExtensionScriptManager.CreateTunnelExtensionScriptInstance(relativePath);
 
                 if (instance != null)
                 {
@@ -230,21 +230,21 @@ namespace Tunnel_Next.Services.Scripting
             }
             catch (Exception ex)
             {
-                return Task.FromResult<IRevivalScript?>(null);
+                return Task.FromResult<ITunnelExtensionScript?>(null);
             }
         }
 
         /// <summary>
-        /// 获取RevivalScriptManager实例（从应用程序上下文）
+        /// 获取TunnelExtensionScriptManager实例（从应用程序上下文）
         /// </summary>
-        private RevivalScriptManager? GetRevivalScriptManager()
+        private TunnelExtensionScriptManager? GetTunnelExtensionScriptManager()
         {
             try
             {
-                // 从MainWindow获取RevivalScriptManager
+                // 从MainWindow获取TunnelExtensionScriptManager
                 if (System.Windows.Application.Current?.MainWindow is MainWindow mainWindow)
                 {
-                    return mainWindow.GetRevivalScriptManager();
+                    return mainWindow.GetTunnelExtensionScriptManager();
                 }
 
                 return null;
@@ -276,7 +276,7 @@ namespace Tunnel_Next.Services.Scripting
 
         // 移除 NotifyNodeGraphNeedsUpdate 方法
         // 不再需要通过 ScriptInstanceManager 通知节点图更新
-        // 改为使用单一链路：RevivalScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged
+        // 改为使用单一链路：TunnelExtensionScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged
 
         /// <summary>
         /// 从ViewModel同步参数到脚本实例
@@ -304,7 +304,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 同步单个参数
         /// </summary>
-        private void SyncSingleParameter(IRevivalScript scriptInstance, string parameterName, object value)
+        private void SyncSingleParameter(ITunnelExtensionScript scriptInstance, string parameterName, object value)
         {
             try
             {
@@ -346,7 +346,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 尝试重新创建实例
         /// </summary>
-        private IRevivalScript? TryRecreateInstance(Node node)
+        private ITunnelExtensionScript? TryRecreateInstance(Node node)
         {
             try
             {
@@ -410,7 +410,7 @@ namespace Tunnel_Next.Services.Scripting
         public string ScriptPath { get; set; } = string.Empty;
         public string ScriptName { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
-        public IRevivalScript? ScriptInstance { get; set; }
+        public ITunnelExtensionScript? ScriptInstance { get; set; }
         public IScriptViewModel? ViewModel { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastModified { get; set; }

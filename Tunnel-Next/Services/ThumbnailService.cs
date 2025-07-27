@@ -255,66 +255,18 @@ namespace Tunnel_Next.Services
 
                 BitmapSource? thumbnail = null;
 
-                // 尝试从预览控件获取图像
-                Mat? previewImage = null;
-                if (previewControl != null)
+                // 使用预览控件的BitmapSource生成缩略图（完整预览，正确比例）
+                if (previewControl?.PreviewImageControl?.Source is BitmapSource source)
                 {
-                    // 在UI线程上安全地获取渲染后的图像，而不是ImageSource
-                    thumbnail = await Application.Current.Dispatcher.Invoke(async () => {
-                        // 检查PreviewImage是否有内容
-                        if (previewControl.PreviewImageControl != null && 
-                            previewControl.PreviewImageControl.Source != null && 
-                            previewControl.PreviewImageControl.ActualWidth > 0 && 
-                            previewControl.PreviewImageControl.ActualHeight > 0)
-                        {
-                            try
-                            {
-                                // 创建RenderTargetBitmap以捕获实际渲染的图像
-                                var rtb = new RenderTargetBitmap(
-                                    (int)previewControl.PreviewImageControl.ActualWidth,
-                                    (int)previewControl.PreviewImageControl.ActualHeight,
-                                    96, 96, PixelFormats.Pbgra32);
-
-                                // 渲染控件内容
-                                rtb.Render(previewControl.PreviewImageControl);
-                                rtb.Freeze();
-                                
-                                // 调整大小
-                                return await Task.Run(() => CreateThumbnailFromBitmapSource(rtb));
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[ThumbnailService] 捕获预览图像失败: {ex.Message}");
-                            }
-                        }
-                        
-                        // 如果从UI渲染获取失败，尝试从ImageSource获取
-                        var source = previewControl.ImageSource;
-                        if (source != null && !source.Empty())
-                        {
-                            var cloned = source.Clone();
-                            var result = await CreateThumbnailFromMatAsync(cloned);
-                            cloned.Dispose();
-                            return result;
-                        }
-                        return null;
-                    });
+                    // 使用Aurora背景+深色遮罩叠加预览图
+                    thumbnail = CreatePreviewThumbnail(source);
                 }
-
-                // 如果无法从UI获取，但有原始Mat，则使用它
-                if (thumbnail == null && previewControl?.ImageSource != null && !previewControl.ImageSource.Empty())
+                else if (previewControl?.ImageSource != null && !previewControl.ImageSource.Empty())
                 {
-                    // 从原始ImageSource克隆Mat对象以确保线程安全
-                    previewImage = previewControl.ImageSource.Clone();
-                    
-                    if (previewImage != null && !previewImage.Empty())
-                    {
-                        // 从预览图像生成缩略图
-                        thumbnail = await CreateThumbnailFromMatAsync(previewImage);
-                        
-                        // 释放克隆的图像资源
-                        previewImage.Dispose();
-                    }
+                    // 回退：使用原始Mat生成缩略图
+                    var clonedMat = previewControl.ImageSource.Clone();
+                    thumbnail = await CreateThumbnailFromMatAsync(clonedMat);
+                    clonedMat.Dispose();
                 }
 
                 // 如果仍无法获取有效图像，创建默认缩略图
@@ -674,6 +626,59 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
+        /// 为预览图生成带Aurora背景和深色遮罩的缩略图
+        /// </summary>
+        /// <param name="source">预览图像</param>
+        /// <returns>带背景和遮罩的缩略图</returns>
+        private BitmapSource CreatePreviewThumbnail(BitmapSource source)
+        {
+            // 在128×128画布上绘制背景+遮罩+预览图
+            var visual = new DrawingVisual();
+            using (var ctx = visual.RenderOpen())
+            {
+                // 选择随机Aurora背景
+                var selected = AuroraBackgrounds[_random.Next(AuroraBackgrounds.Length)];
+                var uri = new Uri($"pack://application:,,,/Resources/{selected}");
+                Brush bgBrush;
+                try
+                {
+                    var img = new BitmapImage(uri);
+                    bgBrush = new ImageBrush(img) { Stretch = Stretch.UniformToFill };
+                }
+                catch
+                {
+                    // 失败时使用渐变备份
+                    var grad = new LinearGradientBrush();
+                    grad.StartPoint = new System.Windows.Point(0, 0);
+                    grad.EndPoint = new System.Windows.Point(1, 1);
+                    grad.GradientStops.Add(new GradientStop(Color.FromRgb(64, 128, 255), 0.0));
+                    grad.GradientStops.Add(new GradientStop(Color.FromRgb(128, 64, 255), 1.0));
+                    bgBrush = grad;
+                }
+                // 绘制背景
+                ctx.DrawRectangle(bgBrush, null, new System.Windows.Rect(0,0, ThumbnailSize, ThumbnailSize));
+                
+                // 绘制深色遮罩 (更黑，alpha 180)
+                var mask = new SolidColorBrush(Color.FromArgb(180,0,0,0));
+                ctx.DrawRectangle(mask, null, new System.Windows.Rect(0,0, ThumbnailSize, ThumbnailSize));
+                
+                // 计算预览图缩放和居中
+                double scale = Math.Min((double)ThumbnailSize / source.PixelWidth,
+                                        (double)ThumbnailSize / source.PixelHeight);
+                double w = source.PixelWidth * scale;
+                double h = source.PixelHeight * scale;
+                double x = (ThumbnailSize - w) / 2;
+                double y = (ThumbnailSize - h) / 2;
+                ctx.DrawImage(source, new System.Windows.Rect(x, y, w, h));
+            }
+
+            var rtb = new RenderTargetBitmap(ThumbnailSize, ThumbnailSize, 96, 96, PixelFormats.Pbgra32);
+            rtb.Render(visual);
+            rtb.Freeze();
+            return rtb;
+        }
+
+        /// <summary>
         /// 保存缩略图到文件，使用临时文件和映射机制
         /// </summary>
         /// <param name="thumbnail">缩略图</param>
@@ -1030,3 +1035,4 @@ namespace Tunnel_Next.Services
         }
     }
 }
+

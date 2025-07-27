@@ -15,21 +15,21 @@ namespace Tunnel_Next.Services
     public class NodeGraphInterpreterService
     {
         private readonly FileService _fileService;
-        private readonly RevivalScriptManager _revivalScriptManager;
+        private readonly TunnelExtensionScriptManager _TunnelExtensionScriptManager;
 
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="fileService">文件服务</param>
-        /// <param name="revivalScriptManager">Revival脚本管理器</param>
+        /// <param name="TunnelExtensionScriptManager">TunnelExtension脚本管理器</param>
         /// <param name="workFolderService">工作文件夹服务</param>
         public NodeGraphInterpreterService(
             FileService fileService,
-            RevivalScriptManager revivalScriptManager,
+            TunnelExtensionScriptManager TunnelExtensionScriptManager,
             WorkFolderService workFolderService)
         {
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
-            _revivalScriptManager = revivalScriptManager ?? throw new ArgumentNullException(nameof(revivalScriptManager));
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager ?? throw new ArgumentNullException(nameof(TunnelExtensionScriptManager));
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Tunnel_Next.Services
                 }
 
                 // 4. 使用ImageProcessor执行节点图
-                var imageProcessor = new ImageProcessor(_revivalScriptManager);
+                var imageProcessor = new ImageProcessor(_TunnelExtensionScriptManager);
                 var success = await imageProcessor.ProcessNodeGraphAsync(nodeGraph, environment);
                 if (!success)
                     throw new InvalidOperationException("节点图执行失败");

@@ -79,13 +79,13 @@ namespace Tunnel_Next.Services.Scripting
 
         public void SetNodeOutputs(int nodeId, Dictionary<string, object> outputs)
         {
-            // 新的Revival Scripts接口方法，暂时空实现
+            // 新的TunnelExtension Scripts接口方法，暂时空实现
             // 后续需要实现具体的节点输出设置逻辑
         }
 
         public T? GetService<T>() where T : class
         {
-            // 新的Revival Scripts接口方法，暂时返回null
+            // 新的TunnelExtension Scripts接口方法，暂时返回null
             // 后续需要实现服务定位器模式
             return null;
         }

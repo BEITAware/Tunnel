@@ -14,7 +14,7 @@ namespace Tunnel_Next.Models
         F32bmp,     // 32位浮点RGBA格式（主要格式）
         F32Page,    // 32位浮点统计页面图像类型（兼容F32bmp）
         Img,        // 标准图像格式（PNG、JPG等）
-        Image,      // 通用图像类型（Revival Scripts兼容）
+        Image,      // 通用图像类型（TunnelExtension Scripts兼容）
         Tif16,      // 16位TIFF格式
         Tif8,       // 8位TIFF格式（预留）
 
@@ -23,8 +23,8 @@ namespace Tunnel_Next.Models
         Constant,   // 常量数据
         Mask,       // 遮罩数据
         Spectrumf,  // 频域图像数据
-        Array,      // 数组类型（Revival Scripts兼容）
-        Object,     // 对象类型（Revival Scripts兼容）
+        Array,      // 数组类型（TunnelExtension Scripts兼容）
+        Object,     // 对象类型（TunnelExtension Scripts兼容）
 
         // 色彩管理类型
         Cube3DLut,          // 3D LUT立方体数据
@@ -188,12 +188,12 @@ namespace Tunnel_Next.Models
                 CompatibleTypes = new List<NodePortDataType> { NodePortDataType.Spectrumf }
             };
 
-            // Revival Scripts兼容类型
+            // TunnelExtension Scripts兼容类型
             definitions[NodePortDataType.Image] = new PortTypeInfo
             {
                 Type = NodePortDataType.Image,
                 Name = "Image",
-                Description = "通用图像类型（Revival Scripts兼容）",
+                Description = "通用图像类型（TunnelExtension Scripts兼容）",
                 HexColor = "#FF6464",
                 WpfColor = Color.FromRgb(0xFF, 0x64, 0x64),
                 Category = "图像",
@@ -204,7 +204,7 @@ namespace Tunnel_Next.Models
             {
                 Type = NodePortDataType.Array,
                 Name = "Array",
-                Description = "数组类型（Revival Scripts兼容）",
+                Description = "数组类型（TunnelExtension Scripts兼容）",
                 HexColor = "#64FFFF",
                 WpfColor = Color.FromRgb(0x64, 0xFF, 0xFF),
                 Category = "数据",
@@ -215,7 +215,7 @@ namespace Tunnel_Next.Models
             {
                 Type = NodePortDataType.Object,
                 Name = "Object",
-                Description = "对象类型（Revival Scripts兼容）",
+                Description = "对象类型（TunnelExtension Scripts兼容）",
                 HexColor = "#C8C8C8",
                 WpfColor = Color.FromRgb(0xC8, 0xC8, 0xC8),
                 Category = "数据",

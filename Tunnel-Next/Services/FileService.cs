@@ -28,8 +28,8 @@ namespace Tunnel_Next.Services
         /// 构造函数
         /// </summary>
         /// <param name="workFolderService">工作文件夹服务（可选）</param>
-        /// <param name="scriptManager">Revival Script管理器（可选）</param>
-        public FileService(WorkFolderService? workFolderService = null, RevivalScriptManager? scriptManager = null)
+        /// <param name="scriptManager">TunnelExtension Script管理器（可选）</param>
+        public FileService(WorkFolderService? workFolderService = null, TunnelExtensionScriptManager? scriptManager = null)
         {
             _workFolderService = workFolderService;
 
@@ -41,10 +41,10 @@ namespace Tunnel_Next.Services
         }
 
         /// <summary>
-        /// 更新Revival Script管理器
+        /// 更新TunnelExtension Script管理器
         /// </summary>
-        /// <param name="scriptManager">新的Revival Script管理器</param>
-        public void UpdateScriptManager(RevivalScriptManager scriptManager)
+        /// <param name="scriptManager">新的TunnelExtension Script管理器</param>
+        public void UpdateScriptManager(TunnelExtensionScriptManager scriptManager)
         {
             if (scriptManager != null)
             {
@@ -65,7 +65,7 @@ namespace Tunnel_Next.Services
             {
                 if (_serializer == null)
                 {
-                    throw new InvalidOperationException("节点图序列化器未初始化，请确保传入了RevivalScriptManager");
+                    throw new InvalidOperationException("节点图序列化器未初始化，请确保传入了TunnelExtensionScriptManager");
                 }
 
                 // 确定保存路径
@@ -162,7 +162,7 @@ namespace Tunnel_Next.Services
             try
             {
                 if (_deserializer == null)
-                    throw new InvalidOperationException("节点图反序列化器未初始化，请确保传入了RevivalScriptManager");
+                    throw new InvalidOperationException("节点图反序列化器未初始化，请确保传入了TunnelExtensionScriptManager");
 
                 // 确定加载路径
                 if (string.IsNullOrEmpty(filePath))
@@ -492,6 +492,6 @@ namespace Tunnel_Next.Services
 
         // 移除 UpdateNodeGraphForParameterChanges 方法
         // 不再需要通过 FileService 处理参数变化
-        // 改为使用单一链路：RevivalScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged → ProcessNodeGraphImmediately
+        // 改为使用单一链路：TunnelExtensionScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged → ProcessNodeGraphImmediately
     }
 }

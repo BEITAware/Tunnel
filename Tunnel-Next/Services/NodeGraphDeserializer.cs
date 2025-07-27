@@ -15,10 +15,10 @@ namespace Tunnel_Next.Services
     /// </summary>
     public class NodeGraphDeserializer
     {
-        private readonly RevivalScriptManager _scriptManager;
+        private readonly TunnelExtensionScriptManager _scriptManager;
         private readonly NodeIdManager _nodeIdManager;
 
-        public NodeGraphDeserializer(RevivalScriptManager scriptManager)
+        public NodeGraphDeserializer(TunnelExtensionScriptManager scriptManager)
         {
             _scriptManager = scriptManager ?? throw new ArgumentNullException(nameof(scriptManager));
             _nodeIdManager = NodeIdManager.Instance;
@@ -196,10 +196,10 @@ namespace Tunnel_Next.Services
 
 
                 // 尝试多种方式查找脚本
-                IRevivalScript? scriptInstance = null;
+                ITunnelExtensionScript? scriptInstance = null;
 
                 // 方法1: 直接使用原始路径
-                scriptInstance = _scriptManager.CreateRevivalScriptInstance(scriptPath);
+                scriptInstance = _scriptManager.CreateTunnelExtensionScriptInstance(scriptPath);
                 if (scriptInstance != null)
                 {
                 }
@@ -208,7 +208,7 @@ namespace Tunnel_Next.Services
 
                     // 方法2: 使用文件名
                     var fileName = Path.GetFileName(scriptPath);
-                    scriptInstance = _scriptManager.CreateRevivalScriptInstance(fileName);
+                    scriptInstance = _scriptManager.CreateTunnelExtensionScriptInstance(fileName);
                     if (scriptInstance != null)
                     {
                     }
@@ -216,12 +216,12 @@ namespace Tunnel_Next.Services
                     {
 
                         // 方法3: 通过脚本名称查找
-                        var availableScripts = _scriptManager.GetAvailableRevivalScripts();
+                        var availableScripts = _scriptManager.GetAvailableTunnelExtensionScripts();
                         var matchingScript = availableScripts.Values.FirstOrDefault(s => s.Name == node.Title);
                         if (matchingScript != null)
                         {
                             var relativePath = Path.GetRelativePath(_scriptManager.UserScriptsFolder, matchingScript.FilePath);
-                            scriptInstance = _scriptManager.CreateRevivalScriptInstance(relativePath);
+                            scriptInstance = _scriptManager.CreateTunnelExtensionScriptInstance(relativePath);
                             if (scriptInstance != null)
                             {
                                 // 更新节点的脚本路径为正确的路径
@@ -269,7 +269,7 @@ namespace Tunnel_Next.Services
         /// <summary>
         /// 重建节点参数（从脚本实例获取当前参数值）
         /// </summary>
-        private void RebuildNodeParameters(Node node, IRevivalScript scriptInstance)
+        private void RebuildNodeParameters(Node node, ITunnelExtensionScript scriptInstance)
         {
             try
             {

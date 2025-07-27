@@ -29,7 +29,7 @@ namespace Tunnel_Next.Services
         /// <param name="node">要更新的节点</param>
         /// <param name="script">节点的脚本实例</param>
         /// <returns>端口变化信息</returns>
-        public PortUpdateResult UpdateNodePorts(Node node, IRevivalScript script)
+        public PortUpdateResult UpdateNodePorts(Node node, ITunnelExtensionScript script)
         {
             System.Diagnostics.Debug.WriteLine($"[DynamicPortManager] 开始更新节点端口: {node.Title}");
 

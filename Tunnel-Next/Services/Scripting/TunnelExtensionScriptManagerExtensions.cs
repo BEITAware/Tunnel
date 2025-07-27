@@ -6,32 +6,32 @@ using System.Collections.Generic;
 namespace Tunnel_Next.Services.Scripting
 {
     /// <summary>
-    /// 兼容旧代码的扩展方法，为 IRevivalScript 提供扩展方法。
+    /// 兼容旧代码的扩展方法，为 ITunnelExtensionScript 提供扩展方法。
     /// </summary>
-    public static class RevivalScriptManagerExtensions
+    public static class TunnelExtensionScriptManagerExtensions
     {
         /// <summary>
-        /// 兼容旧版的 CreateScript 方法，内部调用 CreateRevivalScriptInstance。
+        /// 兼容旧版的 CreateScript 方法，内部调用 CreateTunnelExtensionScriptInstance。
         /// </summary>
-        public static IRevivalScript? CreateScript(this RevivalScriptManager manager, string path)
+        public static ITunnelExtensionScript? CreateScript(this TunnelExtensionScriptManager manager, string path)
         {
             if (manager == null) throw new ArgumentNullException(nameof(manager));
-            return manager.CreateRevivalScriptInstance(path);
+            return manager.CreateTunnelExtensionScriptInstance(path);
         }
 
         /// <summary>
-        /// 兼容旧版的 LoadScriptFromPath 方法，内部调用 CreateRevivalScriptInstance。
+        /// 兼容旧版的 LoadScriptFromPath 方法，内部调用 CreateTunnelExtensionScriptInstance。
         /// </summary>
-        public static IRevivalScript? LoadScriptFromPath(this RevivalScriptManager manager, string path)
+        public static ITunnelExtensionScript? LoadScriptFromPath(this TunnelExtensionScriptManager manager, string path)
         {
             if (manager == null) throw new ArgumentNullException(nameof(manager));
-            return manager.CreateRevivalScriptInstance(path);
+            return manager.CreateTunnelExtensionScriptInstance(path);
         }
 
         /// <summary>
         /// 获取脚本路径
         /// </summary>
-        public static string ScriptPath(this IRevivalScript script)
+        public static string ScriptPath(this ITunnelExtensionScript script)
         {
             if (script == null) throw new ArgumentNullException(nameof(script));
             
@@ -50,7 +50,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 获取脚本名称
         /// </summary>
-        public static string ScriptName(this IRevivalScript script)
+        public static string ScriptName(this ITunnelExtensionScript script)
         {
             if (script == null) throw new ArgumentNullException(nameof(script));
             
@@ -70,7 +70,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 获取脚本数据
         /// </summary>
-        public static string ScriptData(this IRevivalScript script, Dictionary<string, object>? data = null)
+        public static string ScriptData(this ITunnelExtensionScript script, Dictionary<string, object>? data = null)
         {
             if (script == null) throw new ArgumentNullException(nameof(script));
             

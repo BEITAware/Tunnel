@@ -83,7 +83,7 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
-        /// 是否为输入端口（用于Revival Scripts）
+        /// 是否为输入端口（用于TunnelExtension Scripts）
         /// </summary>
         public bool IsInput
         {
@@ -523,7 +523,7 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
-        /// 节点标签，用于存储额外的数据（如Revival Script实例或ViewModel）
+        /// 节点标签，用于存储额外的数据（如TunnelExtension Script实例或ViewModel）
         /// </summary>
         public object? Tag
         {
@@ -532,7 +532,7 @@ namespace Tunnel_Next.Models
         }
 
         /// <summary>
-        /// 视图模型（用于Revival Scripts）
+        /// 视图模型（用于TunnelExtension Scripts）
         /// </summary>
         public object? ViewModel
         {

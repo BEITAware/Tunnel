@@ -16,8 +16,8 @@ using System.Windows.Interop;
 namespace Tunnel_Next.Controls
 {
     /// <summary>
-    /// 高性能图像预览控件 - Revival Scripts系统专用版本
-    /// 专为Revival Scripts节点系统设计，支持f32bmp格式图像显示和实时预览
+    /// 高性能图像预览控件 - TunnelExtension Scripts系统专用版本
+    /// 专为TunnelExtension Scripts节点系统设计，支持f32bmp格式图像显示和实时预览
     /// </summary>
     public partial class ImagePreviewControl : UserControl
     {
@@ -30,7 +30,7 @@ namespace Tunnel_Next.Controls
         /// </summary>
         public System.Windows.Controls.Image PreviewImageControl => this.PreviewImage;
 
-        // 核心属性 - Revival Scripts系统
+        // 核心属性 - TunnelExtension Scripts系统
         private Mat? _currentImage;
         private BitmapSource? _originalBitmap;
         private double _zoomFactor = 1.0;
@@ -165,7 +165,7 @@ namespace Tunnel_Next.Controls
                     return;
                 }
 
-                var formatInfo = GetRevivalScriptImageFormat(_currentImage);
+                var formatInfo = GetTunnelExtensionScriptImageFormat(_currentImage);
                 var alphaInfo = GetAlphaChannelInfo(_currentImage);
                 try
                 {
@@ -222,7 +222,7 @@ namespace Tunnel_Next.Controls
 
                     PreviewImage.Source = null;
                     NoImageText.Visibility = Visibility.Visible;
-                    NoImageText.Text = "Revival Scripts图像转换失败";
+                    NoImageText.Text = "TunnelExtension Scripts图像转换失败";
                     _originalBitmap = null;
 
                     TryAlternativeImageConversion();
@@ -475,7 +475,7 @@ namespace Tunnel_Next.Controls
                 {
                     string tempFile = System.IO.Path.Combine(
                         System.IO.Path.GetTempPath(),
-                        $"revival_preview_{Guid.NewGuid()}.png");
+                        $"TunnelExtension_preview_{Guid.NewGuid()}.png");
 
                     Cv2.ImWrite(tempFile, matToConvert);
 
@@ -729,7 +729,7 @@ namespace Tunnel_Next.Controls
             _preserveCurrentImage = preserve;
         }
 
-        public void SetRevivalScriptImage(Mat? image, Dictionary<string, object>? metadata = null)
+        public void SetTunnelExtensionScriptImage(Mat? image, Dictionary<string, object>? metadata = null)
         {
             ImageSource = image;
 
@@ -762,7 +762,7 @@ namespace Tunnel_Next.Controls
         {
         }
 
-        private static string GetRevivalScriptImageFormat(Mat image)
+        private static string GetTunnelExtensionScriptImageFormat(Mat image)
         {
             if (image == null || image.Empty())
                 return "无效";
@@ -770,9 +770,9 @@ namespace Tunnel_Next.Controls
             var depth = image.Depth();
             var channels = image.Channels();
 
-            // Revival Scripts BGRA一等公民架构 (遵循OpenCV约定)
+            // TunnelExtension Scripts BGRA一等公民架构 (遵循OpenCV约定)
             if (depth == MatType.CV_32F && channels == 4)
-                return "F32BGRA (Revival主格式)";
+                return "F32BGRA (TunnelExtension主格式)";
             else if (depth == MatType.CV_32F && channels == 3)
                 return "F32BGR (OpenCV格式)";
             else if (depth == MatType.CV_8U && channels == 4)

@@ -28,9 +28,9 @@ namespace Tunnel_Next.Services.Scripting
     }
 
     /// <summary>
-    /// Revival Script基类，提供通用功能
+    /// TunnelExtension Script基类，提供通用功能
     /// </summary>
-    public abstract class RevivalScriptBase : IRevivalScript, INotifyPropertyChanged
+    public abstract class TunnelExtensionScriptBase : ITunnelExtensionScript, INotifyPropertyChanged
     {
         /// <summary>
         /// Fired when a parameter is changed externally (e.g., by UI or ViewModel)
@@ -253,7 +253,7 @@ namespace Tunnel_Next.Services.Scripting
         protected readonly SynchronizationContext _uiContext;
         protected readonly CancellationTokenSource _cancellationTokenSource;
 
-        public IRevivalScript Script { get; }
+        public ITunnelExtensionScript Script { get; }
         public int NodeId { get; set; }
 
         public bool IsProcessing
@@ -314,7 +314,7 @@ namespace Tunnel_Next.Services.Scripting
         public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
         public bool CanExecute => IsValid && !IsProcessing;
 
-        protected ScriptViewModelBase(IRevivalScript script)
+        protected ScriptViewModelBase(ITunnelExtensionScript script)
         {
             Script = script ?? throw new ArgumentNullException(nameof(script));
             _uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
@@ -427,7 +427,7 @@ namespace Tunnel_Next.Services.Scripting
                 await OnParameterChangedAsync(parameterName, oldValue, newValue);
 
                 // 移除多链路通知，只保留 OnParameterChanged 方法中的 ParameterExternallyChanged 事件
-                // 这样确保只有单一链路：RevivalScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged
+                // 这样确保只有单一链路：TunnelExtensionScriptBase.ParameterExternallyChanged → NodeEditorViewModel.HandleScriptParameterExternallyChanged
             }
             catch (Exception ex)
             {
@@ -463,9 +463,9 @@ namespace Tunnel_Next.Services.Scripting
     }
 
     /// <summary>
-    /// 支持动态UI的Revival Script基类
+    /// 支持动态UI的TunnelExtension Script基类
     /// </summary>
-    public abstract class DynamicUIRevivalScriptBase : RevivalScriptBase, IDynamicUIScript
+    public abstract class DynamicUITunnelExtensionScriptBase : TunnelExtensionScriptBase, IDynamicUIScript
     {
         public event EventHandler? UIUpdateRequested;
 

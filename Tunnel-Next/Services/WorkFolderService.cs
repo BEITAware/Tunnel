@@ -49,7 +49,7 @@ namespace Tunnel_Next.Services
         public string UserScriptsFolder => _userScriptsFolder;
 
         /// <summary>
-        /// 用户脚本资源文件夹路径（脚本文件夹下的RevivalResources）
+        /// 用户脚本资源文件夹路径（脚本文件夹下的TunnelExtensionResources）
         /// </summary>
         public string UserResourcesFolder => _userResourcesFolder;
 
@@ -95,7 +95,7 @@ namespace Tunnel_Next.Services
             {
                 _workFolder = _config.WorkFolder;
                 _userScriptsFolder = _config.ScriptsFolder;
-                _userResourcesFolder = Path.Combine(_userScriptsFolder, "RevivalResources");
+                _userResourcesFolder = Path.Combine(_userScriptsFolder, "TunnelExtensionResources");
 
                 // 基于工作文件夹设置其他路径
                 _nodeGraphsFolder = Path.Combine(_workFolder, "Projects");

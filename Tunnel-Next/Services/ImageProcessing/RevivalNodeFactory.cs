@@ -10,31 +10,31 @@ using Tunnel_Next.Services;
 namespace Tunnel_Next.Services.ImageProcessing
 {
     /// <summary>
-    /// Revival Scripts节点工厂 - 基于Revival Scripts系统创建节点
+    /// TunnelExtension Scripts节点工厂 - 基于TunnelExtension Scripts系统创建节点
     /// </summary>
-    public static class RevivalNodeFactory
+    public static class TunnelExtensionNodeFactory
     {
-        private static RevivalScriptManager? _revivalScriptManager;
+        private static TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
         private static Random _random = new Random(); // 用于随机样式
 
         /// <summary>
-        /// 获取所有可用的Revival Scripts节点类型
+        /// 获取所有可用的TunnelExtension Scripts节点类型
         /// </summary>
-        public static List<RevivalNodeMenuItem> GetAvailableRevivalNodeTypes(RevivalScriptManager? revivalScriptManager = null)
+        public static List<TunnelExtensionNodeMenuItem> GetAvailableTunnelExtensionNodeTypes(TunnelExtensionScriptManager? TunnelExtensionScriptManager = null)
         {
-            var nodeTypes = new List<RevivalNodeMenuItem>();
+            var nodeTypes = new List<TunnelExtensionNodeMenuItem>();
 
-            if (revivalScriptManager != null)
+            if (TunnelExtensionScriptManager != null)
             {
                 // 保存管理器引用以供后续使用
-                _revivalScriptManager = revivalScriptManager;
+                _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
 
-                // 从Revival Scripts管理器获取节点类型
-                var scripts = revivalScriptManager.GetAvailableRevivalScripts();
+                // 从TunnelExtension Scripts管理器获取节点类型
+                var scripts = TunnelExtensionScriptManager.GetAvailableTunnelExtensionScripts();
                 foreach (var kvp in scripts)
                 {
                     var scriptInfo = kvp.Value;
-                    nodeTypes.Add(new RevivalNodeMenuItem
+                    nodeTypes.Add(new TunnelExtensionNodeMenuItem
                     {
                         Name = scriptInfo.Name,
                         Category = scriptInfo.Category,
@@ -57,30 +57,30 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 从Revival Script创建节点（公共方法）
+        /// 从TunnelExtension Script创建节点（公共方法）
         /// </summary>
-        public static Node CreateRevivalNode(RevivalScriptInfo scriptInfo, double x, double y)
+        public static Node CreateTunnelExtensionNode(TunnelExtensionScriptInfo scriptInfo, double x, double y)
         {
             if (scriptInfo.IsSymbolNode)
             {
                 return CreateSymbolNode(scriptInfo, x, y);
             }
 
-            return CreateRevivalNodeFromScript(scriptInfo, x, y);
+            return CreateTunnelExtensionNodeFromScript(scriptInfo, x, y);
         }
 
         /// <summary>
-        /// 设置RevivalScriptManager（确保正确初始化）
+        /// 设置TunnelExtensionScriptManager（确保正确初始化）
         /// </summary>
-        public static void SetRevivalScriptManager(RevivalScriptManager manager)
+        public static void SetTunnelExtensionScriptManager(TunnelExtensionScriptManager manager)
         {
-            _revivalScriptManager = manager;
+            _TunnelExtensionScriptManager = manager;
         }
 
         /// <summary>
-        /// 从Revival Script创建节点
+        /// 从TunnelExtension Script创建节点
         /// </summary>
-        private static Node CreateRevivalNodeFromScript(RevivalScriptInfo scriptInfo, double x, double y)
+        private static Node CreateTunnelExtensionNodeFromScript(TunnelExtensionScriptInfo scriptInfo, double x, double y)
         {
             try
             {
@@ -101,7 +101,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 node.StyleType = _random.Next(2) == 0 ? "V1" : "V2";
 
                 // 创建脚本实例
-                var scriptInstance = CreateRevivalScriptInstance(scriptInfo);
+                var scriptInstance = CreateTunnelExtensionScriptInstance(scriptInfo);
 
                 if (scriptInstance != null)
                 {
@@ -109,8 +109,8 @@ namespace Tunnel_Next.Services.ImageProcessing
                     node.Tag = scriptInstance;
 
                     // 设置端口和参数
-                    SetupRevivalScriptPorts(node, scriptInstance);
-                    SetupRevivalScriptParameters(node, scriptInstance);
+                    SetupTunnelExtensionScriptPorts(node, scriptInstance);
+                    SetupTunnelExtensionScriptParameters(node, scriptInstance);
                 }
                 else
                 {
@@ -125,22 +125,22 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 创建Revival Script实例
+        /// 创建TunnelExtension Script实例
         /// </summary>
-        private static IRevivalScript? CreateRevivalScriptInstance(RevivalScriptInfo scriptInfo)
+        private static ITunnelExtensionScript? CreateTunnelExtensionScriptInstance(TunnelExtensionScriptInfo scriptInfo)
         {
             try
             {
-                if (_revivalScriptManager == null)
+                if (_TunnelExtensionScriptManager == null)
                 {
                     return null;
                 }
 
                 // 计算相对路径
-                var relativePath = Path.GetRelativePath(_revivalScriptManager.UserScriptsFolder, scriptInfo.FilePath);
+                var relativePath = Path.GetRelativePath(_TunnelExtensionScriptManager.UserScriptsFolder, scriptInfo.FilePath);
 
-                // 使用RevivalScriptManager创建实例
-                var instance = _revivalScriptManager.CreateRevivalScriptInstance(relativePath);
+                // 使用TunnelExtensionScriptManager创建实例
+                var instance = _TunnelExtensionScriptManager.CreateTunnelExtensionScriptInstance(relativePath);
 
                 if (instance != null)
                 {
@@ -158,9 +158,9 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 设置Revival Script端口
+        /// 设置TunnelExtension Script端口
         /// </summary>
-        private static void SetupRevivalScriptPorts(Node node, IRevivalScript scriptInstance)
+        private static void SetupTunnelExtensionScriptPorts(Node node, ITunnelExtensionScript scriptInstance)
         {
             try
             {
@@ -234,9 +234,9 @@ namespace Tunnel_Next.Services.ImageProcessing
         }
 
         /// <summary>
-        /// 设置Revival Script参数
+        /// 设置TunnelExtension Script参数
         /// </summary>
-        private static void SetupRevivalScriptParameters(Node node, IRevivalScript scriptInstance)
+        private static void SetupTunnelExtensionScriptParameters(Node node, ITunnelExtensionScript scriptInstance)
         {
             try
             {
@@ -316,7 +316,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 从符号节点信息创建占位节点
         /// </summary>
-        private static Node CreateSymbolNode(RevivalScriptInfo scriptInfo, double x, double y)
+        private static Node CreateSymbolNode(TunnelExtensionScriptInfo scriptInfo, double x, double y)
         {
             var node = new Node
             {
@@ -377,7 +377,7 @@ namespace Tunnel_Next.Services.ImageProcessing
             return node;
         }
 
-        // 移除了CreateRevivalScriptInstance方法，现在完全使用ScriptInstanceManager
+        // 移除了CreateTunnelExtensionScriptInstance方法，现在完全使用ScriptInstanceManager
 
         // 旧的随机ID生成方法已移除，等待重构
     }

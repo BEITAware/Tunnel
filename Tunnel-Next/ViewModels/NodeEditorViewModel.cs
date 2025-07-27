@@ -26,8 +26,8 @@ namespace Tunnel_Next.ViewModels
         private bool _isConnectionStartOutput;
         private readonly IImageProcessingService _processingService;
         private readonly ConnectionManager _connectionManager;
-        // 移除了传统的NodeTypeInfo，现在只使用Revival Scripts
-        private RevivalScriptManager? _revivalScriptManager;
+        // 移除了传统的NodeTypeInfo，现在只使用TunnelExtension Scripts
+        private TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
         private readonly FileService? _fileService;
         private bool _isProcessing = false;
 
@@ -41,15 +41,15 @@ namespace Tunnel_Next.ViewModels
         private readonly HashSet<Node> _pendingParamChangeNodes = new();
         private readonly object _pendingParamChangeLock = new();
 
-        public NodeEditorViewModel(RevivalScriptManager? revivalScriptManager = null, FileService? fileService = null)
+        public NodeEditorViewModel(TunnelExtensionScriptManager? TunnelExtensionScriptManager = null, FileService? fileService = null)
         {
-            _revivalScriptManager = revivalScriptManager;
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
             _fileService = fileService;
 
-            // 设置RevivalNodeFactory的管理器引用
-            if (_revivalScriptManager != null)
+            // 设置TunnelExtensionNodeFactory的管理器引用
+            if (_TunnelExtensionScriptManager != null)
             {
-                RevivalNodeFactory.SetRevivalScriptManager(_revivalScriptManager);
+                TunnelExtensionNodeFactory.SetTunnelExtensionScriptManager(_TunnelExtensionScriptManager);
             }
             Nodes = new ObservableCollection<Node>();
             Connections = new ObservableCollection<NodeConnection>();
@@ -58,15 +58,15 @@ namespace Tunnel_Next.ViewModels
             _connectionManager.ConnectionErrorDetected += OnConnectionErrorDetected;
 
             // 创建MVVM解耦的处理服务
-            if (_revivalScriptManager != null)
+            if (_TunnelExtensionScriptManager != null)
             {
-                var imageProcessor = new ImageProcessor(_revivalScriptManager);
+                var imageProcessor = new ImageProcessor(_TunnelExtensionScriptManager);
                 _processingService = new ProcessingCoordinator(imageProcessor);
             }
             else
             {
-                // 创建一个临时的RevivalScriptManager用于初始化
-                var tempManager = CreateTemporaryRevivalScriptManager();
+                // 创建一个临时的TunnelExtensionScriptManager用于初始化
+                var tempManager = CreateTemporaryTunnelExtensionScriptManager();
                 var imageProcessor = new ImageProcessor(tempManager);
                 _processingService = new ProcessingCoordinator(imageProcessor);
             }
@@ -92,9 +92,9 @@ namespace Tunnel_Next.ViewModels
         }
 
         /// <summary>
-        /// 创建临时的RevivalScriptManager用于初始化
+        /// 创建临时的TunnelExtensionScriptManager用于初始化
         /// </summary>
-        private static RevivalScriptManager CreateTemporaryRevivalScriptManager()
+        private static TunnelExtensionScriptManager CreateTemporaryTunnelExtensionScriptManager()
         {
             var tempScriptsFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TempScripts");
             var tempResourcesFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TempResources");
@@ -103,7 +103,7 @@ namespace Tunnel_Next.ViewModels
             System.IO.Directory.CreateDirectory(tempScriptsFolder);
             System.IO.Directory.CreateDirectory(tempResourcesFolder);
 
-            return new RevivalScriptManager(tempScriptsFolder, tempResourcesFolder);
+            return new TunnelExtensionScriptManager(tempScriptsFolder, tempResourcesFolder);
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace Tunnel_Next.ViewModels
         /// <summary>
         /// 可用的节点类型
         /// </summary>
-        // 移除了AvailableNodeTypes属性，现在只使用Revival Scripts
+        // 移除了AvailableNodeTypes属性，现在只使用TunnelExtension Scripts
 
         /// <summary>
         /// 图像处理服务
@@ -321,7 +321,7 @@ namespace Tunnel_Next.ViewModels
 
         private void ExecuteAddNode(Point? position)
         {
-            // 现在只使用Revival Scripts，通过RevivalNodeMenuService添加节点
+            // 现在只使用TunnelExtension Scripts，通过TunnelExtensionNodeMenuService添加节点
         }
 
         private void ExecuteAddSpecificNode(string? nodeTypeName)
@@ -331,10 +331,10 @@ namespace Tunnel_Next.ViewModels
                 return;
             }
 
-            // 现在通过RevivalScriptManager查找并创建节点
-            if (_revivalScriptManager != null)
+            // 现在通过TunnelExtensionScriptManager查找并创建节点
+            if (_TunnelExtensionScriptManager != null)
             {
-                var scripts = _revivalScriptManager.GetAvailableRevivalScripts();
+                var scripts = _TunnelExtensionScriptManager.GetAvailableTunnelExtensionScripts();
                 var scriptInfo = scripts.Values.FirstOrDefault(s => s.Name == nodeTypeName);
 
                 if (scriptInfo != null)
@@ -345,7 +345,7 @@ namespace Tunnel_Next.ViewModels
                     // 清除存储的位置，避免影响下次添加
                     _pendingNodePosition = null;
 
-                    var node = RevivalNodeFactory.CreateRevivalNode(scriptInfo, position.X, position.Y);
+                    var node = TunnelExtensionNodeFactory.CreateTunnelExtensionNode(scriptInfo, position.X, position.Y);
 
                     // 监听老的节点参数变化 PropertyChanged (This is for individual NodeParameter objects)
                     foreach (var parameter in node.Parameters)
@@ -355,13 +355,13 @@ namespace Tunnel_Next.ViewModels
 
                     Nodes.Add(node);
 
-                    // Subscribe to the script's external parameter change event from RevivalScriptBase
-                    IRevivalScript? scriptInstanceForEvent = null;
+                    // Subscribe to the script's external parameter change event from TunnelExtensionScriptBase
+                    ITunnelExtensionScript? scriptInstanceForEvent = null;
                     if (node.ViewModel is IScriptViewModel vm && vm.Script != null)
                     {
                         scriptInstanceForEvent = vm.Script;
                     }
-                    else if (node.Tag is IRevivalScript directScript)
+                    else if (node.Tag is ITunnelExtensionScript directScript)
                     {
                         scriptInstanceForEvent = directScript;
                     }
@@ -370,7 +370,7 @@ namespace Tunnel_Next.ViewModels
                         scriptInstanceForEvent = vmFromTag.Script;
                     }
 
-                    if (scriptInstanceForEvent is RevivalScriptBase rsb)
+                    if (scriptInstanceForEvent is TunnelExtensionScriptBase rsb)
                     {
                         rsb.ParameterExternallyChanged += HandleScriptParameterExternallyChanged;
                     }
@@ -398,7 +398,7 @@ namespace Tunnel_Next.ViewModels
                 if (changedNode != null && parameter != null)
                 {
                     // 同步参数到脚本的 ViewModel，这将触发 ViewModel 的 PropertyChanged 事件
-                    // 进而触发 RevivalScriptBase.OnParameterChanged 方法
+                    // 进而触发 TunnelExtensionScriptBase.OnParameterChanged 方法
                     SyncParameterToScriptViewModel(changedNode, parameter);
 
                     // 参数变化后标记节点及其下游节点需要处理，然后触发选择性处理
@@ -509,13 +509,13 @@ namespace Tunnel_Next.ViewModels
                     parameter.PropertyChanged -= Parameter_PropertyChanged;
                 }
 
-                // Unsubscribe from the script's external parameter change event from RevivalScriptBase
-                IRevivalScript? scriptInstanceForEvent = null;
+                // Unsubscribe from the script's external parameter change event from TunnelExtensionScriptBase
+                ITunnelExtensionScript? scriptInstanceForEvent = null;
                 if (nodeToDelete.ViewModel is IScriptViewModel vm && vm.Script != null)
                 {
                     scriptInstanceForEvent = vm.Script;
                 }
-                else if (nodeToDelete.Tag is IRevivalScript directScript)
+                else if (nodeToDelete.Tag is ITunnelExtensionScript directScript)
                 {
                     scriptInstanceForEvent = directScript;
                 }
@@ -524,7 +524,7 @@ namespace Tunnel_Next.ViewModels
                     scriptInstanceForEvent = vmFromTag.Script;
                 }
 
-                if (scriptInstanceForEvent is RevivalScriptBase rsb)
+                if (scriptInstanceForEvent is TunnelExtensionScriptBase rsb)
                 {
                     rsb.ParameterExternallyChanged -= HandleScriptParameterExternallyChanged;
                 }
@@ -609,13 +609,13 @@ namespace Tunnel_Next.ViewModels
                     parameter.PropertyChanged -= Parameter_PropertyChanged;
                 }
 
-                // Unsubscribe from the script's external parameter change event from RevivalScriptBase
-                IRevivalScript? scriptInstanceForEvent = null;
+                // Unsubscribe from the script's external parameter change event from TunnelExtensionScriptBase
+                ITunnelExtensionScript? scriptInstanceForEvent = null;
                 if (node.ViewModel is IScriptViewModel vm && vm.Script != null)
                 {
                     scriptInstanceForEvent = vm.Script;
                 }
-                else if (node.Tag is IRevivalScript directScript)
+                else if (node.Tag is ITunnelExtensionScript directScript)
                 {
                     scriptInstanceForEvent = directScript;
                 }
@@ -624,7 +624,7 @@ namespace Tunnel_Next.ViewModels
                     scriptInstanceForEvent = vmFromTag.Script;
                 }
 
-                if (scriptInstanceForEvent is RevivalScriptBase rsb)
+                if (scriptInstanceForEvent is TunnelExtensionScriptBase rsb)
                 {
                     rsb.ParameterExternallyChanged -= HandleScriptParameterExternallyChanged;
                 }
@@ -820,7 +820,7 @@ namespace Tunnel_Next.ViewModels
 
         private async void HandleScriptParameterExternallyChanged(object? sender, ScriptParameterChangedEventArgs e)
         {
-            if (sender is IRevivalScript changedScript)
+            if (sender is ITunnelExtensionScript changedScript)
             {
                 // Find the node associated with this script instance.
                 // Nodes can store the script instance or its ViewModel in the Tag property,
@@ -843,7 +843,7 @@ namespace Tunnel_Next.ViewModels
                         return;
                     }
 
-                    // The RevivalScriptBase.OnParameterChanged method already calls the script's OnParameterChangedAsync,
+                    // The TunnelExtensionScriptBase.OnParameterChanged method already calls the script's OnParameterChangedAsync,
                     // so the script's internal state (like ImageInputScript.ImagePath) should be up-to-date.
 
                     // Trigger graph re-processing with selective processing.
@@ -1320,12 +1320,12 @@ namespace Tunnel_Next.ViewModels
 
                     // 【修复】绑定脚本事件 - 这是加载节点图时缺失的关键步骤！
                     // 与新建节点时的逻辑保持一致（参考ExecuteAddSpecificNode方法）
-                    IRevivalScript? scriptInstanceForEvent = null;
+                    ITunnelExtensionScript? scriptInstanceForEvent = null;
                     if (node.ViewModel is IScriptViewModel vm && vm.Script != null)
                     {
                         scriptInstanceForEvent = vm.Script;
                     }
-                    else if (node.Tag is IRevivalScript directScript)
+                    else if (node.Tag is ITunnelExtensionScript directScript)
                     {
                         scriptInstanceForEvent = directScript;
                     }
@@ -1334,7 +1334,7 @@ namespace Tunnel_Next.ViewModels
                         scriptInstanceForEvent = vmFromTag.Script;
                     }
 
-                    if (scriptInstanceForEvent is RevivalScriptBase rsb)
+                    if (scriptInstanceForEvent is TunnelExtensionScriptBase rsb)
                     {
                         rsb.ParameterExternallyChanged += HandleScriptParameterExternallyChanged;
                     }
@@ -1382,23 +1382,23 @@ namespace Tunnel_Next.ViewModels
         // 旧的EnsureAllNodesParametersRebuilt方法已移除，等待重构
 
         /// <summary>
-        /// 刷新可用的节点类型（现在只支持Revival Scripts）
+        /// 刷新可用的节点类型（现在只支持TunnelExtension Scripts）
         /// </summary>
         public void RefreshAvailableNodeTypes()
         {
-            // 现在只使用Revival Scripts，不需要刷新传统节点类型
+            // 现在只使用TunnelExtension Scripts，不需要刷新传统节点类型
         }
 
         /// <summary>
-        /// 更新Revival Script管理器
+        /// 更新TunnelExtension Script管理器
         /// </summary>
-        /// <param name="revivalScriptManager">新的Revival Script管理器</param>
-        public void UpdateRevivalScriptManager(RevivalScriptManager revivalScriptManager)
+        /// <param name="TunnelExtensionScriptManager">新的TunnelExtension Script管理器</param>
+        public void UpdateTunnelExtensionScriptManager(TunnelExtensionScriptManager TunnelExtensionScriptManager)
         {
-            _revivalScriptManager = revivalScriptManager;
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
 
-            // 同时更新RevivalNodeFactory的管理器引用
-            RevivalNodeFactory.SetRevivalScriptManager(revivalScriptManager);
+            // 同时更新TunnelExtensionNodeFactory的管理器引用
+            TunnelExtensionNodeFactory.SetTunnelExtensionScriptManager(TunnelExtensionScriptManager);
 
         }
 
@@ -1452,7 +1452,7 @@ namespace Tunnel_Next.ViewModels
             }
         }
 
-        // 旧的RebuildRevivalScriptNode方法已移除，等待重构
+        // 旧的RebuildTunnelExtensionScriptNode方法已移除，等待重构
 
         // 旧的RebuildNodePorts方法已移除，等待重构
 
@@ -1492,7 +1492,7 @@ namespace Tunnel_Next.ViewModels
             // 尝试获得脚本实例
             object? scriptObj = null;
 
-            if (node.Tag is Services.Scripting.IRevivalScript script)
+            if (node.Tag is Services.Scripting.ITunnelExtensionScript script)
             {
                 scriptObj = script;
             }

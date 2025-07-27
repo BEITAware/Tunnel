@@ -8,10 +8,10 @@ using System.ComponentModel;
 namespace Tunnel_Next.Services.Scripting
 {
     /// <summary>
-    /// Revival Script特性 - 定义脚本的基本信息
+    /// TunnelExtension Script特性 - 定义脚本的基本信息
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class RevivalScriptAttribute : Attribute
+    public class TunnelExtensionScriptAttribute : Attribute
     {
         public string Name { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
@@ -21,10 +21,10 @@ namespace Tunnel_Next.Services.Scripting
         public string Color { get; set; } = "#4A90E2";
     }
 
-    // 移除了过时的NodeScriptAttribute，现在只使用RevivalScriptAttribute
+    // 移除了过时的NodeScriptAttribute，现在只使用TunnelExtensionScriptAttribute
 
     /// <summary>
-    /// 脚本参数特性 - 定义Revival Script参数
+    /// 脚本参数特性 - 定义TunnelExtension Script参数
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class ScriptParameterAttribute : Attribute
@@ -88,9 +88,9 @@ namespace Tunnel_Next.Services.Scripting
     }
 
     /// <summary>
-    /// Revival Script接口 - 新的脚本系统接口
+    /// TunnelExtension Script接口 - 新的脚本系统接口
     /// </summary>
-    public interface IRevivalScript
+    public interface ITunnelExtensionScript
     {
         /// <summary>
         /// 获取输入端口定义
@@ -172,7 +172,7 @@ namespace Tunnel_Next.Services.Scripting
     /// <summary>
     /// 支持动态UI更新的扩展接口
     /// </summary>
-    public interface IDynamicUIScript : IRevivalScript
+    public interface IDynamicUIScript : ITunnelExtensionScript
     {
         /// <summary>
         /// UI更新请求事件
@@ -224,7 +224,7 @@ namespace Tunnel_Next.Services.Scripting
         Initialized   // 初始化（节点刚创建或加载时）
     }
 
-    // 移除了过时的INodeScript接口，现在只使用IRevivalScript
+    // 移除了过时的INodeScript接口，现在只使用ITunnelExtensionScript
 
     /// <summary>
     /// 节点参数定义
@@ -252,7 +252,7 @@ namespace Tunnel_Next.Services.Scripting
         /// <summary>
         /// 脚本实例引用
         /// </summary>
-        IRevivalScript Script { get; }
+        ITunnelExtensionScript Script { get; }
 
         /// <summary>
         /// 节点ID（用于标识）
@@ -434,7 +434,7 @@ namespace Tunnel_Next.Services.Scripting
         void RequestPreviewReattach();
     }
 
-    // 移除了过时的ScriptInfo类，现在只使用RevivalScriptInfo
+    // 移除了过时的ScriptInfo类，现在只使用TunnelExtensionScriptInfo
 
-    // 移除了过时的ScriptCompilationResult类，现在只使用RevivalScriptCompilationResult
+    // 移除了过时的ScriptCompilationResult类，现在只使用TunnelExtensionScriptCompilationResult
 }

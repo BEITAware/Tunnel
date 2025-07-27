@@ -7,7 +7,7 @@
 ---
 ![主图](READMEPresentation/Tunnel.png)
 
-Tunnel 是一款拥有 Windows Aero 视觉风格的 **节点式图像处理工具**，通过 C# **Revival Script Framework** 让创意随时「复兴」。拖拽节点、连接端口、实时调参——预览窗口将即时呈现结果。
+Tunnel 是一款拥有 Windows Aero 视觉风格的 **节点式图像处理工具**，通过 C# **TunnelExtension Script Framework** 让创意随时「复兴」。拖拽节点、连接端口、实时调参——预览窗口将即时呈现结果。
 
 **核心理念**：
 
@@ -26,7 +26,7 @@ Tunnel 是一款拥有 Windows Aero 视觉风格的 **节点式图像处理工�
 ![节点图编辑器](READMEPresentation/NodeGraphEditor.gif)
 
 ### 脚本系统——代码即节点，保存即重载
-脚本系统是 Tunnel 最强大的特性，它能将 C# 代码直接转化为功能节点。只需在 `Scripts` 文件夹中创建 `.cs` 文件，Tunnel 的 `RevivalScriptManager` 就会利用 `FileSystemWatcher` 侦测变动，并通过 Roslyn 编译器自动触发热编译。无需手动编译 DLL 或重启程序，保存代码后数秒内，新的或更新的节点便会出现在菜单中待命。脚本通过 C# 特性（Attribute）定义其 UI，包括名称、分类及参数滑块等。这种「代码即节点」的理念极大加速了自定义工具的开发，让灵感随写随用。
+脚本系统是 Tunnel 最强大的特性，它能将 C# 代码直接转化为功能节点。只需在 `Scripts` 文件夹中创建 `.cs` 文件，Tunnel 的 `TunnelExtensionScriptManager` 就会利用 `FileSystemWatcher` 侦测变动，并通过 Roslyn 编译器自动触发热编译。无需手动编译 DLL 或重启程序，保存代码后数秒内，新的或更新的节点便会出现在菜单中待命。脚本通过 C# 特性（Attribute）定义其 UI，包括名称、分类及参数滑块等。这种「代码即节点」的理念极大加速了自定义工具的开发，让灵感随写随用。
 ![脚本系统](READMEPresentation/Nodes.gif)
 
 ### 元数据系统——让每一帧图像自带上下文
@@ -63,8 +63,8 @@ using System.Collections.Generic;
 using OpenCvSharp;
 using Tunnel_Next.Services.Scripting;
 
-[RevivalScript(Name = "灰度", Author = "Demo", Description = "将输入图像转换为灰度", Category = "基础处理", Color = "#95A5A6")]
-public class GrayScript : SimpleRevivalScriptBase
+[TunnelExtensionScript(Name = "灰度", Author = "Demo", Description = "将输入图像转换为灰度", Category = "基础处理", Color = "#95A5A6")]
+public class GrayScript : SimpleTunnelExtensionScriptBase
 {
     public override Dictionary<string, PortDefinition> GetInputPorts() => new()
     {
@@ -129,7 +129,7 @@ public class GrayScript : SimpleRevivalScriptBase
 
 ```text
 Tunnel/
-├─ Scripts/            # 你的 Revival Scripts（.cs）↩ 自动热加载
+├─ Scripts/            # 你的 TunnelExtension Scripts（.cs）↩ 自动热加载
 ├─ Resources/          # 公共图片 / 控件 等资源
 ├─ Tunnel-Next/        # WPF 主程序源码
 │  ├─ Services/        # 核心服务（脚本、I/O、图像处理…）

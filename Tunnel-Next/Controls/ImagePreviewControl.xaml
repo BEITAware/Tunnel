@@ -12,14 +12,14 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Revival Scripts图像显示区域 -->
+        <!-- TunnelExtension Scripts图像显示区域 -->
         <ScrollViewer Grid.Row="0"
                       x:Name="ImageScrollViewer"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
                       Background="#FF1A1F28">
 
-            <!-- Revival Scripts图像容器 -->
+            <!-- TunnelExtension Scripts图像容器 -->
             <Grid x:Name="ImageContainer" Background="Transparent">
                 <!-- 透明度棋盘背景 -->
                 <Rectangle x:Name="TransparencyBackground"

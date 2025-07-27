@@ -30,7 +30,7 @@ namespace Tunnel_Next.ViewModels
         private readonly FileService _fileService;
         private readonly ThumbnailService _thumbnailService;
         private readonly ThumbnailManager _thumbnailManager;
-        private RevivalScriptManager? _revivalScriptManager;
+        private TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
         private readonly ResourceCatalogService _resourceCatalogService;
         private ResourceScanService _resourceScanService;
         private ResourceWatcherService _resourceWatcherService;
@@ -38,24 +38,24 @@ namespace Tunnel_Next.ViewModels
         private NodeGraphInterpreterService? _nodeGraphInterpreterService;
         private DocumentManagerService? _documentManager;
 
-        public MainViewModel(RevivalScriptManager? revivalScriptManager = null, bool initializeImmediately = true)
+        public MainViewModel(TunnelExtensionScriptManager? TunnelExtensionScriptManager = null, bool initializeImmediately = true)
         {
-            _revivalScriptManager = revivalScriptManager;
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
 
-            // 初始化服务（传入RevivalScriptManager）
-            _fileService = new FileService(_workFolderService, _revivalScriptManager);
+            // 初始化服务（传入TunnelExtensionScriptManager）
+            _fileService = new FileService(_workFolderService, _TunnelExtensionScriptManager);
             _thumbnailService = new ThumbnailService(_workFolderService);
             _thumbnailManager = new ThumbnailManager(_thumbnailService);
             _resourceCatalogService = new ResourceCatalogService(_workFolderService);
-            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
+            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _TunnelExtensionScriptManager);
             _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
             _staticNodeService = new StaticNodeService(_workFolderService);
-            _nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
+            _nodeEditor = new NodeEditorViewModel(_TunnelExtensionScriptManager);
 
-            // 初始化节点图解释器服务（如果RevivalScriptManager可用）
-            if (_revivalScriptManager != null)
+            // 初始化节点图解释器服务（如果TunnelExtensionScriptManager可用）
+            if (_TunnelExtensionScriptManager != null)
             {
-                _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
+                _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _TunnelExtensionScriptManager, _workFolderService);
 
                 // 初始化节点图导出服务并设置委托
                 SetupNodeGraphExportDelegate();
@@ -463,18 +463,18 @@ namespace Tunnel_Next.ViewModels
                 }
 
                 // 步骤1: 反序列化模板
-                RevivalScriptManager revivalManager;
-                if (_revivalScriptManager != null)
+                TunnelExtensionScriptManager TunnelExtensionManager;
+                if (_TunnelExtensionScriptManager != null)
                 {
-                    revivalManager = _revivalScriptManager;
+                    TunnelExtensionManager = _TunnelExtensionScriptManager;
                 }
                 else
                 {
                     // 确保WorkFolderService已初始化
                     await _workFolderService.InitializeAsync();
-                    revivalManager = new RevivalScriptManager(_workFolderService.UserScriptsFolder, _workFolderService.UserResourcesFolder);
+                    TunnelExtensionManager = new TunnelExtensionScriptManager(_workFolderService.UserScriptsFolder, _workFolderService.UserResourcesFolder);
                 }
-                var deserializer = new NodeGraphDeserializer(revivalManager);
+                var deserializer = new NodeGraphDeserializer(TunnelExtensionManager);
                 var json = await File.ReadAllTextAsync(templatePath);
                 var nodeGraph = deserializer.DeserializeNodeGraph(json);
 
@@ -731,7 +731,7 @@ namespace Tunnel_Next.ViewModels
                             }
 
                             // 方法2：直接通过脚本实例设置参数
-                            if (!parameterSet && lastNode.Tag is Services.Scripting.IRevivalScript scriptInstance)
+                            if (!parameterSet && lastNode.Tag is Services.Scripting.ITunnelExtensionScript scriptInstance)
                             {
                                 try
                                 {
@@ -743,9 +743,9 @@ namespace Tunnel_Next.ViewModels
                                         imagePathProperty.SetValue(scriptInstance, workFolderPath);
 
                                         // 触发参数变化事件，确保UI和处理流程同步
-                                        if (scriptInstance is Services.Scripting.RevivalScriptBase revivalScript)
+                                        if (scriptInstance is Services.Scripting.TunnelExtensionScriptBase TunnelExtensionScript)
                                         {
-                                            revivalScript.OnParameterChanged("ImagePath", workFolderPath);
+                                            TunnelExtensionScript.OnParameterChanged("ImagePath", workFolderPath);
                                         }
 
                                         parameterSet = true;
@@ -1615,7 +1615,7 @@ namespace Tunnel_Next.ViewModels
                 TaskStatus = "正在打开批量处理器...";
 
                 // 创建并打开批量处理器窗口
-                var batchProcessWindow = new UtilityTools.BatchProcessor.Views.BatchProcessWindow(_revivalScriptManager);
+                var batchProcessWindow = new UtilityTools.BatchProcessor.Views.BatchProcessWindow(_TunnelExtensionScriptManager);
                 
                 // 设置Owner属性
                 var mainWindow = System.Windows.Application.Current?.MainWindow;
@@ -1637,32 +1637,32 @@ namespace Tunnel_Next.ViewModels
 
         #endregion
 
-        #region RevivalScriptManager Update
+        #region TunnelExtensionScriptManager Update
 
         /// <summary>
-        /// 更新RevivalScriptManager并重新创建相关服务
+        /// 更新TunnelExtensionScriptManager并重新创建相关服务
         /// </summary>
-        public void UpdateRevivalScriptManager(RevivalScriptManager revivalScriptManager)
+        public void UpdateTunnelExtensionScriptManager(TunnelExtensionScriptManager TunnelExtensionScriptManager)
         {
-            _revivalScriptManager = revivalScriptManager;
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
 
-            // 重新创建ResourceScanService，传入正确的RevivalScriptManager
-            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _revivalScriptManager);
+            // 重新创建ResourceScanService，传入正确的TunnelExtensionScriptManager
+            _resourceScanService = new ResourceScanService(_workFolderService, _thumbnailService, _TunnelExtensionScriptManager);
 
             // 重新创建ResourceWatcherService
             _resourceWatcherService = new ResourceWatcherService(_workFolderService, _resourceCatalogService, _resourceScanService);
 
-            // 更新NodeEditor的RevivalScriptManager
-            _nodeEditor.UpdateRevivalScriptManager(_revivalScriptManager);
+            // 更新NodeEditor的TunnelExtensionScriptManager
+            _nodeEditor.UpdateTunnelExtensionScriptManager(_TunnelExtensionScriptManager);
 
             // 重新创建节点图解释器服务
-            _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _revivalScriptManager, _workFolderService);
+            _nodeGraphInterpreterService = new NodeGraphInterpreterService(_fileService, _TunnelExtensionScriptManager, _workFolderService);
 
             // 重新设置节点图导出委托
             SetupNodeGraphExportDelegate();
 
-            System.Diagnostics.Debug.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
-            Console.WriteLine("[MainViewModel] RevivalScriptManager已更新，ResourceScanService已重新创建");
+            System.Diagnostics.Debug.WriteLine("[MainViewModel] TunnelExtensionScriptManager已更新，ResourceScanService已重新创建");
+            Console.WriteLine("[MainViewModel] TunnelExtensionScriptManager已更新，ResourceScanService已重新创建");
         }
 
         #endregion
@@ -1677,7 +1677,7 @@ namespace Tunnel_Next.ViewModels
         public async Task<Dictionary<string, object>?> InterpretNodeGraphAsync(string nodeGraphPath)
         {
             if (_nodeGraphInterpreterService == null)
-                throw new InvalidOperationException("节点图解释器服务未初始化，请确保RevivalScriptManager已正确设置");
+                throw new InvalidOperationException("节点图解释器服务未初始化，请确保TunnelExtensionScriptManager已正确设置");
 
             return await _nodeGraphInterpreterService.InterpretNodeGraphAsync(nodeGraphPath);
         }

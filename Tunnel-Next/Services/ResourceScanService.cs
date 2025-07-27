@@ -17,7 +17,7 @@ namespace Tunnel_Next.Services
         private readonly WorkFolderService _workFolderService;
         private readonly ThumbnailService _thumbnailService;
         private readonly UnifiedResourceScanner _unifiedScanner;
-        private readonly RevivalScriptManager? _scriptManager;
+        private readonly TunnelExtensionScriptManager? _scriptManager;
 
         /// <summary>
         /// 支持的节点图文件扩展名
@@ -50,7 +50,7 @@ namespace Tunnel_Next.Services
             return typeFromExtension;
         }
 
-        public ResourceScanService(WorkFolderService workFolderService, ThumbnailService thumbnailService, RevivalScriptManager? scriptManager = null, IServiceProvider? serviceProvider = null)
+        public ResourceScanService(WorkFolderService workFolderService, ThumbnailService thumbnailService, TunnelExtensionScriptManager? scriptManager = null, IServiceProvider? serviceProvider = null)
         {
             _workFolderService = workFolderService ?? throw new ArgumentNullException(nameof(workFolderService));
             _thumbnailService = thumbnailService ?? throw new ArgumentNullException(nameof(thumbnailService));
@@ -324,7 +324,7 @@ namespace Tunnel_Next.Services
                     }
 
                     // 查找类名
-                    if (trimmedLine.Contains("class ") && trimmedLine.Contains("RevivalScriptBase"))
+                    if (trimmedLine.Contains("class ") && trimmedLine.Contains("TunnelExtensionScriptBase"))
                     {
                         var classIndex = trimmedLine.IndexOf("class ");
                         var colonIndex = trimmedLine.IndexOf(":");

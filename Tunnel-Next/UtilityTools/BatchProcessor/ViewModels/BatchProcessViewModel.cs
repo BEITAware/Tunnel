@@ -26,7 +26,7 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
         private readonly ThumbnailService _thumbnailService;
         private readonly FileService _fileService;
         private readonly NodeEditorViewModel? _nodeEditorViewModel;
-        private readonly RevivalScriptManager? _revivalScriptManager;
+        private readonly TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
         private NodePreviewControl? _previewControl;
         private BatchProcessNodeGraphItem? _firstSelectedItem;
         private string _previewTitle = "";
@@ -139,17 +139,17 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
 
         #region 构造函数
 
-        public BatchProcessViewModel(RevivalScriptManager? revivalScriptManager)
+        public BatchProcessViewModel(TunnelExtensionScriptManager? TunnelExtensionScriptManager)
         {
-            _revivalScriptManager = revivalScriptManager;
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager;
 
             // 初始化服务
             _workFolderService = new WorkFolderService();
             _thumbnailService = new ThumbnailService(_workFolderService);
-            _fileService = new FileService(_workFolderService, _revivalScriptManager);
+            _fileService = new FileService(_workFolderService, _TunnelExtensionScriptManager);
 
             // 创建一个轻量级的NodeEditorViewModel用于预览
-            _nodeEditorViewModel = new NodeEditorViewModel(_revivalScriptManager);
+            _nodeEditorViewModel = new NodeEditorViewModel(_TunnelExtensionScriptManager);
 
             // 初始化命令
             RefreshCommand = new RelayCommand(async () => await LoadNodeGraphsAsync());
@@ -415,7 +415,7 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.ViewModels
                     string json = await File.ReadAllTextAsync(item.FilePath);
 
                     // 创建反序列化器
-                    var deserializer = new NodeGraphDeserializer(_revivalScriptManager);
+                    var deserializer = new NodeGraphDeserializer(_TunnelExtensionScriptManager);
 
                     // 反序列化节点图
                     var nodeGraph = deserializer.DeserializeNodeGraph(json);

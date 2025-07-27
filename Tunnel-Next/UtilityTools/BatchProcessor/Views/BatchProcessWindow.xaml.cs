@@ -15,12 +15,12 @@ namespace Tunnel_Next.UtilityTools.BatchProcessor.Views
     {
         private readonly BatchProcessViewModel _viewModel;
 
-        public BatchProcessWindow(RevivalScriptManager? revivalScriptManager)
+        public BatchProcessWindow(TunnelExtensionScriptManager? TunnelExtensionScriptManager)
         {
             InitializeComponent();
             
             // 创建并设置视图模型
-            _viewModel = new BatchProcessViewModel(revivalScriptManager);
+            _viewModel = new BatchProcessViewModel(TunnelExtensionScriptManager);
             DataContext = _viewModel;
             
             // 订阅视图模型事件

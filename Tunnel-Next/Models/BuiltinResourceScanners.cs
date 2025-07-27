@@ -206,8 +206,8 @@ namespace Tunnel_Next.Models
                 System.Diagnostics.Debug.WriteLine($"[ScriptScan] 开始扫描脚本文件夹: {scriptsFolder}");
 
                 // 获取脚本管理器（如果可用）
-                var scriptManager = context.Services?.GetService(typeof(RevivalScriptManager)) as RevivalScriptManager;
-                var availableScripts = scriptManager?.GetAvailableRevivalScripts() ?? new Dictionary<string, RevivalScriptInfo>();
+                var scriptManager = context.Services?.GetService(typeof(TunnelExtensionScriptManager)) as TunnelExtensionScriptManager;
+                var availableScripts = scriptManager?.GetAvailableTunnelExtensionScripts() ?? new Dictionary<string, TunnelExtensionScriptInfo>();
 
                 var scriptFiles = new List<string>();
                 scriptFiles.AddRange(Directory.GetFiles(scriptsFolder, "*.cs", SearchOption.AllDirectories));
@@ -222,7 +222,7 @@ namespace Tunnel_Next.Models
 
                         // 查找脚本资源文件夹
                         var scriptName = Path.GetFileNameWithoutExtension(filePath);
-                        var scriptResourceFolder = Path.Combine(scriptsFolder, "RevivalResources", scriptName);
+                        var scriptResourceFolder = Path.Combine(scriptsFolder, "TunnelExtensionResources", scriptName);
                         if (Directory.Exists(scriptResourceFolder))
                         {
                             resource.AddAssociatedFolder(scriptResourceFolder);

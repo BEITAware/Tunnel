@@ -69,9 +69,9 @@ namespace Tunnel_Next
             });
             
             // 监听主窗口的脚本管理器初始化完成事件
-            if (mainWindow.GetRevivalScriptManager() != null)
+            if (mainWindow.GetTunnelExtensionScriptManager() != null)
             {
-                var scriptManager = mainWindow.GetRevivalScriptManager();
+                var scriptManager = mainWindow.GetTunnelExtensionScriptManager();
                 
                 // 设置脚本编译状态订阅
                 Debug.WriteLine("设置脚本编译完成事件处理程序");
@@ -169,7 +169,7 @@ namespace Tunnel_Next
                         splashWindow.UpdateStatus($"正在初始化脚本系统... ({checkCount/2}秒)");
                     }
                     
-                    var scriptManager = mainWindow.GetRevivalScriptManager();
+                    var scriptManager = mainWindow.GetTunnelExtensionScriptManager();
                     if (scriptManager != null)
                     {
                         checkTimer.Stop();

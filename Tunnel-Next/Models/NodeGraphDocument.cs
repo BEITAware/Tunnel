@@ -445,7 +445,7 @@ namespace Tunnel_Next.Models
                 foreach (var node in _nodeEditor.Nodes)
                 {
                     // 检查是否需要重建参数
-                    if (node.Tag is Services.Scripting.IRevivalScript scriptInstance && node.Parameters.Count == 0)
+                    if (node.Tag is Services.Scripting.ITunnelExtensionScript scriptInstance && node.Parameters.Count == 0)
                     {
                         RebuildNodeParameters(node, scriptInstance);
                     }
@@ -652,7 +652,7 @@ namespace Tunnel_Next.Models
         /// <summary>
         /// 重建节点参数（从脚本实例获取当前参数值）
         /// </summary>
-        private void RebuildNodeParameters(Node node, Services.Scripting.IRevivalScript scriptInstance)
+        private void RebuildNodeParameters(Node node, Services.Scripting.ITunnelExtensionScript scriptInstance)
         {
             try
             {

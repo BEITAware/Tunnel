@@ -13,12 +13,12 @@ namespace Tunnel_Next.Services
     public class DocumentFactory
     {
         private readonly FileService _fileService;
-        private readonly RevivalScriptManager? _revivalScriptManager;
+        private readonly TunnelExtensionScriptManager? _TunnelExtensionScriptManager;
 
-        public DocumentFactory(FileService fileService, RevivalScriptManager? revivalScriptManager)
+        public DocumentFactory(FileService fileService, TunnelExtensionScriptManager? TunnelExtensionScriptManager)
         {
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
-            _revivalScriptManager = revivalScriptManager; // Revival Scripts管理器
+            _TunnelExtensionScriptManager = TunnelExtensionScriptManager; // TunnelExtension Scripts管理器
         }
 
         /// <summary>
@@ -34,8 +34,8 @@ namespace Tunnel_Next.Services
                 var nodeGraph = _fileService.CreateNewNodeGraph();
                 nodeGraph.Name = name ?? "新节点图";
 
-                // 创建节点编辑器实例（传入RevivalScriptManager）
-                var nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
+                // 创建节点编辑器实例（传入TunnelExtensionScriptManager）
+                var nodeEditor = new NodeEditorViewModel(_TunnelExtensionScriptManager);
 
                 // 创建文档实例
                 var document = new NodeGraphDocument(nodeGraph, nodeEditor, _fileService);
@@ -68,8 +68,8 @@ namespace Tunnel_Next.Services
                 if (loadedNodeGraph == null)
                     throw new InvalidOperationException("加载节点图失败");
 
-                // 创建节点编辑器实例（传入RevivalScriptManager）
-                var nodeEditor = new NodeEditorViewModel(_revivalScriptManager);
+                // 创建节点编辑器实例（传入TunnelExtensionScriptManager）
+                var nodeEditor = new NodeEditorViewModel(_TunnelExtensionScriptManager);
 
                 // 加载节点图到编辑器
                 await nodeEditor.LoadNodeGraphAsync(loadedNodeGraph);
