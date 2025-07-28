@@ -10,6 +10,13 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# 添加权限配置
+permissions:
+  contents: write
+  packages: read
+  actions: read
+  checks: read
+
 jobs:
   build-and-release:
     runs-on: windows-latest
@@ -105,6 +112,16 @@ jobs:
           -p:AssemblyVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
           -p:FileVersion=${{ steps.version.outputs.TECHNICAL_VERSION }} `
           -p:InformationalVersion=${{ steps.version.outputs.DISPLAY_VERSION }}
+
+    # 将 App 文件夹复制到安装向导输出目录，确保包含主程序
+    - name: Copy App folder to installer output
+      run: |
+        if (Test-Path "InstallationWizard\App") {
+          Copy-Item "InstallationWizard\App" -Destination "InstallationWizardOutput\App" -Recurse -Force
+          echo "App folder copied to installer output"
+        } else {
+          echo "InstallationWizard\\App 文件夹不存在，无法复制"
+        }
 
     - name: Package installation wizard
       id: package
