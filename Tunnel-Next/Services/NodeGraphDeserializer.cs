@@ -142,6 +142,10 @@ namespace Tunnel_Next.Services
         /// </summary>
         private void DeserializeNodePorts(JObject nodeData, Node node)
         {
+            // Reset flexible port type lists
+            node.FlexibleInputTypes.Clear();
+            node.FlexibleOutputTypes.Clear();
+
             // 恢复输入端口
             if (nodeData["inputPorts"] is JArray inputPorts)
             {
@@ -158,6 +162,8 @@ namespace Tunnel_Next.Services
                             IsInput = true
                         };
                         node.InputPorts.Add(port);
+                        if (port.IsFlexible)
+                            node.FlexibleInputTypes.Add(port.DataType);
                     }
                 }
             }
@@ -178,6 +184,8 @@ namespace Tunnel_Next.Services
                             IsInput = false
                         };
                         node.OutputPorts.Add(port);
+                        if (port.IsFlexible)
+                            node.FlexibleOutputTypes.Add(port.DataType);
                     }
                 }
             }

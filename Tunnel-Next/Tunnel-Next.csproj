@@ -68,6 +68,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Controls\aurora.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Controls\aurora.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="workfolders.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

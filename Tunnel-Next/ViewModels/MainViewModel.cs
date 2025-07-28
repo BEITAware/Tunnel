@@ -1103,47 +1103,45 @@ namespace Tunnel_Next.ViewModels
                 node.UpdateNodeHeight();
             }
 
-            // 2. 使用拓扑排序确定节点层级
-            var layers = PerformTopologicalLayering(nodes, connections);
+            // 2. 使用“逆向”拓扑分层 —— 从输出（汇点）开始反向分层
+            var layers = PerformReverseTopologicalLayering(nodes, connections);
 
-            // 3. 密集布局参数 - 极致紧凑
-            const double layerSpacing = 80;   // 层间距极度减少到80
-            const double nodeSpacing = 5;    // 节点间距极度减少到5
-            const double startX = 10;        // 起始X位置极度减少
-            const double startY = 10;        // 起始Y位置极度减少
+            // 3. 布局参数（不再追求极致紧凑，而是整齐的“热带鱼形”）
+            const double layerSpacing = 150; // 层间距
+            const double nodeSpacing  = 20;  // 同层节点间距
+            const double startX      = 50;  // 起始 X
+            const double startY      = 50;  // 起始 Y
 
-            // 4. 为每一层布局节点 - 使用极致紧凑算法
+            // 4. 自左向右布置：最左侧为输入层（sources），最右侧为输出层（sinks）
             double currentX = startX;
 
-            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            for (int layerIndex = layers.Count - 1; layerIndex >= 0; layerIndex--)
             {
                 var layer = layers[layerIndex];
                 if (!layer.Any()) continue;
 
-                // 按连接数量和高度排序，优化垂直空间利用
+                // 为了减少交叉，按连接数、节点高度排序
                 var sortedLayer = layer.OrderBy(n => GetNodeConnectionCount(n, connections))
-                                      .ThenBy(n => n.Height).ToList();
+                                       .ThenBy(n => n.Height)
+                                       .ToList();
 
-                // 使用极致紧凑的垂直打包
-                var packedPositions = PackNodesUltraCompact(sortedLayer, nodeSpacing, startY);
+                // 计算当前层整体高度，以便垂直居中
+                double totalHeight = sortedLayer.Sum(n => n.Height) + (sortedLayer.Count - 1) * nodeSpacing;
+                double currentY = startY;
 
-                // 设置节点位置
-                for (int i = 0; i < sortedLayer.Count; i++)
+                foreach (var node in sortedLayer)
                 {
-                    var node = sortedLayer[i];
                     node.X = currentX;
-                    node.Y = packedPositions[i];
+                    node.Y = currentY;
+                    currentY += node.Height + nodeSpacing;
                 }
 
-                // 移动到下一层，使用极致紧凑的宽度计算
-                // 进一步减少层间距，几乎贴合
-                var layerWidth = GetUltraCompactWidth(layer);
-                currentX += layerWidth + Math.Min(layerSpacing, layerWidth * 0.3); // 层间距不超过节点宽度的30%
+                currentX += GetMaxNodeWidth(layer) + layerSpacing;
             }
-
+ 
             // 后处理：微调重叠节点
             ResolveNodeOverlaps(nodes, nodeSpacing);
-
+ 
             // 通知节点图已修改
             if (nodes.Any())
             {
@@ -1151,6 +1149,49 @@ namespace Tunnel_Next.ViewModels
                 var firstNodeX = firstNode.X;
                 firstNode.X = firstNodeX; // 触发PropertyChanged事件
             }
+        }
+
+        /// <summary>
+        /// 逆向拓扑分层：以“输出节点→输入节点”的方向分层。
+        /// 逻辑：每次选取“所有输出连线已指向已处理节点或空”的节点，形成一层。
+        /// </summary>
+        private List<List<Node>> PerformReverseTopologicalLayering(List<Node> nodes, List<NodeConnection> connections)
+        {
+            var layers = new List<List<Node>>();
+            var remainingNodes = new HashSet<Node>(nodes);
+            var processedNodes = new HashSet<Node>();
+
+            while (remainingNodes.Any())
+            {
+                var currentLayer = new List<Node>();
+
+                // 找到当前层节点：其所有“输出”都已指向已处理的节点或为空
+                var candidateNodes = remainingNodes.Where(node =>
+                {
+                    var outputConnections = connections.Where(c => c.OutputNode?.Id == node.Id);
+                    return outputConnections.All(c => c.InputNode == null || processedNodes.Contains(c.InputNode));
+                }).ToList();
+
+                // 若检测到循环依赖，则强行取一个节点打破
+                if (!candidateNodes.Any() && remainingNodes.Any())
+                {
+                    candidateNodes.Add(remainingNodes.First());
+                }
+
+                foreach (var node in candidateNodes)
+                {
+                    currentLayer.Add(node);
+                    remainingNodes.Remove(node);
+                    processedNodes.Add(node);
+                }
+
+                if (currentLayer.Any())
+                {
+                    layers.Add(currentLayer);
+                }
+            }
+
+            return layers;
         }
 
         /// <summary>
