@@ -1,4 +1,4 @@
-# ✨ Tunnel
+# Tunnel
 
 [![Target Framework](https://img.shields.io/badge/.NET-8.0-blueviolet?logo=dotnet)](https://learn.microsoft.com/dotnet) [![Platform](https://img.shields.io/badge/平台-Windows%2010%20%7C%2011-lightgrey?logo=windows)](https://www.microsoft.com/windows) [![OpenCvSharp](https://img.shields.io/badge/OpenCV-4.x-informational?logo=opencv)](https://opencv.org)  [![License](https://img.shields.io/github/license/BEITAware/Tunnel)](LICENSE)
 
