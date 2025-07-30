@@ -49,6 +49,24 @@ namespace Tunnel_Next.Controls
         private bool _isUpdating = false;
         private bool _preserveCurrentImage = false; // 标志：是否保持当前图像不被清除
 
+        // --------------- 新增：缩放模式枚举与字段 -----------------
+        private enum ScalingMode
+        {
+            /// <summary>优化的区域缩放（默认，保持现有预缩放逻辑）</summary>
+            OptimizedAreaWithPreScale,
+            /// <summary>最近邻缩放，不进行预缩放</summary>
+            NearestNeighborNoPreScale,
+            /// <summary>区域缩放，不进行预缩放</summary>
+            AreaNoPreScale
+        }
+
+        private ScalingMode _scalingMode = ScalingMode.OptimizedAreaWithPreScale;
+
+        /// <summary>
+        /// 当前模式下是否允许预缩放
+        /// </summary>
+        private bool ShouldPreScale => _scalingMode == ScalingMode.OptimizedAreaWithPreScale;
+
         public Mat? ImageSource
         {
             get => (Mat?)GetValue(ImageSourceProperty);
@@ -188,7 +206,7 @@ namespace Tunnel_Next.Controls
                     {
                         var requiredBytes = (long)imgWidth * imgHeight * imgChannels * (imgDepth == MatType.CV_8U ? 1 : 4);
 
-                        if (requiredBytes > MAX_BUFFER_SIZE)
+                        if (requiredBytes > MAX_BUFFER_SIZE && ShouldPreScale)
                         {
                             using var scaledMat = ResizeImageForPreview(_currentImage);
                             bitmapSource = scaledMat.ToBitmapSource();
@@ -250,7 +268,7 @@ namespace Tunnel_Next.Controls
             try
             {
                 long floatBytes = (long)mat.Width * mat.Height * mat.Channels() * sizeof(float);
-                if (floatBytes > MAX_BUFFER_SIZE)
+                if (floatBytes > MAX_BUFFER_SIZE && ShouldPreScale)
                 {
                     workingMat = ResizeImageForPreview(mat);
                     disposeWorking = true;
@@ -532,6 +550,21 @@ namespace Tunnel_Next.Controls
 
         private void UpdateRenderingQuality()
         {
+            // 根据用户选择的缩放模式优先设置算法
+            if (_scalingMode == ScalingMode.NearestNeighborNoPreScale)
+            {
+                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.NearestNeighbor);
+                RenderOptions.SetEdgeMode(PreviewImage, EdgeMode.Aliased);
+                return;
+            }
+            else if (_scalingMode == ScalingMode.AreaNoPreScale)
+            {
+                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.Fant);
+                RenderOptions.SetEdgeMode(PreviewImage, EdgeMode.Unspecified);
+                return;
+            }
+
+            // 默认逻辑：根据缩放系数动态调整
             if (_zoomFactor < 0.1)
             {
                 RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.LowQuality);
@@ -547,6 +580,32 @@ namespace Tunnel_Next.Controls
                 RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.Fant);
                 RenderOptions.SetEdgeMode(PreviewImage, EdgeMode.Unspecified);
             }
+        }
+
+        // ------------------- UI 交互：缩放模式菜单 --------------------
+
+        private void ScalingModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 直接打开按钮自带的 ContextMenu
+            ScalingModeButton.ContextMenu.IsOpen = true;
+        }
+
+        private void NearestNeighborMenu_Click(object sender, RoutedEventArgs e)
+        {
+            _scalingMode = ScalingMode.NearestNeighborNoPreScale;
+            UpdateImage();
+        }
+
+        private void OptimizedAreaMenu_Click(object sender, RoutedEventArgs e)
+        {
+            _scalingMode = ScalingMode.OptimizedAreaWithPreScale;
+            UpdateImage();
+        }
+
+        private void AreaMenu_Click(object sender, RoutedEventArgs e)
+        {
+            _scalingMode = ScalingMode.AreaNoPreScale;
+            UpdateImage();
         }
 
         private void UpdateTransparencyBackground()

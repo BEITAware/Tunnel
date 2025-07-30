@@ -79,11 +79,32 @@
                     <GradientStop Color="#FF929292" Offset="0.53"/>
                 </LinearGradientBrush>
             </Border.Background>
-            <StackPanel Orientation="Horizontal" Margin="5,2">
-                <TextBlock x:Name="ImageInfoText" Text="无图像" VerticalAlignment="Center" Foreground="White"/>
-                <Separator Margin="10,0"/>
-                <TextBlock x:Name="MousePositionText" Text="位置: -" VerticalAlignment="Center" Foreground="White"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="5,2" Grid.Column="0">
+                    <TextBlock x:Name="ImageInfoText" Text="无图像" VerticalAlignment="Center" Foreground="White"/>
+                    <Separator Margin="10,0"/>
+                    <TextBlock x:Name="MousePositionText" Text="位置: -" VerticalAlignment="Center" Foreground="White"/>
+                </StackPanel>
+
+                <Button x:Name="ScalingModeButton" Grid.Column="1" Width="22" Height="22" Margin="0,0,5,0" Click="ScalingModeButton_Click" ToolTip="缩放模式">
+                    <Button.Foreground>
+                        <ImageBrush/>
+                    </Button.Foreground>
+                    <Image Source="/Tunnel-Next;component/Resources/ClickToOpenSomeMenu.png" Stretch="Uniform" />
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="最近邻缩放" Click="NearestNeighborMenu_Click" />
+                            <MenuItem Header="优化的区域缩放" Click="OptimizedAreaMenu_Click" />
+                            <MenuItem Header="区域缩放" Click="AreaMenu_Click" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>
