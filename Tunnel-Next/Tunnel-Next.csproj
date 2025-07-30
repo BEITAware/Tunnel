@@ -69,10 +69,12 @@
 
   <ItemGroup>
     <None Remove="Controls\aurora.png" />
+    <None Remove="Controls\Aurora4.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Controls\aurora.png" />
+    <Resource Include="Controls\Aurora4.png" />
   </ItemGroup>
 
   <ItemGroup>

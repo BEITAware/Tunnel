@@ -523,10 +523,9 @@ namespace Tunnel_Next.Services.ImageProcessing
                                 throw new InvalidOperationException($"Cannot access a disposed Mat object from node {outputNode.Title}, port {outputPortName}");
                             }
 
-                            // 为当前节点克隆一份，避免上游节点提前Dispose
-                            var matClone = mat.Clone();
-                            clonedMats.Add(matClone);
-                            inputs[inputPort.Name] = matClone;
+                            // 直接传递 Mat 引用，OpenCV Mat 采用引用计数管理内存
+                            // 这样可避免大图像的深度克隆带来的性能与内存损耗
+                            inputs[inputPort.Name] = mat;
                         }
                         else
                         {

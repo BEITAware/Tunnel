@@ -244,88 +244,71 @@ namespace Tunnel_Next.Controls
 
         private BitmapSource ConvertF32BMPtoBitmapSource(Mat mat)
         {
-            int width = mat.Width;
-            int height = mat.Height;
-            int channels = mat.Channels();
-
-            long requiredMem = (long)width * height * channels * 4; // 每个浮点数占4字节
-            if (requiredMem > MAX_BUFFER_SIZE)
-            {
-                using var resizedMat = ResizeImageForPreview(mat);
-                return ConvertF32BMPtoBitmapSource(resizedMat);
-            }
-
-            byte[] outputBuffer = new byte[width * height * 4]; // BGRA 8位格式
-
+            // 如果图像尺寸过大，先进行缩放以避免占用过多内存。
+            Mat workingMat = mat;
+            bool disposeWorking = false;
             try
             {
-                const int CHUNK_HEIGHT = 128; // 每次处理128行
-
-                // 使用安全的逐像素访问，避免unsafe内存操作
-                for (int y = 0; y < height; y++)
+                long floatBytes = (long)mat.Width * mat.Height * mat.Channels() * sizeof(float);
+                if (floatBytes > MAX_BUFFER_SIZE)
                 {
-                    for (int x = 0; x < width; x++)
-                    {
-                        int destIdx = (y * width + x) * 4; // 目标BGRA格式索引
-
-                        if (channels == 3) // BGR 图像
-                        {
-                            var pixel = mat.At<Vec3f>(y, x);
-                            outputBuffer[destIdx + 0] = (byte)(Math.Clamp(pixel.Item0, 0.0f, 1.0f) * 255.0f); // B
-                            outputBuffer[destIdx + 1] = (byte)(Math.Clamp(pixel.Item1, 0.0f, 1.0f) * 255.0f); // G
-                            outputBuffer[destIdx + 2] = (byte)(Math.Clamp(pixel.Item2, 0.0f, 1.0f) * 255.0f); // R
-                            outputBuffer[destIdx + 3] = 255; // Alpha (不透明)
-                        }
-                        else if (channels == 1) // 灰度图像
-                        {
-                            var pixel = mat.At<float>(y, x);
-                            byte gray = (byte)(Math.Clamp(pixel, 0.0f, 1.0f) * 255.0f);
-                            outputBuffer[destIdx + 0] = gray; // B
-                            outputBuffer[destIdx + 1] = gray; // G
-                            outputBuffer[destIdx + 2] = gray; // R
-                            outputBuffer[destIdx + 3] = 255;  // A
-                        }
-                        else if (channels == 4) // BGRA 图像 (OpenCV标准格式)
-                        {
-                            var pixel = mat.At<Vec4f>(y, x);
-                            outputBuffer[destIdx + 0] = (byte)(Math.Clamp(pixel.Item0, 0.0f, 1.0f) * 255.0f); // B
-                            outputBuffer[destIdx + 1] = (byte)(Math.Clamp(pixel.Item1, 0.0f, 1.0f) * 255.0f); // G
-                            outputBuffer[destIdx + 2] = (byte)(Math.Clamp(pixel.Item2, 0.0f, 1.0f) * 255.0f); // R
-                            outputBuffer[destIdx + 3] = (byte)(Math.Clamp(pixel.Item3, 0.0f, 1.0f) * 255.0f); // A
-                        }
-                    }
-
-                    // 定期进行垃圾回收以避免内存压力
-                    if (y > 0 && y % 256 == 0)
-                    {
-                        GC.Collect(0, GCCollectionMode.Optimized);
-                    }
+                    workingMat = ResizeImageForPreview(mat);
+                    disposeWorking = true;
                 }
 
-                int bitmapStride = width * 4; // BGRA格式，每像素4字节
-                BitmapSource bitmapSource = BitmapSource.Create(
-                    width, height,
-                    96, 96, // DPI设置
-                    PixelFormats.Bgra32,
-                    null,
-                    outputBuffer,
-                    bitmapStride);
+                // 1) 将 32F -> 8U，并尽量直接转换到目标通道数
+                Mat converted = new Mat();
+                if (workingMat.Type().Depth == MatType.CV_32F)
+                {
+                    // 直接缩放到 0-255 区间
+                    MatType targetType = workingMat.Channels() switch
+                    {
+                        1 => MatType.CV_8UC1,
+                        3 => MatType.CV_8UC3,
+                        4 => MatType.CV_8UC4,
+                        _ => throw new NotSupportedException($"不支持 {workingMat.Channels()} 通道的 F32BMP 图像")
+                    };
+                    workingMat.ConvertTo(converted, targetType, 255.0);
+                }
+                else
+                {
+                    // 非 32F 图像直接复制
+                    workingMat.CopyTo(converted);
+                }
 
-                bitmapSource.Freeze();
-                return bitmapSource;
+                // 2) 确保输出为 BGRA，WPF 要求 Bgra32
+                Mat bgra = converted;
+                switch (converted.Channels())
+                {
+                    case 1:
+                        bgra = new Mat();
+                        Cv2.CvtColor(converted, bgra, ColorConversionCodes.GRAY2BGRA);
+                        converted.Dispose();
+                        break;
+                    case 3:
+                        bgra = new Mat();
+                        Cv2.CvtColor(converted, bgra, ColorConversionCodes.BGR2BGRA);
+                        converted.Dispose();
+                        break;
+                    case 4:
+                        // 已经是 BGRA，直接使用
+                        break;
+                    default:
+                        converted.Dispose();
+                        throw new NotSupportedException($"无法处理 {converted.Channels()} 通道的图像");
+                }
+
+                // 3) 生成 WPF BitmapSource
+                BitmapSource bitmap = bgra.ToBitmapSource();
+                bitmap.Freeze();
+                if (bgra != converted) bgra.Dispose();
+                return bitmap;
             }
-            catch (Exception ex)
+            finally
             {
-
-                try
+                if (disposeWorking && workingMat != null && workingMat != mat)
                 {
-                    using var converted = new Mat();
-                    mat.ConvertTo(converted, MatType.CV_8UC3, 255.0);
-                    return converted.ToBitmapSource();
-                }
-                catch
-                {
-                    throw;
+                    workingMat.Dispose();
                 }
             }
         }
