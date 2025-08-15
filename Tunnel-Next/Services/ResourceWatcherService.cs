@@ -60,9 +60,17 @@ namespace Tunnel_Next.Services
                 {
                     var scriptsWatcher = CreateWatcher(scriptsFolder, "*.cs", true);
                     _watchers.Add(scriptsWatcher);
-                    
+
                     var symbolNodeWatcher = CreateWatcher(scriptsFolder, "*.sn", true);
                     _watchers.Add(symbolNodeWatcher);
+
+                    // 监控脚本自定义类型文件夹（Types）
+                    var typesFolder = Path.Combine(scriptsFolder, "TunnelExtensionResources", "Types");
+                    if (Directory.Exists(typesFolder))
+                    {
+                        var typesWatcher = CreateWatcher(typesFolder, "*.cs", true);
+                        _watchers.Add(typesWatcher);
+                    }
                 }
 
                 System.Diagnostics.Debug.WriteLine($"[ResourceWatcherService] 已启动 {_watchers.Count} 个文件监控器");
@@ -257,6 +265,9 @@ namespace Tunnel_Next.Services
             }
             else if (extension == ".cs" || extension == ".sn")
             {
+                // Types 目录下的 .cs 归为 ScriptType，其余为 Script
+                if (directory.Replace('/', '\\').Contains(Path.Combine("TunnelExtensionResources", "Types")))
+                    return ResourceItemType.ScriptType;
                 return ResourceItemType.Script;
             }
 

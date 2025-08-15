@@ -209,7 +209,7 @@
             <TabItem Header="欢迎" Tag="False">
                 <Grid>
                     <Grid.Background>
-                        <ImageBrush ImageSource="pack://application:,,,/Resources/Aurora.png" Stretch="Fill"/>
+                        <ImageBrush ImageSource="pack://application:,,,/Resources/aurora.png" Stretch="Fill"/>
                     </Grid.Background>
 
                     <!-- Aero风格半透明背景层 -->

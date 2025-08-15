@@ -13,6 +13,7 @@ namespace Tunnel_Next.Models
         // 图像类型
         F32bmp,     // 32位浮点RGBA格式（主要格式）
         F32Page,    // 32位浮点统计页面图像类型（兼容F32bmp）
+        F32texture, // GPU 32位浮点纹理格式（GPU处理专用）
         Img,        // 标准图像格式（PNG、JPG等）
         Image,      // 通用图像类型（TunnelExtension Scripts兼容）
         Tif16,      // 16位TIFF格式
@@ -106,6 +107,17 @@ namespace Tunnel_Next.Models
                 WpfColor = Color.FromRgb(0x87, 0xCE, 0xEB),
                 Category = "图像",
                 CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
+            };
+
+            definitions[NodePortDataType.F32texture] = new PortTypeInfo
+            {
+                Type = NodePortDataType.F32texture,
+                Name = "F32texture",
+                Description = "GPU 32位浮点纹理格式（GPU处理专用）",
+                HexColor = "#40E0D0",
+                WpfColor = Color.FromRgb(0x40, 0xE0, 0xD0),
+                Category = "图像",
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32texture, NodePortDataType.F32bmp, NodePortDataType.F32Page, NodePortDataType.Img, NodePortDataType.Tif16, NodePortDataType.Tif8 }
             };
 
             definitions[NodePortDataType.Img] = new PortTypeInfo

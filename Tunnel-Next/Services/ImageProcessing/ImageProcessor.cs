@@ -17,7 +17,8 @@ namespace Tunnel_Next.Services.ImageProcessing
     /// </summary>
     public class ImageProcessor : IDisposable
     {
-        private readonly ConcurrentDictionary<int, Dictionary<string, object>> _nodeOutputs = new();
+        private readonly ImageProcessingObjectPool _objectPool = new();
+        private readonly ConcurrentDictionary<int, Dictionary<string, object>> _nodeOutputs;
         private readonly object _lock = new object();
         // connection quick-lookup tables, rebuilt each processing round
         private Dictionary<(int nodeId, string portName), NodeConnection> _inputConnectionMap = new();
@@ -33,6 +34,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         {
             _TunnelExtensionScriptManager = TunnelExtensionScriptManager ?? throw new ArgumentNullException(nameof(TunnelExtensionScriptManager));
             _scriptContext = scriptContext ?? CreateDefaultContext();
+            _nodeOutputs = _objectPool.GetNodeOutputsDictionary();
         }
 
         /// <summary>
@@ -173,7 +175,7 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// </summary>
         private void ProcessTunnelExtensionScriptNode(Node node, NodeGraph nodeGraph, ProcessorEnvironment environment)
         {
-            var clonedMatsForThisNode = new List<Mat>();
+            var pooledMatsForThisNode = _objectPool.GetMatList();
             try
             {
                 // 清除节点错误状态，预先假设本次会成功
@@ -181,7 +183,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 node.ErrorMessage = string.Empty;
 
                 // 准备输入数据
-                var inputs = PrepareNodeInputs(node, nodeGraph, clonedMatsForThisNode);
+                var inputs = PrepareNodeInputs(node, nodeGraph, pooledMatsForThisNode);
 
                 // 执行脚本
                 var outputs = ExecuteTunnelExtensionScript(node, inputs, nodeGraph, environment); // This can return null if script fails
@@ -193,7 +195,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                     if (_nodeOutputs.TryGetValue(node.Id, out var oldOutputs))
                     {
 #if DEBUG
-                        Console.WriteLine($"[ImageProcessor] 节点 {node.Title} 释放旧输出资源");
+                        Console.WriteLine($"[ImageProcessor] 节点 {node.Title} 回收旧输出资源到对象池");
 #endif
                         DisposeOutputResources(oldOutputs);
                     }
@@ -258,11 +260,8 @@ namespace Tunnel_Next.Services.ImageProcessing
             }
             finally
             {
-                // 释放为本节点克隆的所有输入Mat，防止内存泄漏
-                foreach (var m in clonedMatsForThisNode)
-                {
-                    try { m.Dispose(); } catch { }
-                }
+                // 将为本节点使用的所有Mat回收到对象池
+                _objectPool.ReturnMatList(pooledMatsForThisNode);
             }
         }
 
@@ -485,7 +484,11 @@ namespace Tunnel_Next.Services.ImageProcessing
             currentMetadata = metadataManager.CleanMetadata(currentMetadata, cleanOptions);
 
             // 7. 将元数据附加到所有输出
-            var processedOutputs = new Dictionary<string, object>(outputs);
+            var processedOutputs = _objectPool.GetMetadataDictionary();
+            foreach (var kvp in outputs)
+            {
+                processedOutputs[kvp.Key] = kvp.Value;
+            }
             processedOutputs["_metadata"] = currentMetadata;
 
             return processedOutputs;
@@ -494,9 +497,9 @@ namespace Tunnel_Next.Services.ImageProcessing
         /// <summary>
         /// 准备节点输入数据
         /// </summary>
-        private Dictionary<string, object> PrepareNodeInputs(Node node, NodeGraph nodeGraph, List<Mat> clonedMats)
+        private Dictionary<string, object> PrepareNodeInputs(Node node, NodeGraph nodeGraph, List<Mat> pooledMats)
         {
-            var inputs = new Dictionary<string, object>();
+            var inputs = _objectPool.GetMetadataDictionary();
 
             // 遍历节点的输入端口
             foreach (var inputPort in node.InputPorts)
@@ -513,19 +516,21 @@ namespace Tunnel_Next.Services.ImageProcessing
                         if (portData is Mat mat)
                         {
 #if DEBUG
-                            Console.WriteLine($"[ImageProcessor] 为节点 {node.Title} 克隆Mat输入: {inputPort.Name}, 源Mat IsDisposed: {mat.IsDisposed}");
+                            Console.WriteLine($"[ImageProcessor] 为节点 {node.Title} 从对象池获取Mat输入: {inputPort.Name}, 源Mat IsDisposed: {mat.IsDisposed}");
 #endif
                             if (mat.IsDisposed)
                             {
 #if DEBUG
-                                Console.WriteLine($"[ImageProcessor] 错误：尝试克隆已释放的Mat对象！源节点: {outputNode.Title}, 端口: {outputPortName}");
+                                Console.WriteLine($"[ImageProcessor] 错误：尝试访问已释放的Mat对象！源节点: {outputNode.Title}, 端口: {outputPortName}");
 #endif
                                 throw new InvalidOperationException($"Cannot access a disposed Mat object from node {outputNode.Title}, port {outputPortName}");
                             }
 
-                            // 直接传递 Mat 引用，OpenCV Mat 采用引用计数管理内存
-                            // 这样可避免大图像的深度克隆带来的性能与内存损耗
-                            inputs[inputPort.Name] = mat;
+                            // 从对象池获取Mat并复制数据
+                            var pooledMat = _objectPool.GetMat(mat);
+                            mat.CopyTo(pooledMat);
+                            inputs[inputPort.Name] = pooledMat;
+                            pooledMats.Add(pooledMat);
                         }
                         else
                         {
@@ -840,12 +845,16 @@ namespace Tunnel_Next.Services.ImageProcessing
         {
             foreach (var output in _nodeOutputs.Values)
             {
-                // 释放Mat资源
+                // 将资源回收到对象池
                 foreach (var item in output.Values)
                 {
                     if (item is Mat mat)
                     {
-                        mat?.Dispose();
+                        _objectPool.ReturnMat(mat);
+                    }
+                    else if (item is Dictionary<string, object> metadata)
+                    {
+                        _objectPool.ReturnMetadataDictionary(metadata);
                     }
                 }
             }
@@ -860,12 +869,13 @@ namespace Tunnel_Next.Services.ImageProcessing
             if (!_disposed)
             {
                 ClearOutputs();
+                _objectPool.Dispose();
                 _disposed = true;
             }
         }
 
         /// <summary>
-        /// 安全释放输出资源
+        /// 将输出资源回收到对象池
         /// </summary>
         private void DisposeOutputResources(Dictionary<string, object> outputs)
         {
@@ -874,12 +884,16 @@ namespace Tunnel_Next.Services.ImageProcessing
                 if (output.Value is Mat mat)
                 {
 #if DEBUG
-                    Console.WriteLine($"[ImageProcessor] 释放Mat资源: {output.Key}, IsDisposed: {mat.IsDisposed}");
+                    Console.WriteLine($"[ImageProcessor] 回收Mat到对象池: {output.Key}, IsDisposed: {mat.IsDisposed}");
 #endif
                     if (!mat.IsDisposed)
                     {
-                        mat.Dispose();
+                        _objectPool.ReturnMat(mat);
                     }
+                }
+                else if (output.Value is Dictionary<string, object> metadata)
+                {
+                    _objectPool.ReturnMetadataDictionary(metadata);
                 }
             }
         }

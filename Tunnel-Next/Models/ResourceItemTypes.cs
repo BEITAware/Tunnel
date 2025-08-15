@@ -32,6 +32,11 @@ namespace Tunnel_Next.Models
         Script,
 
         /// <summary>
+        /// 脚本类型定义文件（TunnelExtension 自定义类型）
+        /// </summary>
+        ScriptType,
+
+        /// <summary>
         /// 素材文件
         /// </summary>
         Material,

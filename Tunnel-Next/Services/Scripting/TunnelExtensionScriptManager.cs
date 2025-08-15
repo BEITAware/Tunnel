@@ -35,6 +35,12 @@ namespace Tunnel_Next.Services.Scripting
         private readonly object _watcherLock = new();
         private const int DebounceDelayMs = 1000;
 
+	        // 自定义类型（Scripts/TunnelExtensionResources/Types）支持
+	        private readonly string _typesFolder;
+	        private readonly string _typesAssemblyName = "TunnelExtensionTypes";
+	        private readonly string _typesAssemblyPath;
+
+
         /// <summary>
         /// 脚本系统是否已初始化
         /// </summary>
@@ -75,10 +81,23 @@ namespace Tunnel_Next.Services.Scripting
             _compilationCacheFile = Path.Combine(_compiledFolder, "compilation-cache.json");
             _assemblyReferenceManager = new AssemblyReferenceManager(_userScriptsFolder, _userResourcesFolder);
 
+	            // 自定义类型路径与输出
+	            _typesFolder = Path.Combine(_userScriptsFolder, "TunnelExtensionResources", "Types");
+	            _typesAssemblyPath = Path.Combine(_compiledFolder, _typesAssemblyName + ".dll");
+
+
             // 确保文件夹存在
             Directory.CreateDirectory(_userScriptsFolder);
             Directory.CreateDirectory(_userResourcesFolder);
             Directory.CreateDirectory(_compiledFolder);
+
+
+	            // 初始时尝试编译并注册Types程序集
+	            try
+	            {
+	                CompileAndRegisterTypesAssembly();
+	            }
+	            catch { }
 
             // 加载编译缓存
             LoadCompilationCache();
@@ -537,12 +556,12 @@ namespace Tunnel_Next.Services.Scripting
             }
 
             _isInitialized = true;
-            
+
             // 触发脚本编译完成事件
             Console.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
             Trace.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
             Debug.WriteLine("[TunnelExtensionScriptManager] 脚本编译完成");
-            
+
             var handler = ScriptsCompilationCompleted;
             if (handler != null)
             {
@@ -568,7 +587,7 @@ namespace Tunnel_Next.Services.Scripting
             {
                 progress?.Report("所有脚本都是最新的，无需编译");
                 _isInitialized = true;
-                
+
                 // 即使没有脚本需要编译，也触发编译完成事件
                 Console.WriteLine("[TunnelExtensionScriptManager] 所有脚本都是最新的，无需编译");
                 var noCompileHandler = ScriptsCompilationCompleted;
@@ -646,12 +665,12 @@ namespace Tunnel_Next.Services.Scripting
 
             _isInitialized = true;
             progress?.Report($"编译完成：成功 {compiledCount} 个，失败 {failedCount} 个");
-            
+
             // 触发脚本编译完成事件
             Console.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
             Trace.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
             Debug.WriteLine("[TunnelExtensionScriptManager] 异步脚本编译完成");
-            
+
             var handler = ScriptsCompilationCompleted;
             if (handler != null)
             {
@@ -900,6 +919,21 @@ namespace Tunnel_Next.Services.Scripting
                 if (scriptType != null)
                 {
                     var instance = Activator.CreateInstance(scriptType) as ITunnelExtensionScript;
+
+                    // 检查是否实现了基底预览接口，如果是则自动注册
+                    if (instance is IBasePreviewProvider basePreviewProvider)
+                    {
+                        try
+                        {
+                            var ctx = new ScriptContext("", "", "", () => null, _ => { }, _ => new Dictionary<string, object>(), (a, b, c) => { });
+                            UI.PreviewManager.Instance.RegisterBasePreviewProvider(basePreviewProvider, ctx);
+                        }
+                        catch
+                        {
+                            // 注册失败时忽略，不影响脚本的正常加载
+                        }
+                    }
+
                     return instance;
                 }
                 else
@@ -1105,10 +1139,55 @@ namespace Tunnel_Next.Services.Scripting
                     }
                 }
             }
-            catch (Exception ex)
-            {
-            }
-        }
+
+	            catch (Exception ex)
+	            {
+	            }
+	        }
+
+
+	        /// <summary>
+	        /// 编译 Scripts/TunnelExtensionResources/Types 下的自定义类型，并注册为全局引用
+	        /// </summary>
+	        private void CompileAndRegisterTypesAssembly()
+	        {
+	            try
+	            {
+	                if (!Directory.Exists(_typesFolder))
+	                {
+	                    return;
+	                }
+	                var typeFiles = Directory.GetFiles(_typesFolder, "*.cs", SearchOption.AllDirectories);
+	                if (typeFiles.Length == 0)
+	                {
+	                    return;
+	                }
+
+	                var syntaxTrees = typeFiles.Select(f => CSharpSyntaxTree.ParseText(File.ReadAllText(f))).ToArray();
+	                var compilation = CSharpCompilation.Create(
+	                    _typesAssemblyName,
+	                    syntaxTrees,
+	                    GetReferences(),
+	                    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+
+	                using var ms = new MemoryStream();
+	                var emitResult = compilation.Emit(ms);
+	                if (!emitResult.Success)
+	                {
+	                    return;
+	                }
+
+	                Directory.CreateDirectory(_compiledFolder);
+	                File.WriteAllBytes(_typesAssemblyPath, ms.ToArray());
+
+	                // 将Types程序集添加为全局引用
+	                _assemblyReferenceManager.AddGlobalReference(_typesAssemblyPath);
+	            }
+	            catch (Exception ex)
+	            {
+	            }
+	        }
+
 
         private void InitializeScriptsWatcher()
         {
@@ -1130,9 +1209,37 @@ namespace Tunnel_Next.Services.Scripting
 
         private void OnScriptFileChanged(object sender, FileSystemEventArgs e)
         {
-            // 跳过编译输出与资源目录
+            // 跳过编译输出，与资源目录中的绝大多数文件。但Types需要特殊处理
             var relative = Path.GetRelativePath(_userScriptsFolder, e.FullPath);
-            if (relative.StartsWith("compiled") || relative.StartsWith("TunnelExtensionResources")) return;
+            if (relative.StartsWith("compiled", StringComparison.OrdinalIgnoreCase)) return;
+
+            // 如果是自定义类型（TunnelExtensionResources/Types），则立即编译类型并触发脚本重编译
+            var typesPrefix = Path.Combine("TunnelExtensionResources", "Types");
+            if (relative.StartsWith(typesPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    CompileAndRegisterTypesAssembly();
+
+                    // 重新编译脚本（使用防抖逻辑避免频繁触发）
+                    lock (_watcherLock)
+                    {
+                        if (_debounceTimer == null)
+                        {
+                            _debounceTimer = new Timer(_ => HandleScriptsChanged(), null, DebounceDelayMs, Timeout.Infinite);
+                        }
+                        else
+                        {
+                            _debounceTimer.Change(DebounceDelayMs, Timeout.Infinite);
+                        }
+                    }
+                }
+                catch { }
+                return;
+            }
+
+            // 其他资源目录下的变动忽略
+            if (relative.StartsWith("TunnelExtensionResources", StringComparison.OrdinalIgnoreCase)) return;
 
             lock (_watcherLock)
             {

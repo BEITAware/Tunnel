@@ -389,6 +389,21 @@ namespace Tunnel_Next.Models
                 ScanDelegate = BuiltinResourceScanners.ScanScriptsAsync
             });
 
+            // 脚本类型定义（Tunnel Extension Types）
+            RegisterType(new ResourceTypeDefinition
+            {
+                Type = ResourceItemType.ScriptType,
+                DisplayName = "脚本类型",
+                Description = "TunnelExtension 脚本自定义类型",
+                DefaultIconPath = "../Resources/Script.png",
+                SupportedExtensions = new List<string> { ".cs" },
+                SupportsThumbnail = false,
+                SupportsMultipleFiles = false,
+                SupportsFolderAssociation = false,
+                ScanPriority = 15,
+                ScanDelegate = BuiltinResourceScanners.ScanScriptTypesAsync
+            });
+
             // 图像
             RegisterType(new ResourceTypeDefinition
             {

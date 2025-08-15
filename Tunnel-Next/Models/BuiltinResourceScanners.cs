@@ -217,6 +217,12 @@ namespace Tunnel_Next.Models
                 {
                     try
                     {
+                        // 过滤掉 Types 目录下的.cs，它们属于脚本类型定义
+                        if (filePath.Contains(Path.Combine("TunnelExtensionResources", "Types")))
+                        {
+                            continue;
+                        }
+
                         var fileInfo = new FileInfo(filePath);
                         var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.Script);
 
@@ -270,6 +276,51 @@ namespace Tunnel_Next.Models
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ScriptScan] 扫描脚本失败: {ex.Message}");
+            }
+
+            return resources;
+        }
+
+        /// <summary>
+        /// 脚本类型定义扫描委托（Scripts/TunnelExtensionResources/Types 下的 .cs）
+        /// </summary>
+        public static async Task<List<ResourceObject>> ScanScriptTypesAsync(ResourceScanContext context)
+        {
+            var resources = new List<ResourceObject>();
+
+            try
+            {
+                var typesFolder = Path.Combine(context.WorkFolder, "Scripts", "TunnelExtensionResources", "Types");
+                if (!Directory.Exists(typesFolder))
+                {
+                    return resources;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ScriptTypeScan] 开始扫描类型定义文件夹: {typesFolder}");
+
+                var typeFiles = Directory.GetFiles(typesFolder, "*.cs", SearchOption.AllDirectories);
+                foreach (var filePath in typeFiles)
+                {
+                    try
+                    {
+                        var fileInfo = new FileInfo(filePath);
+                        var resource = ResourceObject.FromFileInfo(fileInfo, ResourceItemType.ScriptType);
+                        resource.ThumbnailPath = ResourceTypeRegistry.GetDefaultIconPath(ResourceItemType.ScriptType);
+                        resource.Description = "脚本类型定义";
+                        resource.Metadata["Category"] = "ScriptType";
+                        resources.Add(resource);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ScriptTypeScan] 处理类型文件失败 {filePath}: {ex.Message}");
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ScriptTypeScan] 扫描完成，共找到 {resources.Count} 个脚本类型定义");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ScriptTypeScan] 扫描脚本类型失败: {ex.Message}");
             }
 
             return resources;
@@ -522,7 +573,7 @@ namespace Tunnel_Next.Models
                     {
                         // 旧版本格式
                         fs.Seek(0, SeekOrigin.Begin);
-                        
+
                         byte[] lengthBytes = new byte[4];
                         fs.Read(lengthBytes, 0, 4);
                         int metadataLength = BitConverter.ToInt32(lengthBytes, 0);
