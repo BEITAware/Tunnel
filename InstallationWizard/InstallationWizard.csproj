@@ -13,7 +13,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\**\*" />
+    <!-- WPF资源文件（图标、主题等） -->
+    <Resource Include="Resources\*.ico" />
+    <Resource Include="Resources\*.png" />
+    <Resource Include="Resources\*.xaml" />
+    
+    <!-- 模板文件需要复制到输出目录 -->
+    <Content Include="Resources\Templates\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    
+    <!-- Controls和ScriptsControls作为资源 -->
+    <Resource Include="Resources\Controls\**\*" />
+    <Resource Include="Resources\ScriptsControls\**\*" />
+    
+    <!-- 脚本文件复制到输出目录 -->
     <Content Include="Scripts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

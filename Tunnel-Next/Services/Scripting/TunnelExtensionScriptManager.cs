@@ -305,6 +305,31 @@ namespace Tunnel_Next.Services.Scripting
                     GetReferences(filePath),
                     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
 
+                // 应用源码生成器（如有）
+                try
+                {
+                    var generators = LoadSourceGeneratorsForScript(filePath);
+                    if (generators.Count > 0)
+                    {
+                        Debug.WriteLine($"[源码生成器] {scriptName}: 将加载 {generators.Count} 个生成器");
+                        Trace.WriteLine($"[源码生成器] {scriptName}: 将加载 {generators.Count} 个生成器");
+                        GeneratorDriver driver = CSharpGeneratorDriver.Create(generators);
+                        driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiagnostics);
+                        compilation = (CSharpCompilation)outputCompilation;
+                        foreach (var diag in generatorDiagnostics)
+                        {
+                            Debug.WriteLine($"[源码生成器诊断] {diag}");
+                            Trace.WriteLine($"[源码生成器诊断] {diag}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[源码生成器] {scriptName}: 未解析到任何生成器");
+                        Trace.WriteLine($"[源码生成器] {scriptName}: 未解析到任何生成器");
+                    }
+                }
+                catch { }
+
                 using var ms = new MemoryStream();
                 var emitResult = compilation.Emit(ms);
 
@@ -817,6 +842,29 @@ namespace Tunnel_Next.Services.Scripting
                     GetReferences(scriptInfo.FilePath),
                     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
 
+                // 应用源码生成器（如有）
+                try
+                {
+                    var generators = LoadSourceGeneratorsForScript(scriptInfo.FilePath);
+                    if (generators.Count > 0)
+                    {
+                        GeneratorDriver driver = CSharpGeneratorDriver.Create(generators);
+                        driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiagnostics);
+                        compilation = (CSharpCompilation)outputCompilation;
+                        foreach (var diag in generatorDiagnostics)
+                        {
+                            Debug.WriteLine($"[源码生成器诊断] {diag}");
+                            Trace.WriteLine($"[源码生成器诊断] {diag}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[源码生成器] {scriptInfo.Name}: 未解析到任何生成器");
+                        Trace.WriteLine($"[源码生成器] {scriptInfo.Name}: 未解析到任何生成器");
+                    }
+                }
+                catch { }
+
                 // 编译到内存
                 using var ms = new MemoryStream();
                 var emitResult = compilation.Emit(ms);
@@ -1205,6 +1253,263 @@ namespace Tunnel_Next.Services.Scripting
                 _scriptsWatcher.EnableRaisingEvents = true;
             }
             catch { /* 忽略初始化失败 */ }
+        }
+
+        /// <summary>
+        /// 从 Scripts/TunnelExtensionResources/{ScriptName}/Generators.json 加载源码生成器并实例化
+        /// </summary>
+        /// <param name="scriptFilePath">脚本文件的完整路径</param>
+        /// <returns>已实例化的源码生成器列表</returns>
+        private List<ISourceGenerator> LoadSourceGeneratorsForScript(string scriptFilePath)
+        {
+            var result = new List<ISourceGenerator>();
+            try
+            {
+                var scriptName = Path.GetFileNameWithoutExtension(scriptFilePath);
+
+                // 尝试定位包含该脚本的“Scripts”根：优先使用用户脚本根；若脚本不在用户根下，则向上搜索名为“Scripts”的祖先目录
+                var scriptsRoot = _userScriptsFolder;
+                try
+                {
+                    var scriptFull = Path.GetFullPath(scriptFilePath);
+                    var userRootFull = Path.GetFullPath(_userScriptsFolder);
+                    if (!scriptFull.StartsWith(userRootFull, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var dir = Path.GetDirectoryName(scriptFull);
+                        while (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                        {
+                            if (string.Equals(Path.GetFileName(dir), "Scripts", StringComparison.OrdinalIgnoreCase))
+                            {
+                                scriptsRoot = dir;
+                                break;
+                            }
+                            var parent = Path.GetDirectoryName(dir);
+                            if (string.IsNullOrEmpty(parent) || string.Equals(parent, dir, StringComparison.OrdinalIgnoreCase)) break;
+                            dir = parent;
+                        }
+                    }
+                }
+                catch { }
+
+                // 配置路径位于“{ScriptsRoot}/TunnelExtensionResources/{ScriptName}/Generators.json”
+                var configFolder = Path.Combine(scriptsRoot, "TunnelExtensionResources", scriptName);
+                var configPath = Path.Combine(configFolder, "Generators.json");
+                if (!File.Exists(configPath))
+                {
+                    Debug.WriteLine($"[源码生成器] {scriptName}: 未找到 Generators.json，跳过");
+                    Trace.WriteLine($"[源码生成器] {scriptName}: 未找到 Generators.json，跳过");
+                    return result;
+                }
+
+                // 读取配置（支持两种格式：{"Generators":["path1","path2"]} 或 ["path1","path2"])）
+                var dllPaths = new List<string>();
+                try
+                {
+                    var json = File.ReadAllText(configPath);
+                    if (string.IsNullOrWhiteSpace(json)) return result;
+
+                    try
+                    {
+                        var obj = JsonSerializer.Deserialize<GeneratorsConfig>(json);
+                        if (obj?.Generators != null)
+                        {
+                            dllPaths.AddRange(obj.Generators);
+                        }
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            var arr = JsonSerializer.Deserialize<List<string>>(json);
+                            if (arr != null) dllPaths.AddRange(arr);
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                if (dllPaths.Count == 0)
+                {
+                    Debug.WriteLine($"[源码生成器] {scriptName}: Generators.json 无有效条目，跳过");
+                    Trace.WriteLine($"[源码生成器] {scriptName}: Generators.json 无有效条目，跳过");
+                    return result;
+                }
+
+                int configured = dllPaths.Count;
+                int resolvedCount = 0;
+                int assembliesLoaded = 0;
+                var unresolved = new List<string>();
+                var resolvedEntries = new List<string>();
+
+                foreach (var entry in dllPaths)
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(entry)) continue;
+
+                        // 允许仅写 DLL 名称（不含路径），以保证跨机器可用
+                        var fileName = Path.GetFileName(entry);
+                        if (!fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fileName += ".dll";
+                        }
+
+                        bool hasDir = entry.Contains('/') || entry.Contains('\\');
+
+                        // 生成候选路径（优先绝对/相对，随后名称搜索）
+                        var candidatePaths = new List<string>();
+                        if (Path.IsPathRooted(entry))
+                        {
+                            candidatePaths.Add(entry);
+                        }
+                        else if (hasDir)
+                        {
+                            candidatePaths.Add(Path.Combine(configFolder, entry));
+                            candidatePaths.Add(Path.Combine(_userScriptsFolder, entry));
+                        }
+                        else
+                        {
+                            candidatePaths.Add(Path.Combine(configFolder, fileName));
+                            candidatePaths.Add(Path.Combine(_userScriptsFolder, fileName));
+                        }
+
+                        string? resolved = candidatePaths.FirstOrDefault(File.Exists);
+
+                        // 若未直接命中，进一步在常见目录中按文件名递归搜索（资源目录与脚本根目录）
+                        if (resolved == null)
+                        {
+                            Debug.WriteLine($"[源码生成器] {scriptName}: 未在本地目录找到 {fileName}，继续搜索");
+                            Trace.WriteLine($"[源码生成器] {scriptName}: 未在本地目录找到 {fileName}，继续搜索");
+                            try { resolved = Directory.EnumerateFiles(configFolder, fileName, SearchOption.AllDirectories).FirstOrDefault(); } catch { }
+                            if (resolved == null)
+                            {
+                                try { resolved = Directory.EnumerateFiles(_userScriptsFolder, fileName, SearchOption.AllDirectories).FirstOrDefault(); } catch { }
+                            }
+                        }
+
+                        // 扩展搜索：应用程序目录、运行时目录、全局 NuGet 缓存等
+                        if (resolved == null)
+                        {
+                            var searchPaths = new List<string>();
+
+                            try
+                            {
+                                // 应用程序目录
+                                var appDir = AppDomain.CurrentDomain.BaseDirectory;
+                                if (!string.IsNullOrEmpty(appDir)) searchPaths.Add(appDir);
+
+                                // 运行时目录
+                                var runtimeDir = Path.GetDirectoryName(typeof(object).Assembly.Location);
+                                if (!string.IsNullOrEmpty(runtimeDir)) searchPaths.Add(runtimeDir);
+
+                                // NuGet 全局包缓存（如果存在）
+                                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                                var nugetPackages = Path.Combine(userProfile, ".nuget", "packages");
+                                if (Directory.Exists(nugetPackages)) searchPaths.Add(nugetPackages);
+
+                                // 程序文件目录下的 dotnet 共享运行时（Windows）
+                                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                                {
+                                    var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                                    var dotnetShared = Path.Combine(programFiles, "dotnet", "shared");
+                                    if (Directory.Exists(dotnetShared)) searchPaths.Add(dotnetShared);
+                                }
+
+                                foreach (var searchPath in searchPaths)
+                                {
+                                    try
+                                    {
+                                        resolved = Directory.EnumerateFiles(searchPath, fileName, SearchOption.AllDirectories).FirstOrDefault();
+                                        if (resolved != null) break;
+                                    }
+                                    catch { }
+                                }
+                            }
+                            catch { }
+                        }
+
+                        if (resolved == null)
+                        {
+                            // 未找到物理文件，放弃该条目（不绑定任何具体路径）
+                            Debug.WriteLine($"[源码生成器] {scriptName}: 未找到 {fileName}，跳过该条目");
+                            Trace.WriteLine($"[源码生成器] {scriptName}: 未找到 {fileName}，跳过该条目");
+                            continue;
+                        }
+                        else
+                        {
+                            resolvedCount++;
+                            Debug.WriteLine($"[源码生成器] {scriptName}: 解析 {entry} -> {resolved}");
+                            Trace.WriteLine($"[源码生成器] {scriptName}: 解析 {entry} -> {resolved}");
+                        }
+
+                        // 加载程序集并查找生成器类型
+                        Assembly asm;
+                        try
+                        {
+                            asm = Assembly.LoadFrom(resolved);
+                        }
+                        catch
+                        {
+                            // 若LoadFrom失败，尝试按名称加载（去掉扩展名）
+                            try { asm = Assembly.Load(Path.GetFileNameWithoutExtension(fileName)); }
+                            catch { continue; }
+                        }
+
+                        foreach (var t in asm.GetTypes())
+                        {
+                            if (t.IsAbstract || t.IsInterface) continue;
+                            try
+                            {
+                                if (typeof(IIncrementalGenerator).IsAssignableFrom(t))
+                                {
+                                    if (Activator.CreateInstance(t) is IIncrementalGenerator inc)
+                                    {
+                                        var wrapped = TryWrapIncrementalGenerator(inc);
+                                        if (wrapped != null)
+                                        {
+                                            result.Add(wrapped);
+                                        }
+                                    }
+                                }
+                                else if (typeof(ISourceGenerator).IsAssignableFrom(t))
+                                {
+                                    var gen = Activator.CreateInstance(t) as ISourceGenerator;
+                                    if (gen != null)
+                                    {
+                                        result.Add(gen);
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            return result;
+        }
+
+        private class GeneratorsConfig
+        {
+            public List<string>? Generators { get; set; }
+        }
+
+        /// <summary>
+        /// 将 IIncrementalGenerator 包装为 ISourceGenerator（简易适配）
+        /// </summary>
+        private static ISourceGenerator? TryWrapIncrementalGenerator(IIncrementalGenerator inc)
+        {
+            try
+            {
+                // 使用扩展方法将增量生成器转换为普通生成器接口
+                return inc.AsSourceGenerator();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private void OnScriptFileChanged(object sender, FileSystemEventArgs e)
