@@ -79,12 +79,6 @@ namespace Tunnel_Next
             _documentManager = new DocumentManagerService(_documentFactory);
             _viewModel.DocumentManager = _documentManager;
 
-            // 绑定文档管理器事件
-            _documentManager.NewDocumentRequested += DocumentManager_NewDocumentRequested;
-            _documentManager.OpenDocumentRequested += DocumentManager_OpenDocumentRequested;
-            _documentManager.SaveDocumentRequested += DocumentManager_SaveDocumentRequested;
-            _documentManager.ActiveDocumentChanged += DocumentManager_ActiveDocumentChanged;
-
             // 在窗口加载完成后设置ImageProcessor服务
             Loaded += MainWindow_Loaded;
 
@@ -232,8 +226,7 @@ namespace Tunnel_Next
                 }
             });
 
-            // 重新绑定事件（因为ViewModel已经重新创建）
-            BindEvents();
+            RebindNodeEditorEvents(_viewModel.NodeEditor);
 
         }
 
@@ -355,7 +348,7 @@ namespace Tunnel_Next
             }
         }
 
-        private void DocumentManager_SaveDocumentRequested(object? sender, SaveDocumentEventArgs e)
+        private async void DocumentManager_SaveDocumentRequested(object? sender, SaveDocumentEventArgs e)
         {
             try
             {
@@ -371,7 +364,8 @@ namespace Tunnel_Next
                 {
                     var saveDialog = new Microsoft.Win32.SaveFileDialog
                     {
-                        Filter = "节点图文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+                        Filter = FileService.NodeGraphFilter,
+                        DefaultExt = ".nodegraph",
                         Title = "保存节点图",
                         FileName = document.Title
                     };
@@ -389,7 +383,7 @@ namespace Tunnel_Next
 
                 _viewModel.TaskStatus = $"正在保存文档: {document.Title}";
 
-                if (_documentManager.SaveDocument(e.DocumentId, filePath))
+                if (await document.SaveAsync(filePath))
                 {
                     _viewModel.TaskStatus = $"保存文档成功: {document.Title}";
                 }
@@ -1137,135 +1131,49 @@ namespace Tunnel_Next
             }
         }
 
-        private bool _isClosing = false;
+        private bool _closeApproved;
+        private bool _savingBeforeClose;
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            if (!_isClosing)
-            {
-                // 第一次关闭请求，取消关闭并开始异步保存
-                e.Cancel = true;
-                _ = HandleApplicationClosingAsync();
-            }
-            else
-            {
-                // 异步保存完成后的真正关闭
-                base.OnClosing(e);
-            }
+            base.OnClosing(e);
+            if (_closeApproved || e.Cancel) return;
+            e.Cancel = true;
+            if (_savingBeforeClose) return;
+
+            _savingBeforeClose = true;
+            _ = SaveBeforeClosingAsync();
         }
 
-        private async Task HandleApplicationClosingAsync()
+        private async Task SaveBeforeClosingAsync()
         {
             try
             {
-
-                // 列出所有文档的状态
-                foreach (var doc in _documentManager.Documents)
+                // Return from the first Closing event before attempting Close again.
+                await System.Windows.Threading.Dispatcher.Yield();
+                if (!await DocumentSave.SaveModifiedAsync(_documentManager.Documents))
                 {
+                    _viewModel.TaskStatus = "文档尚未保存，已取消关闭";
+                    return;
                 }
-
-                // 使用与保存按钮相同的逻辑保存所有文档
-                bool allSaved = true;
-
-                // 1. 保存活动的多文档Tab文档（如果有）
-                if (_documentManager.ActiveDocumentId != null)
+                if (_documentManager.DocumentCount == 0 && _viewModel.CurrentNodeGraph.IsModified &&
+                    !await _viewModel.SaveCurrentGraphAsync())
                 {
-                    var activeDocument = _documentManager.GetNodeGraphDocument(_documentManager.ActiveDocumentId);
-                    if (activeDocument != null)
-                    {
-                        try
-                        {
-                            var saveSuccess = activeDocument.Save();
-                            if (saveSuccess)
-                            {
-                            }
-                            else
-                            {
-                                allSaved = false;
-                            }
-                        }
-                        catch (Exception saveEx)
-                        {
-                            allSaved = false;
-                        }
-                    }
+                    _viewModel.TaskStatus = "节点图尚未保存，已取消关闭";
+                    return;
                 }
-
-                // 2. 保存其他非活动的多文档Tab文档
-                foreach (var doc in _documentManager.Documents)
-                {
-                    if (doc is NodeGraphDocument nodeGraphDoc && doc.Id != _documentManager.ActiveDocumentId)
-                    {
-                        try
-                        {
-                            var saveSuccess = nodeGraphDoc.Save();
-                            if (saveSuccess)
-                            {
-                            }
-                            else
-                            {
-                                allSaved = false;
-                            }
-                        }
-                        catch (Exception saveEx)
-                        {
-                            allSaved = false;
-                        }
-                    }
-                }
-
-                // 3. 保存默认的NodeEditor（非多文档系统的节点图）- 使用与保存按钮相同的逻辑
-                if (_documentManager.ActiveDocumentId == null)
-                {
-                    try
-                    {
-                        // 使用新的保存逻辑
-                        var activeDocument = _viewModel.DocumentManager?.ActiveDocumentId != null
-                            ? _viewModel.DocumentManager.GetNodeGraphDocument(_viewModel.DocumentManager.ActiveDocumentId)
-                            : null;
-                        var success = activeDocument != null ? await activeDocument.SaveAsync() : false;
-
-                        if (success)
-                        {
-                        }
-                        else
-                        {
-                            allSaved = false;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        allSaved = false;
-                    }
-                }
-
-
-                if (allSaved)
-                {
-                }
-                else
-                {
-                }
-
-
-                // 保存完成，设置标志并真正关闭窗口
-                _isClosing = true;
-
-                // 在UI线程上关闭窗口
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    Close();
-                });
+                _closeApproved = true;
+                Close();
+                _closeApproved = false;
             }
             catch (Exception ex)
             {
-
-                // 即使出现异常也要关闭应用程序
-                _isClosing = true;
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    Close();
-                });
+                _closeApproved = false;
+                _viewModel.TaskStatus = $"保存失败，已取消关闭：{ex.Message}";
+            }
+            finally
+            {
+                _savingBeforeClose = false;
             }
         }
 

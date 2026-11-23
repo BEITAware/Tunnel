@@ -17,7 +17,7 @@ namespace Tunnel_Next.Services
     /// </summary>
     public class FileService
     {
-        private const string NodeGraphFilter = "TunnelNX 节点图文件 (*.nodegraph)|*.nodegraph|所有文件 (*.*)|*.*";
+        internal const string NodeGraphFilter = "TunnelNX 节点图文件 (*.nodegraph)|*.nodegraph|所有文件 (*.*)|*.*";
         private const string ImageFilter = "图像文件 (*.jpg;*.jpeg;*.png;*.bmp;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.tiff|所有文件 (*.*)|*.*";
 
         private readonly WorkFolderService? _workFolderService;
@@ -137,7 +137,7 @@ namespace Tunnel_Next.Services
                 var json = _serializer.SerializeNodeGraph(nodeGraph);
 
                 // 写入文件
-                await File.WriteAllTextAsync(filePath, json);
+                await DocumentSave.WriteGraphAsync(filePath, json);
 
                 // 更新节点图信息
                 nodeGraph.FilePath = filePath;

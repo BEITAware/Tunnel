@@ -559,11 +559,7 @@ namespace Tunnel_Next.ViewModels
                     {
                         TaskStatus = $"正在保存文档: {activeDocument.Title}";
 
-                        // 在后台线程执行保存操作，避免UI卡死
-                        var saveSuccess = await Task.Run(() => {
-                            var result = activeDocument.Save();
-                            return result;
-                        });
+                        var saveSuccess = await activeDocument.SaveAsync();
 
                         if (saveSuccess)
                         {
@@ -578,18 +574,11 @@ namespace Tunnel_Next.ViewModels
                 }
 
 
-                // 获取当前节点图
-                TaskStatus = "正在创建节点图数据...";
-                var nodeGraph = _nodeEditor.CreateNodeGraph();
-
-                // 使用FileService保存节点图
-                TaskStatus = "正在保存节点图...";
-                var success = await _fileService.SaveNodeGraphAsync(nodeGraph);
+                var success = await SaveCurrentGraphAsync();
+                var nodeGraph = CurrentNodeGraph;
 
                 if (success)
                 {
-                    CurrentNodeGraph = nodeGraph;
-
                     // 生成缩略图（从当前预览控件获取图像）- 使用Dispatcher确保UI线程上执行
                     _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
@@ -644,25 +633,30 @@ namespace Tunnel_Next.ViewModels
 
 
 
+        internal async Task<bool> SaveCurrentGraphAsync(bool saveAs = false)
+        {
+            var graph = _nodeEditor.CreateNodeGraph();
+            graph.Metadata = CurrentNodeGraph.Metadata;
+            graph.ViewportX = CurrentNodeGraph.ViewportX;
+            graph.ViewportY = CurrentNodeGraph.ViewportY;
+            graph.ZoomLevel = CurrentNodeGraph.ZoomLevel;
+            if (!await _fileService.SaveNodeGraphAsync(graph, saveAs ? null : CurrentNodeGraph.FilePath))
+                return false;
+            CurrentNodeGraph = graph;
+            return true;
+        }
+
         private async void ExecuteSaveAsNodeGraph()
         {
             try
             {
-                // 获取当前节点图
-                var nodeGraph = _nodeEditor.CreateNodeGraph();
-
-                // 使用FileService另存为节点图
-                var success = await _fileService.SaveNodeGraphAsync(nodeGraph);
-
-                if (success)
+                if (_documentManager?.ActiveDocument != null)
                 {
-                    CurrentNodeGraph = nodeGraph;
-                    TaskStatus = $"已另存为节点图: {nodeGraph.Name}";
+                    _documentManager.RequestSaveDocument(saveAs: true);
+                    return;
                 }
-                else
-                {
-                    TaskStatus = "另存为节点图失败";
-                }
+                if (await SaveCurrentGraphAsync(saveAs: true))
+                    TaskStatus = $"已另存为节点图: {CurrentNodeGraph.Name}";
             }
             catch (Exception ex)
             {

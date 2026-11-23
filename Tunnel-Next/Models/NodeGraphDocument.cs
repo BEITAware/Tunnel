@@ -28,6 +28,8 @@ namespace Tunnel_Next.Models
         private bool _canClose = true;
         private string _title;
         private bool _isModified;
+        private int _saveInProgress;
+        private long _editRevision;
 
         #endregion
 
@@ -177,7 +179,9 @@ namespace Tunnel_Next.Models
         /// </summary>
         public async Task<bool> SaveAsync(string? filePath = null)
         {
-
+            if (System.Threading.Interlocked.Exchange(ref _saveInProgress, 1) != 0)
+                return false;
+            long revision = System.Threading.Interlocked.Read(ref _editRevision);
             try
             {
                 // 获取当前节点图数据
@@ -203,9 +207,8 @@ namespace Tunnel_Next.Models
                 {
                     // 更新文档状态
                     FilePath = currentNodeGraph.FilePath;
-                    IsModified = false;
+                    IsModified = System.Threading.Interlocked.Read(ref _editRevision) != revision;
                     _nodeGraph.FilePath = currentNodeGraph.FilePath;
-                    _nodeGraph.IsModified = false;
                     _nodeGraph.LastModified = currentNodeGraph.LastModified;
 
                     // 保存成功后生成缩略图
@@ -296,11 +299,12 @@ namespace Tunnel_Next.Models
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
-                {
-                }
                 MessageBox.Show($"保存过程中发生异常: {ex.Message}", "保存错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
+            }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _saveInProgress, 0);
             }
         }
 
@@ -645,6 +649,7 @@ namespace Tunnel_Next.Models
 
         private void OnNodeGraphModified()
         {
+            System.Threading.Interlocked.Increment(ref _editRevision);
             IsModified = true;
             _nodeGraph.LastModified = DateTime.Now;
         }
