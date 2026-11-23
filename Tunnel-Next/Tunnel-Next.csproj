@@ -32,6 +32,9 @@
     <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
+    <!-- Dynamically compiled GPU image nodes use these assemblies at runtime. -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
   </ItemGroup>

@@ -281,6 +281,7 @@ namespace Tunnel_Next.Services.ImageProcessing
                 // 处理一些常见的别名
                 return dataType.ToLowerInvariant() switch
                 {
+                    "f32texture" => NodePortDataType.F32texture,
                     "f32bmp" or "image" or "bitmap" => NodePortDataType.F32bmp,
                     "img" => NodePortDataType.Img,
                     "tif16" => NodePortDataType.Tif16,
