@@ -681,37 +681,18 @@ namespace Tunnel_Next.Models
             }
         }
 
-        private void UpdateImagePreview()
+        internal void UpdateImagePreview()
         {
-            try
+            if (_imagePreview == null) return;
+            if (!_imagePreview.Dispatcher.CheckAccess())
             {
-                // 设置预览控件为非处理状态（避免界面卡顿）
-                Controls.ImagePreviewControl.SetProcessingState(false);
-
-                // 只显示预览节点的输出
-                // 优先查找有输入连接的预览节点，如果没有则使用第一个预览节点
-                var previewNodes = _nodeEditor.Nodes.Where(n => n.Title == "预览节点").ToList();
-                var previewNode = previewNodes.FirstOrDefault(n => n.InputPorts.Any(p => p.Value != null))
-                                ?? previewNodes.FirstOrDefault();
-
-                if (previewNode != null && previewNode.ProcessedOutputs.TryGetValue("f32bmp", out var previewOutput))
-                {
-                    if (previewOutput is OpenCvSharp.Mat previewMat)
-                    {
-                        if (_imagePreview != null)
-                        {
-                            _imagePreview.ImageSource = previewMat;
-                            return;
-                        }
-                    }
-                }
-
-                // 如果没有预览节点或预览节点没有输出，清空图像预览
-                _imagePreview?.ClearImage();
+                _imagePreview.Dispatcher.InvokeAsync(UpdateImagePreview);
+                return;
             }
-            catch (Exception ex)
-            {
-            }
+            Controls.ImagePreviewControl.SetProcessingState(false);
+            var frame = Services.UI.PreviewNodeFrame.Select(_nodeEditor.Nodes, _nodeEditor.Connections);
+            if (frame == null) _imagePreview.ClearImage();
+            else _imagePreview.ShowNodeFrame(frame);
         }
 
         #endregion
