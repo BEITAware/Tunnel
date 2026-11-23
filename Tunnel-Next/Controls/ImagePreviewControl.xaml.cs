@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
 using Microsoft.Win32;
+using Tunnel_Next.Services.UI;
 using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
@@ -33,6 +34,8 @@ namespace Tunnel_Next.Controls
         // 核心属性 - TunnelExtension Scripts系统
         private Mat? _currentImage;
         private BitmapSource? _originalBitmap;
+        private PreviewNodeSettings? _previewSettings;
+        private string _imageInfo = string.Empty;
         private double _zoomFactor = 1.0;
         private const double MIN_ZOOM = 0.001;
         private const double MAX_ZOOM = 20.0;
@@ -102,6 +105,11 @@ namespace Tunnel_Next.Controls
             ImageContainer.MouseRightButtonDown += OnMouseRightButtonDown;
             ImageContainer.MouseRightButtonUp += OnMouseRightButtonUp;
             ImageContainer.MouseWheel += OnMouseWheel;
+
+            ImageScrollViewer.SizeChanged += (_, _) =>
+            {
+                if (_previewSettings?.AutoScale == true) ZoomFit();
+            };
 
             // 注册事件以更新 PreviewState
             ZoomChanged += z => Tunnel_Next.Services.UI.PreviewState.Zoom = z;
@@ -187,12 +195,13 @@ namespace Tunnel_Next.Controls
                 var alphaInfo = GetAlphaChannelInfo(_currentImage);
                 try
                 {
-                    ImageInfoText.Text = $"尺寸: {imgWidth} × {imgHeight}, " +
+                    _imageInfo = $"尺寸: {imgWidth} × {imgHeight}, " +
                                        $"通道: {imgChannels}, " +
                                        $"格式: {formatInfo}" +
                                        (string.IsNullOrEmpty(alphaInfo) ? "" : $", {alphaInfo}");
                 }
-                catch { Console.WriteLine("错误：图像信息获取异常"); }
+                catch { _imageInfo = string.Empty; }
+                ImageInfoText.Text = _previewSettings?.Caption(_imageInfo) ?? _imageInfo;
 
                 try
                 {
@@ -396,11 +405,14 @@ namespace Tunnel_Next.Controls
                         bitmapSource.Freeze();
 
                         // 在UI线程上设置图像
+                        var source = _currentImage;
                         Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                         {
+                            if (!ReferenceEquals(source, _currentImage)) return;
                             _originalBitmap = bitmapSource;
                             PreviewImage.Source = bitmapSource;
                             NoImageText.Visibility = Visibility.Collapsed;
+                            ApplyNodeZoom();
                         }));
                     }
                     else
@@ -493,11 +505,14 @@ namespace Tunnel_Next.Controls
                     if (bitmapSource != null)
                     {
                         bitmapSource.Freeze();
+                        var source = _currentImage;
                         Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                         {
+                            if (!ReferenceEquals(source, _currentImage)) return;
                             _originalBitmap = bitmapSource;
                             PreviewImage.Source = bitmapSource;
                             NoImageText.Visibility = Visibility.Collapsed;
+                            ApplyNodeZoom();
                         }));
                     }
                 }
@@ -758,6 +773,7 @@ namespace Tunnel_Next.Controls
 
         public void ClearImage()
         {
+            _previewSettings = null;
             _preserveCurrentImage = false; // 明确清除时，不保持图像
             ImageSource = null;
         }
@@ -771,13 +787,35 @@ namespace Tunnel_Next.Controls
             _preserveCurrentImage = preserve;
         }
 
+        internal void ShowNodeFrame(PreviewNodeFrame frame)
+        {
+            var changed = _previewSettings != frame.Settings || !ReferenceEquals(ImageSource, frame.Image);
+            _previewSettings = frame.Settings;
+            ImageSource = frame.Image;
+            if (!changed || _originalBitmap == null) return;
+            ImageInfoText.Text = frame.Settings.Caption(_imageInfo);
+            ApplyNodeZoom();
+        }
+
+        private void ApplyNodeZoom()
+        {
+            if (_previewSettings == null) return;
+            if (_previewSettings.AutoScale) ZoomFit();
+            else ZoomFactor = _previewSettings.Zoom;
+        }
+
         public void SetTunnelExtensionScriptImage(Mat? image, Dictionary<string, object>? metadata = null)
         {
-            ImageSource = image;
-
-            if (metadata != null && metadata.Count > 0)
+            if (image == null) { ClearImage(); return; }
+            if (metadata == null)
             {
+                _previewSettings = null;
+                ImageSource = image;
+                return;
             }
+            var settings = PreviewNodeSettings.Read(metadata, _ => null);
+            if (settings.Enabled) ShowNodeFrame(new PreviewNodeFrame(image, settings));
+            else ClearImage();
         }
 
         private void CenterImage()
