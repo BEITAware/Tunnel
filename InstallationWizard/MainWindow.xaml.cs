@@ -44,8 +44,9 @@ namespace InstallationWizard
             if (_currentPageIndex == _pages.Count - 1) // 完成页面
             {
                 BackButton.Visibility = Visibility.Collapsed;
-                NextButton.Visibility = Visibility.Collapsed;
-                CancelButton.Content = "退出";
+                NextButton.Content = "完成";
+                NextButton.Visibility = Visibility.Visible;
+                CancelButton.Visibility = Visibility.Collapsed;
             }
             else if (_currentPageIndex == _pages.Count - 2) // 安装进度页
             {
@@ -99,6 +100,9 @@ namespace InstallationWizard
 
                 if (_currentPageIndex < _pages.Count - 1)
                 {
+                    if (_pages[_currentPageIndex] is PathSelectionPage paths && !paths.TryConfirmPaths())
+                        return;
+
                     _currentPageIndex++;
                     ShowCurrentPage();
 

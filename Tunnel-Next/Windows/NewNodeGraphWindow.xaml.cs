@@ -55,8 +55,7 @@ namespace Tunnel_Next.Windows
 
             try
             {
-                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var templatesRoot = Path.Combine(documentsPath, "TNX", "Resources", "Templates");
+                var templatesRoot = Path.Combine(new WorkFolderConfig().WorkFolder, "Resources", "Templates");
 
                 if (!Directory.Exists(templatesRoot)) return;
 

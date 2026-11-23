@@ -10,7 +10,7 @@ namespace InstallationWizard.Pages
         public CompletionPage()
         {
             InitializeComponent();
-            LoadInstallationInfo();
+            Loaded += (_, _) => LoadInstallationInfo();
         }
 
         private void LoadInstallationInfo()
@@ -32,6 +32,7 @@ namespace InstallationWizard.Pages
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = executablePath,
+                        WorkingDirectory = PathSelectionPage.InstallPath,
                         UseShellExecute = true
                     });
                 }
