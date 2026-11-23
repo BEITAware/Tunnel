@@ -24,17 +24,14 @@ namespace InstallationWizard.Pages
             {
                 // 默认安装路径
                 string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                InstallPath = Path.Combine(programFiles, "Tunnel");
-                InstallPathTextBox.Text = InstallPath;
+                InstallPathTextBox.Text = Path.Combine(programFiles, "Tunnel");
 
                 // 默认工作文件夹路径
                 string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                WorkFolderPath = Path.Combine(documentsPath, "TNX");
-                WorkFolderTextBox.Text = WorkFolderPath;
+                WorkFolderTextBox.Text = Path.Combine(documentsPath, "TNX");
 
                 // 默认脚本文件夹路径
-                ScriptsFolderPath = Path.Combine(documentsPath, "TNX", "Scripts");
-                ScriptsFolderTextBox.Text = ScriptsFolderPath;
+                ScriptsFolderTextBox.Text = Path.Combine(documentsPath, "TNX", "Scripts");
             }
             catch (Exception ex)
             {
@@ -62,8 +59,7 @@ namespace InstallationWizard.Pages
                         selectedPath = Path.Combine(selectedPath, "Tunnel");
                     }
                     
-                    InstallPath = selectedPath;
-                    InstallPathTextBox.Text = InstallPath;
+                    InstallPathTextBox.Text = selectedPath;
                 }
             }
             catch (Exception ex)
@@ -84,8 +80,7 @@ namespace InstallationWizard.Pages
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    WorkFolderPath = dialog.SelectedPath;
-                    WorkFolderTextBox.Text = WorkFolderPath;
+                    WorkFolderTextBox.Text = dialog.SelectedPath;
                 }
             }
             catch (Exception ex)
@@ -106,14 +101,48 @@ namespace InstallationWizard.Pages
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    ScriptsFolderPath = dialog.SelectedPath;
-                    ScriptsFolderTextBox.Text = ScriptsFolderPath;
+                    ScriptsFolderTextBox.Text = dialog.SelectedPath;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"选择脚本文件夹路径时出错：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        internal bool TryConfirmPaths()
+        {
+            if (!TryReadFolder(InstallPathTextBox, "安装路径", out var install) ||
+                !TryReadFolder(WorkFolderTextBox, "工作文件夹", out var work) ||
+                !TryReadFolder(ScriptsFolderTextBox, "脚本文件夹", out var scripts))
+                return false;
+
+            InstallPath = IsRootDirectory(install) ? Path.Combine(install, "Tunnel") : install;
+            WorkFolderPath = work;
+            ScriptsFolderPath = scripts;
+            return true;
+        }
+
+        private static bool TryReadFolder(TextBox input, string label, out string folder)
+        {
+            folder = input.Text.Trim();
+            try
+            {
+                if (Path.IsPathFullyQualified(folder) && folder.IndexOfAny(Path.GetInvalidPathChars()) < 0)
+                {
+                    folder = Path.GetFullPath(folder);
+                    return true;
+                }
+            }
+            catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException)
+            {
+                // 在当前输入框提示修正路径。
+            }
+
+            MessageBox.Show($"请为{label}输入有效的绝对路径。", "路径无效", MessageBoxButton.OK, MessageBoxImage.Warning);
+            input.Focus();
+            input.SelectAll();
+            return false;
         }
 
         private bool IsRootDirectory(string path)

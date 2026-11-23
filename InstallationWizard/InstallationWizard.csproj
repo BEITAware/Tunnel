@@ -13,7 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\**\*" />
+    <Resource Include="Resources\**\*" Exclude="Resources\Templates\**\*" />
+    <Content Include="Resources\Templates\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Include="Scripts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

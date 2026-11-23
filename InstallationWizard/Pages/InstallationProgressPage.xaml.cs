@@ -182,44 +182,14 @@ namespace InstallationWizard.Pages
                 }
 
                 // 复制 Resources\Templates 文件
-                CopyTemplateResources(workFolder);
+                TemplateInstaller.Install(AppContext.BaseDirectory, workFolder);
+                LogMessage("标准模板安装完成");
 
                 // 创建初始化标记文件
                 var initMarkerFile = Path.Combine(PathSelectionPage.ScriptsFolderPath, ".initialized");
                 File.WriteAllText(initMarkerFile, DateTime.Now.ToString());
                 LogMessage("已创建初始化标记文件");
             });
-        }
-
-        private void CopyTemplateResources(string workFolder)
-        {
-            try
-            {
-                string sourceTemplatesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Templates");
-                string targetTemplatesDir = Path.Combine(workFolder, "Resources", "Templates");
-
-                LogMessage($"模板源目录: {sourceTemplatesDir}");
-                LogMessage($"模板目标目录: {targetTemplatesDir}");
-
-                if (Directory.Exists(sourceTemplatesDir))
-                {
-                    // 确保目标目录存在
-                    Directory.CreateDirectory(targetTemplatesDir);
-
-                    // 复制所有模板文件
-                    CopyDirectory(sourceTemplatesDir, targetTemplatesDir);
-                    LogMessage("模板文件复制完成");
-                }
-                else
-                {
-                    LogMessage("模板源目录不存在，跳过模板复制");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogMessage($"复制模板文件时出错: {ex.Message}");
-                // 不抛出异常，允许安装继续
-            }
         }
 
         private async Task RegisterStartMenuShortcut()
