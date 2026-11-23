@@ -45,7 +45,8 @@ namespace Tunnel_Next.Models
         Vector,
         Set,
         F32bmpSet,
-        Any
+        Any,
+        F32texture
     }
 
     /// <summary>
@@ -377,6 +378,17 @@ namespace Tunnel_Next.Models
                 WpfColor = Color.FromRgb(0xD0, 0x20, 0x90),
                 Category = "基础",
                 CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32bmpSet }
+            };
+
+            definitions[NodePortDataType.F32texture] = new PortTypeInfo
+            {
+                Type = NodePortDataType.F32texture,
+                Name = "F32texture",
+                Description = "32 位浮点 GPU 纹理",
+                Category = "图像",
+                HexColor = "#9B9B9B",
+                WpfColor = Color.FromRgb(0x9B, 0x9B, 0x9B),
+                CompatibleTypes = new List<NodePortDataType> { NodePortDataType.F32texture }
             };
 
             definitions[NodePortDataType.Any] = new PortTypeInfo

@@ -221,6 +221,7 @@ namespace Tunnel_Next.Services
         {
             return dataType.ToLower() switch
             {
+                "f32texture" => NodePortDataType.F32texture,
                 "f32bmp" => NodePortDataType.F32bmp,
                 "mat" => NodePortDataType.F32bmp,
                 "string" => NodePortDataType.String,
